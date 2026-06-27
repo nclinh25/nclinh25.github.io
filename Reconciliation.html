@@ -1,0 +1,1569 @@
+<div id="root"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+  if (window.pdfjsLib) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+  }
+</script>
+
+<style>
+  :root{
+    --ink:#0f1b2d; --ink-soft:#37475c; --muted:#6b7a8d;
+    --line:#dce3ec; --line-soft:#eef2f7;
+    --bg:#f4f7fb; --panel:#ffffff;
+    --blue:#1f5fd6; --blue-deep:#143e8c; --blue-wash:#eaf1fd;
+    --steel:#41597a;
+    --amber:#b56a00; --amber-wash:#fff4e2;
+    --red:#b3261e; --red-wash:#fdecea;
+    --green:#1f7a4d; --green-wash:#e7f5ee;
+    --shadow:0 1px 2px rgba(16,33,61,.05),0 8px 24px rgba(16,33,61,.06);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+  }
+  .mono{font-family:"SF Mono",ui-monospace,"Roboto Mono",Menlo,Consolas,monospace}
+  h1,h2,h3,h4{margin:0;color:var(--ink);font-weight:650;letter-spacing:-.01em}
+  button{font-family:inherit;cursor:pointer}
+  /* ---- shell ---- */
+  .app{display:flex;min-height:100vh}
+  .side{
+    width:240px;flex:0 0 240px;background:linear-gradient(180deg,#12274a,#0e1f3c);
+    color:#cdd9ec;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;
+  }
+  .brand{padding:20px 22px 16px;border-bottom:1px solid rgba(255,255,255,.08)}
+  .brand .logo{display:flex;align-items:center;gap:10px}
+  .brand .mark{width:30px;height:30px;border-radius:7px;background:linear-gradient(135deg,#3f7be8,#1f5fd6);
+    display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:15px}
+  .brand .name{color:#fff;font-weight:680;font-size:14.5px;letter-spacing:-.01em}
+  .brand .sub{color:#7f93b4;font-size:11px;margin-top:2px;letter-spacing:.04em;text-transform:uppercase}
+  .nav{padding:12px 10px;display:flex;flex-direction:column;gap:2px;overflow-y:auto}
+  .nav .grp{color:#647aa0;font-size:10px;letter-spacing:.09em;text-transform:uppercase;padding:12px 12px 5px;font-weight:650}
+  .nav button{
+    display:flex;align-items:center;gap:11px;width:100%;text-align:left;
+    background:transparent;border:0;color:#bcccdf;border-radius:8px;
+    padding:9px 12px;font-size:13.5px;font-weight:520;transition:.12s;position:relative
+  }
+  .nav button:hover{background:rgba(255,255,255,.06);color:#fff}
+  .nav button.on{background:rgba(63,123,232,.22);color:#fff}
+  .nav button.on::before{content:"";position:absolute;left:-10px;top:9px;bottom:9px;width:3px;border-radius:3px;background:#5b91f2}
+  .nav .ic{width:17px;height:17px;flex:0 0 17px;opacity:.92}
+  .nav .badge{margin-left:auto;background:rgba(255,255,255,.14);color:#fff;font-size:11px;
+    padding:1px 7px;border-radius:20px;font-weight:600}
+  .nav .badge.warn{background:var(--amber)}
+  .nav .badge.ok{background:#1f7a4d}
+  .side .foot{margin-top:auto;padding:14px 18px;border-top:1px solid rgba(255,255,255,.08);font-size:11px;color:#6c80a4}
+
+  .main{flex:1;min-width:0;display:flex;flex-direction:column}
+  .topbar{
+    background:var(--panel);border-bottom:1px solid var(--line);
+    padding:16px 30px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:20
+  }
+  .topbar .crumb{font-size:11px;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;font-weight:600}
+  .topbar h2{font-size:18px;margin-top:2px}
+  .topbar .desc{color:var(--muted);font-size:12.5px;margin-top:1px;font-weight:480}
+  .topbar .right{margin-left:auto;display:flex;align-items:center;gap:10px}
+  .pipe{display:flex;align-items:center;gap:6px}
+  .pdot{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--muted);font-weight:560}
+  .pdot .d{width:8px;height:8px;border-radius:50%;background:var(--line);border:1px solid #cbd5e2}
+  .pdot.done .d{background:var(--green);border-color:var(--green)}
+  .pdot.done{color:var(--ink-soft)}
+  .pipe .sep{width:14px;height:1px;background:var(--line)}
+
+  .content{padding:26px 30px 60px;max-width:1320px;width:100%}
+  .section-intro{margin-bottom:18px}
+  .section-intro h3{font-size:15px}
+  .section-intro p{color:var(--muted);margin:4px 0 0;font-size:13px;max-width:760px}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow)}
+  .card .hd{padding:15px 18px;border-bottom:1px solid var(--line-soft);display:flex;align-items:center;gap:10px}
+  .card .hd h4{font-size:13.5px}
+  .card .hd .sub{color:var(--muted);font-size:12px;font-weight:480}
+  .card .hd .right{margin-left:auto;display:flex;gap:8px;align-items:center}
+  .card .bd{padding:18px}
+  .grid{display:grid;gap:18px}
+  .g2{grid-template-columns:1fr 1fr}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  @media(max-width:1080px){.g2,.g3{grid-template-columns:1fr}}
+
+  /* buttons */
+  .btn{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:#fff;
+    color:var(--ink-soft);border-radius:8px;padding:8px 14px;font-size:13px;font-weight:580;transition:.12s}
+  .btn:hover{border-color:#c3cedd;background:#fbfcfe}
+  .btn .ic{width:15px;height:15px}
+  .btn.pri{background:var(--blue);border-color:var(--blue);color:#fff}
+  .btn.pri:hover{background:var(--blue-deep);border-color:var(--blue-deep)}
+  .btn.dk{background:var(--steel);border-color:var(--steel);color:#fff}
+  .btn.dk:hover{background:#33486a}
+  .btn.gh{background:transparent;border-color:transparent;color:var(--blue);padding:6px 9px}
+  .btn.gh:hover{background:var(--blue-wash)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .btn.sm{padding:5px 10px;font-size:12px}
+  .btn.danger{color:var(--red);border-color:#f0c9c6}
+  .btn.danger:hover{background:var(--red-wash)}
+
+  /* dropzone */
+  .drop{border:1.5px dashed #b9c7da;border-radius:11px;background:#f8fbff;
+    padding:30px;text-align:center;transition:.14s;cursor:pointer}
+  .drop:hover,.drop.hot{border-color:var(--blue);background:var(--blue-wash)}
+  .drop .ring{width:48px;height:48px;border-radius:12px;background:#fff;border:1px solid var(--line);
+    display:flex;align-items:center;justify-content:center;margin:0 auto 12px;color:var(--blue)}
+  .drop h4{font-size:14px}
+  .drop p{color:var(--muted);margin:5px 0 0;font-size:12.5px}
+  .drop .formats{margin-top:10px;display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+  .chipfmt{font-size:11px;color:var(--steel);background:#eef3fa;border:1px solid #dde6f1;border-radius:6px;padding:2px 8px;font-weight:600}
+
+  /* tables */
+  .tw{overflow:auto;border:1px solid var(--line);border-radius:10px}
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  thead th{background:#f6f9fd;text-align:left;padding:9px 12px;font-weight:620;color:var(--ink-soft);
+    border-bottom:1px solid var(--line);white-space:nowrap;font-size:11.5px;letter-spacing:.02em;position:sticky;top:0}
+  tbody td{padding:8px 12px;border-bottom:1px solid var(--line-soft);color:var(--ink-soft);vertical-align:top}
+  tbody tr:last-child td{border-bottom:0}
+  tbody tr:hover{background:#fafcfe}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;font-family:"SF Mono",ui-monospace,monospace}
+  .tw.tall{max-height:430px}
+  .tw.mid{max-height:340px}
+
+  /* tags */
+  .tag{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:650;
+    padding:2px 9px;border-radius:20px;border:1px solid transparent;white-space:nowrap}
+  .t-missing{background:var(--red-wash);color:var(--red);border-color:#f1cbc8}
+  .t-under{background:var(--amber-wash);color:var(--amber);border-color:#f0d9b0}
+  .t-over{background:#eaeefb;color:#3a4fb8;border-color:#cfd8f4}
+  .t-same{background:var(--green-wash);color:var(--green);border-color:#bfe2cd}
+  .t-soh{background:#eef1f5;color:var(--steel);border-color:#d9e0ea}
+  .pill{font-size:11px;font-weight:600;padding:2px 8px;border-radius:6px;background:#eef3fa;color:var(--steel);border:1px solid #dde6f1}
+  .pill.force{background:#f3eefb;color:#6b3fb0;border-color:#e0d3f3}
+  .pill.same{background:#eef7f1;color:var(--green);border-color:#cfe8d8}
+
+  /* stat cards */
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:15px 16px;box-shadow:var(--shadow)}
+  .stat .lab{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:650;display:flex;align-items:center;gap:7px}
+  .stat .val{font-size:26px;font-weight:700;margin-top:7px;letter-spacing:-.02em;line-height:1}
+  .stat .sub{font-size:11.5px;color:var(--muted);margin-top:5px;font-weight:500}
+  .stat.red .val{color:var(--red)} .stat.amber .val{color:var(--amber)}
+  .stat.blue .val{color:var(--blue)} .stat.green .val{color:var(--green)}
+
+  .empty{text-align:center;padding:42px 20px;color:var(--muted)}
+  .empty .ring{width:54px;height:54px;border-radius:14px;background:var(--blue-wash);
+    display:flex;align-items:center;justify-content:center;margin:0 auto 13px;color:var(--blue)}
+  .empty h4{font-size:14.5px;color:var(--ink-soft)} .empty p{margin:5px 0 0;font-size:13px;max-width:420px;display:inline-block}
+
+  .note{display:flex;gap:10px;padding:11px 13px;border-radius:9px;font-size:12.5px;align-items:flex-start}
+  .note.info{background:var(--blue-wash);color:var(--blue-deep);border:1px solid #cfe0fa}
+  .note.warn{background:var(--amber-wash);color:#8a5200;border:1px solid #f0dcb4}
+  .note.soh{background:#eef1f5;color:var(--steel);border:1px solid #dbe2ec}
+  .note .ic{flex:0 0 16px;width:16px;height:16px;margin-top:1px}
+
+  input.f,select.f{font-family:inherit;font-size:13px;border:1px solid var(--line);border-radius:7px;
+    padding:7px 10px;background:#fff;color:var(--ink);width:100%}
+  input.f:focus,select.f:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-wash)}
+  label.fl{font-size:11.5px;color:var(--ink-soft);font-weight:600;display:block;margin-bottom:5px}
+
+  .rule-edit input{border:1px solid transparent;background:transparent;border-radius:6px;padding:4px 7px;width:100%;font-size:12.5px;font-family:inherit;color:var(--ink-soft)}
+  .rule-edit input:hover{background:#f3f6fb}
+  .rule-edit input:focus{outline:none;background:#fff;border-color:var(--blue);box-shadow:0 0 0 2px var(--blue-wash)}
+
+  .seg{display:inline-flex;background:#eef2f7;border:1px solid var(--line);border-radius:9px;padding:3px}
+  .seg button{border:0;background:transparent;padding:6px 14px;font-size:12.5px;font-weight:580;color:var(--muted);border-radius:7px}
+  .seg button.on{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+
+  .runrow{display:flex;align-items:center;gap:14px;padding:13px 16px;border:1px solid var(--line);border-radius:10px;background:#fff;transition:.12s}
+  .runrow:hover{border-color:#c3cedd;box-shadow:var(--shadow)}
+  .runrow .fic{width:38px;height:38px;border-radius:9px;background:var(--blue-wash);color:var(--blue);display:flex;align-items:center;justify-content:center;flex:0 0 38px}
+  .runrow .meta{flex:1;min-width:0}
+  .runrow .meta .nm{font-weight:620;font-size:13.5px}
+  .runrow .meta .dt{color:var(--muted);font-size:12px;margin-top:1px}
+
+  .toast{position:fixed;bottom:22px;right:22px;background:var(--ink);color:#fff;padding:12px 18px;
+    border-radius:10px;font-size:13px;font-weight:540;box-shadow:0 10px 30px rgba(0,0,0,.25);z-index:200;display:flex;gap:9px;align-items:center;animation:pop .2s}
+  @keyframes pop{from{transform:translateY(8px);opacity:0}to{transform:translateY(0);opacity:1}}
+  .spin{width:15px;height:15px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite;display:inline-block}
+  .spin.dk{border-color:rgba(31,95,214,.25);border-top-color:var(--blue)}
+  @keyframes sp{to{transform:rotate(360deg)}}
+
+  .filterbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .fchip{font-size:12px;font-weight:580;padding:5px 11px;border-radius:20px;border:1px solid var(--line);background:#fff;color:var(--muted);cursor:pointer}
+  .fchip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .modal-bg{position:fixed;inset:0;background:rgba(15,27,45,.45);display:flex;align-items:center;justify-content:center;z-index:150;padding:20px}
+  .modal{background:#fff;border-radius:14px;width:480px;max-width:100%;box-shadow:0 24px 60px rgba(0,0,0,.3);overflow:hidden}
+  .modal .mh{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px}
+  .modal .mb{padding:20px}
+  .modal .mf{padding:14px 20px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:9px;background:#f9fbfd}
+  .expandrow td{background:#f8fafd!important;padding:0!important}
+  .subtw{margin:0;border:0}
+  .subtw table{font-size:12px}
+  .subtw thead th{background:#eef3fa}
+  .linkbtn{background:none;border:0;color:var(--blue);font-weight:600;font-size:12.5px;padding:0;display:inline-flex;align-items:center;gap:5px}
+  .help{font-size:12px;color:var(--muted);margin-top:6px}
+  .kpiwrap{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+  @media(max-width:1080px){.kpiwrap{grid-template-columns:repeat(2,1fr)}}
+  .divlabel{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:680;margin:0 0 9px}
+</style>
+
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useMemo, useRef, useCallback } = React;
+
+/* ───────────────────────── ICONS ───────────────────────── */
+const I = {
+  dash:    <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>,
+  wms:     <g fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7l9-4 9 4M3 7v10l9 4 9-4V7M3 7l9 4 9-4M12 11v10"/></g>,
+  pdf:     <g fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h1.5a1.5 1.5 0 0 1 0 3H9v-3zM9 16v2"/></g>,
+  rules:   <g fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M9 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4"/><path d="M9 3v6H3M21 7l-9 9-3-3 9-9zM18 4l3 3"/></g>,
+  transform:<g fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M4 7h12l-3-3M20 17H8l3 3"/></g>,
+  compare: <g fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M9 3v18M15 3v18M3 9h6M3 15h6M15 9h6M15 15h6"/></g>,
+  variance:<g fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18M7 14l4-4 3 3 5-6"/></g>,
+  drill:   <g fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></g>,
+  archive: <g fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M21 8v13H3V8M1 3h22v5H1zM10 12h4"/></g>,
+  excel:   <g fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13l6 5M15 13l-6 5"/></g>,
+  up:      <g fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></g>,
+  folder:  <g fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></g>,
+  check:   <g fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></g>,
+  warn:    <g fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4M12 17h.01"/></g>,
+  info:    <g fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></g>,
+  save:    <g fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></g>,
+  plus:    <g fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 5v14M5 12h14"/></g>,
+  trash:   <g fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></g>,
+  chev:    <g fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></g>,
+  file:    <g fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></g>,
+  reset:   <g fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5"/></g>,
+  box:     <g fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96L12 12l8.73-5.04M12 22V12"/></g>,
+  play:    <g fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M5 3l16 9-16 9V3z"/></g>,
+};
+const Ic = ({d,s=18}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="currentColor" className="ic">{d}</svg>;
+
+/* ───────────────────────── DEFAULT AUDIT RULES (per customer) ───────────────────────── */
+// customer -> which group's rules to seed from (groups are only used here to build defaults; the live model is flat)
+const _CUST_GROUP = {
+  ANTAP:"ANTAP", ANZ:"ANZ", ASM:"ASM", MCG:"MCG", PFC:"PFC",
+  GKOA:"GROUP_B", HAR:"GROUP_B", GKOTFI:"GROUP_B", HARM:"GROUP_B",
+  MCM:"GROUP_B", OCONN:"GROUP_B", STMP:"GROUP_B", MCMC:"MCMC",
+  OP:"GROUP_B", SAX:"GROUP_B", SEC:"GROUP_B", PF:"GROUP_B",
+  GV:"GV", "KAR-PX":"KAR-PX", OCC:"GROUP_C", SAXC:"SAXC",
+  RAV:"GROUP_B", RPCF:"RPCF",
+};
+const _GROUP_RULES = {
+  ANTAP:  [["PICK","PICK","Same"],["PICK","STOR","Same"]],
+  ANZ:    [["RECN","REC","Same"],["RECN","SCAN","Same"],["PICK","PICK","Same"],["PICK","STOR","Same"]],
+  GROUP_B:[["PICK","PICK","Same"],["PICK","STOR","Same"],["BREC","BREC","Same"],["BREC","REC","Same"],["BREC","SCAN","Same"],["TREC","REC","Same"],["TREC","SCAN","Same"]],
+  GROUP_C:[["PICK","PICKP","Force1"],["PICK","STOP","Force1"],["RECN","RECP","Force1"],["RECN","SCAN","Same"],["BREC","SCAN","Same"]],
+  PFC:    [["PICK","PICKP","Force1"],["PICK","STOP","Force1"],["TREC","SCAN","Same"],["TREC","RECP","Force1"],["BREC","SCAN","Same"]],
+  MCG:    [["PICK","PICKP","Force1"],["PICK","STOPP","Force1"],["RECN","RECP","Force1"]],
+  SAXC:   [["PICK","PICK","Same"],["PICK","STOR","Same"],["BREC","SCAN","Same"]],
+  GV:     [["PICK","PICKP","Force1"],["PICK","STOPP","Force1"],["RECN","RECP","Force1"]],
+  "KAR-PX":[["PICK","PICKP","Force1"],["PICK","STOPP","Force1"],["RECN","RECP","Force1"],["BREC","SCAN","Same"]],
+  MCMC:   [["PICK","PICK","Same"],["PICK","STOR","Same"],["BREC","REC","Same"]],
+  ASM:    [["PICK","PICKP","Force1"],["PICK","STOPP","Force1"],["RECN","RECP","Force1"]],
+  RPCF:   [["TREC","REC","Same"],["TREC","SCAN","Same"],["BREC","SCAN","Same"],["BREC","REC","Same"],["PICK","PICK","Same"],["PICK","STOR","Same"]],
+};
+// Build flat per-customer rules: { customers: [ {code, rules:[{in,out,qty}]} ] }
+const DEFAULT_CUSTOMERS = Object.keys(_CUST_GROUP).map(code=>({
+  code,
+  rules: (_GROUP_RULES[_CUST_GROUP[code]]||[]).map(([inp,out,qty])=>({in:inp,out,qty})),
+}));
+const DEFAULT_RULES = { customers: DEFAULT_CUSTOMERS };
+
+
+const SOH_TASKS = ["STOR","STOP","STOPP"];
+
+/* ───────────────────────── WMS CLEANING (spec 0C / 0D) ───────────────────────── */
+const AUDIT_KEEP_TASKS = ["PICK","BREC","RECN","TREC"];
+// flexible column getter
+const col=(r,...keys)=>{ for(const k of Object.keys(r)){ const kk=k.toLowerCase().replace(/[^a-z0-9]/g,""); if(keys.includes(kk)) return r[k]; } return ""; };
+
+// 0C: Audit Enquiry → keep 6 cols, keep only PICK/BREC/RECN/TREC
+function cleanAuditEnquiry(rows){
+  const out=[];
+  rows.forEach(r=>{
+    const customer=String(col(r,"client","customer","custcode","code")||"").trim();
+    const task=String(col(r,"task","billingtask")||"").trim().toUpperCase();
+    if(!customer || !AUDIT_KEEP_TASKS.includes(task)) return;
+    out.push({
+      customer, task,
+      order: String(col(r,"orderno","ordernumber","order")||"").trim(),
+      product: String(col(r,"product","item","sku")||"").trim(),
+      units: String(col(r,"packtype","units","unit","uom")||"").trim(),
+      qty: Number(col(r,"quantity","qty"))||0,
+      source: "Audit Enquiry",
+    });
+  });
+  return out;
+}
+// 0D: Manual Task → map 5 cols, set Product = "~", keep numeric task code as-is
+function cleanManualTask(rows){
+  const out=[];
+  rows.forEach(r=>{
+    const customer=String(col(r,"client","customer","custcode","code")||"").trim();
+    const task=String(col(r,"task","billingtask")||"").trim().toUpperCase();
+    if(!customer || !task) return;
+    out.push({
+      customer, task,
+      order: String(col(r,"ordernoload","ordernumberload","orderno","ordernumber","order","load")||"").trim(),
+      product: "~",                    // manual-task marker
+      units: String(col(r,"uom","units","unit","packtype")||"").trim(),
+      qty: Number(col(r,"items","qty","quantity"))||0,
+      source: "Manual Task",
+    });
+  });
+  return out;
+}
+
+/* ───────────────────────── SAMPLE DATA (two sources) ───────────────────────── */
+const SAMPLE_AE=[
+  {customer:"ANTAP",task:"PICK",order:"SO10231",product:"FROZEN-PEAS-1KG",units:"CARTON",qty:10,source:"Audit Enquiry"},
+  {customer:"ANTAP",task:"PICK",order:"SO10232",product:"FROZEN-CORN-1KG",units:"CARTON",qty:6,source:"Audit Enquiry"},
+  {customer:"GV",task:"PICK",order:"GVL5877",product:"CHESSE PASTRY 454CR",units:"CARTON",qty:60,source:"Audit Enquiry"},
+  {customer:"HAR",task:"PICK",order:"SO88001",product:"VEG-SPRING-ROLL",units:"CARTON",qty:14,source:"Audit Enquiry"},
+  {customer:"HAR",task:"BREC",order:"PO88010",product:"MIXED-VEG-PALLET",units:"CARTON",qty:9,source:"Audit Enquiry"},
+  {customer:"OCONN",task:"PICK",order:"78526",product:"BEEF-BULK",units:"CARTON",qty:1198,source:"Audit Enquiry"},
+];
+const SAMPLE_MT=[
+  {customer:"OCONN",task:"108",order:"78526",product:"~",units:"CARTON",qty:1198,source:"Manual Task"},
+  {customer:"OCONN",task:"525",order:"78526",product:"~",units:"ORDER",qty:1,source:"Manual Task"},
+  {customer:"OCONN",task:"120",order:"78526",product:"~",units:"ORDER",qty:1,source:"Manual Task"},
+  {customer:"GV",task:"120",order:"GVL5877",product:"~",units:"ORDER",qty:1,source:"Manual Task"},
+  {customer:"GV",task:"109",order:"GVL5877",product:"~",units:"PALLET",qty:4,source:"Manual Task"},
+];
+
+/* ───────────────────────── PDF EXTRACTION ───────────────────────── */
+async function extractPdfText(file){
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({data:buf}).promise;
+  let text="";
+  for(let p=1;p<=pdf.numPages;p++){
+    const page = await pdf.getPage(p);
+    const c = await page.getTextContent();
+    // collect items with x,y; group into lines by y with a small tolerance
+    const items = c.items.map(it=>({x:it.transform[4], y:it.transform[5], s:it.str})).filter(it=>it.s.trim()!=="");
+    items.sort((a,b)=> b.y-a.y || a.x-b.x);
+    const lines=[]; let cur=null;
+    for(const it of items){
+      if(!cur || Math.abs(it.y-cur.y)>3){ cur={y:it.y, items:[it]}; lines.push(cur); }
+      else cur.items.push(it);
+    }
+    lines.forEach(ln=>{
+      const txt=ln.items.sort((a,b)=>a.x-b.x).map(i=>i.s).join(" ").replace(/\s+/g," ").trim();
+      if(txt) text+=txt+"\n";
+    });
+  }
+  return text;
+}
+// Parse extracted text into customer + charge lines — handles real charge-detail layout:
+// header "CLIENT CODE xxx", columns BILLING TASK | ORDER NO | PRODUCT | GROUP REF | UNITS | RATE | QTY,
+// wrapped product names on continuation lines, "~" stock-on-hand orders, junk numeric tasks, TOTAL QTY footer.
+const KNOWN_TASKS = ["PICK","STOR","STOP","STOPP","PICKP","RECN","REC","SCAN","BREC","TREC","RECP"];
+const UNIT_WORDS = ["PALLET","CARTON","ORDER","EACH","CTN","PLT","UNIT","CASE"];
+const isNum = (s)=> /^-?\d+(\.\d+)?$/.test(s);
+
+function parseChargeText(text){
+  const out={customer:null, lines:[], warnings:[]};
+  const rawLines = text.split(/\n/).map(s=>s.replace(/\s+/g," ").trim());
+  // customer = CLIENT CODE token
+  for(const l of rawLines){
+    let m=l.match(/client\s*code\s+(\S+)/i) || l.match(/customer\s*[:\-]?\s*(\S+)/i);
+    if(m){ out.customer=m[1].trim().toUpperCase(); break; }
+  }
+  if(!out.customer) out.warnings.push("No client code found in document");
+
+  let pending=null; // last data row, for product-name continuation
+  for(const l of rawLines){
+    if(!l) continue;
+    if(/^(billing task|total qty|charge detail|client code|name |period|from date|to date|page\b)/i.test(l)) { pending=null; continue; }
+    const parts=l.split(" ");
+    const task=parts[0].toUpperCase();
+    const isTask = KNOWN_TASKS.includes(task) || /^\d+$/.test(task); // numeric = manual billing code
+    if(isTask){
+      // tail layout: ... [GROUP REF] UNITS RATE QTY  — QTY last numeric, RATE 2nd-last numeric, UNITS before that
+      if(parts.length>=4 && isNum(parts[parts.length-1]) && isNum(parts[parts.length-2])){
+        const qty=parseFloat(parts[parts.length-1]);
+        const units=parts[parts.length-3]||"";
+        const groupref=parts[parts.length-4]||"";
+        const order=parts[1];
+        // product sits between order and the group-ref token
+        const product=parts.slice(2, parts.length-4).join(" ").trim();
+        const rec={task, order, product, groupref, units, qty};
+        out.lines.push(rec); pending=rec;
+      } else { pending=null; }
+    } else {
+      // continuation line: a wrapped product name (no recognized task, not starting with a number)
+      if(pending && !isNum(parts[0]) && !UNIT_WORDS.includes(task)){
+        pending.product=(pending.product+" "+l).trim();
+      }
+    }
+  }
+  if(out.lines.length===0) out.warnings.push("No charge lines could be parsed — check the document layout");
+  return out;
+}
+
+/* ───────────────────────── RULE ENGINE: transform WMS ───────────────────────── */
+function buildCustLookup(rules){
+  const m={};
+  (rules.customers||[]).forEach(c=>{ m[c.code.toUpperCase()] = c.rules||[]; });
+  return m;
+}
+function transformWMS(rawRows, rules){
+  const custRules = buildCustLookup(rules);
+  const out=[]; const issues=[];
+  rawRows.forEach((r,i)=>{
+    const code = (r.customer||"").toUpperCase();
+    const task = (r.task||"").toUpperCase();
+    const isManual = r.source==="Manual Task" || r.product==="~" || /^\d+$/.test(task);
+    // Manual tasks (numeric codes / Product="~") are already billable lines — pass through 1:1, no expansion
+    if(isManual){
+      out.push({ customer:code, srcTask:r.task, task, qtyMode:"Manual",
+        order:r.order, product:r.product, units:r.units, qty:Number(r.qty)||0, manual:true });
+      return;
+    }
+    const rset = custRules[code];
+    if(!rset){ issues.push(`Row ${i+1}: customer ${code||"(blank)"} has no rules`); return; }
+    const taskRules = rset.filter(g=>g.in.toUpperCase()===task);
+    if(taskRules.length===0){ issues.push(`Row ${i+1}: ${code}/${r.task} has no transform rule`); return; }
+    taskRules.forEach(tr=>{
+      const force = tr.qty==="Force1";
+      const qty = force ? 1 : Number(r.qty)||0;
+      const units = force ? "PALLET" : r.units;   // Force1 = pallet-based charge
+      out.push({
+        customer: code,
+        srcTask: r.task, task: tr.out, qtyMode: tr.qty,
+        order: r.order, product: r.product, units, qty,
+      });
+    });
+  });
+  return {rows:out, issues};
+}
+
+/* ───────────────────────── COMPARISON ENGINE ───────────────────────── */
+const keyOf = (r)=>[r.customer,r.task,r.order,r.product,r.units].map(x=>String(x||"").toUpperCase().trim()).join("¦");
+
+function compare(wmsT, chargeByCust, custMap){
+  // index WMS transformed by key
+  const wmsMap = {};
+  wmsT.forEach(r=>{ const k=keyOf(r); wmsMap[k]=(wmsMap[k]||{...r,qty:0}); wmsMap[k].qty+=r.qty; });
+
+  // split charge lines: stock-on-hand (Order No = "~") are pulled OUT of comparison entirely
+  const chgMap = {};
+  const sohLines = [];
+  Object.entries(chargeByCust).forEach(([code, lines])=>{
+    lines.forEach(l=>{
+      const isSOH = String(l.order||"").trim()==="~";
+      if(isSOH){
+        sohLines.push({customer:code, task:String(l.task).toUpperCase(), product:l.product, units:l.units, qty:Number(l.qty)||0});
+        return; // never enters the comparison
+      }
+      const rec={customer:code, task:l.task.toUpperCase(), order:l.order, product:l.product, units:l.units, qty:Number(l.qty)||0};
+      const k=keyOf(rec);
+      chgMap[k]=chgMap[k]||{...rec,qty:0};
+      chgMap[k].qty+=rec.qty;
+    });
+  });
+
+  const allKeys = new Set([...Object.keys(wmsMap),...Object.keys(chgMap)]);
+  const detail=[];
+  allKeys.forEach(k=>{
+    const w=wmsMap[k], c=chgMap[k];
+    const wq=w?w.qty:0, cq=c?c.qty:0;
+    if(wq===cq) return; // matched - skip
+    const base = w||c;
+    let type;
+    if(!c) type="MISSING";           // whole row missing in charge detail
+    else if(cq<wq) type="UNDER";     // charge has less than WMS says
+    else type="OVER";                // charge has more than WMS says (incl. PDF-only, non-SOH)
+    detail.push({
+      customer:base.customer, task:base.task, order:base.order, product:base.product, units:base.units,
+      chargeQty:cq, wmsQty:wq, diff:wq-cq, type,
+    });
+  });
+  // summary by customer+task
+  const sm={};
+  detail.forEach(d=>{
+    const k=d.customer+"¦"+d.task;
+    sm[k]=sm[k]||{customer:d.customer,task:d.task,chargeQty:0,wmsQty:0,rows:[]};
+    sm[k].chargeQty+=d.chargeQty; sm[k].wmsQty+=d.wmsQty; sm[k].rows.push(d);
+  });
+  const summary = Object.values(sm).map(s=>({
+    ...s, diff:s.wmsQty-s.chargeQty,
+    type: s.wmsQty>s.chargeQty ? (s.chargeQty===0?"MISSING":"UNDER") : "OVER",
+  })).sort((a,b)=>Math.abs(b.diff)-Math.abs(a.diff));
+
+  // stock-on-hand tab: aggregate by customer + task + product + units
+  const sohAgg={};
+  sohLines.forEach(s=>{
+    const k=[s.customer,s.task,s.product,s.units].join("¦");
+    sohAgg[k]=sohAgg[k]||{customer:s.customer,task:s.task,product:s.product,units:s.units,qty:0};
+    sohAgg[k].qty+=s.qty;
+  });
+  const soh=Object.values(sohAgg).sort((a,b)=> a.customer.localeCompare(b.customer) || a.task.localeCompare(b.task) || b.qty-a.qty);
+
+  return {summary, detail, soh};
+}
+
+/* ───────────────────────── PERSISTENCE ───────────────────────── */
+const STORE = window.storage || null;
+async function sGet(k){ if(!STORE) return JSON.parse(localStorage.getItem(k)||"null"); try{const r=await STORE.get(k);return r?JSON.parse(r.value):null;}catch{return null;} }
+async function sSet(k,v){ const val=JSON.stringify(v); if(!STORE){localStorage.setItem(k,val);return;} try{await STORE.set(k,val);}catch{localStorage.setItem(k,val);} }
+async function sList(p){ if(!STORE){return Object.keys(localStorage).filter(k=>k.startsWith(p));} try{const r=await STORE.list(p);return r?r.keys:[];}catch{return [];} }
+async function sDel(k){ if(!STORE){localStorage.removeItem(k);return;} try{await STORE.delete(k);}catch{localStorage.removeItem(k);} }
+
+/* ───────────────────────── SMALL UI HELPERS ───────────────────────── */
+const fmt = (n)=> (n===undefined||n===null||isNaN(n))?"—":Number(n).toLocaleString();
+const TypeTag=({t})=>{
+  const map={MISSING:["t-missing","Missing row"],UNDER:["t-under","Undercharge"],OVER:["t-over","Overcharge"]};
+  const [c,l]=map[t]||["t-same",t]; return <span className={"tag "+c}>{l}</span>;
+};
+
+/* ═══════════════════════════════════════════════════════════════════
+   APP
+   ═══════════════════════════════════════════════════════════════════ */
+function App(){
+  const [view,setView]=useState("dash");
+  const [toast,setToast]=useState(null);
+  const flash=(m)=>{ setToast(m); setTimeout(()=>setToast(null),2600); };
+
+  // core state
+  const [aeRows,setAeRows]=useState([]);    // cleaned Audit Enquiry rows
+  const [aeFile,setAeFile]=useState("");
+  const [mtRows,setMtRows]=useState([]);    // cleaned Manual Task rows
+  const [mtFile,setMtFile]=useState("");
+  const rawWMS = useMemo(()=>[...aeRows,...mtRows],[aeRows,mtRows]); // combined tblWMS
+  const [pdfs,setPdfs]=useState([]);        // {name, customer, lines, warnings, code}
+  const [rules,setRules]=useState(DEFAULT_RULES);
+  const [transformed,setTransformed]=useState(null); // {rows,issues}
+  const [result,setResult]=useState(null);  // {summary,detail}
+  const [runs,setRuns]=useState([]);
+
+  // load saved runs + rules on mount
+  useEffect(()=>{ (async()=>{
+    const savedRules = await sGet("wms:rules"); if(savedRules && Array.isArray(savedRules.customers)) setRules(savedRules);
+    await loadRuns();
+  })(); },[]);
+  const loadRuns=async()=>{
+    const keys=await sList("wms:run:");
+    const list=[];
+    for(const k of keys){ const r=await sGet(k); if(r) list.push(r); }
+    list.sort((a,b)=>(b.savedAt||0)-(a.savedAt||0));
+    setRuns(list);
+  };
+
+  // resolve pdf customer name -> wms code
+  const resolveCode=useCallback((name)=>{
+    if(!name) return null;
+    const up=name.toUpperCase();
+    const list=rules.customers||[];
+    let hit=list.find(r=>r.code.toUpperCase()===up);
+    if(hit) return hit.code;
+    hit=list.find(r=>up.includes(r.code.toUpperCase()));
+    if(hit) return hit.code;
+    return null;
+  },[rules]);
+
+  const pipeline = {
+    wms: rawWMS.length>0,
+    pdf: pdfs.length>0,
+    transform: !!transformed,
+    compare: !!result,
+  };
+
+  /* ---- WMS upload: two sources, auto-cleaned per spec 0C / 0D ---- */
+  const readSheet=async(file)=>{
+    const ext=file.name.split(".").pop().toLowerCase();
+    if(ext==="csv"){ return parseCSV(await file.text()); }
+    const wb=XLSX.read(await file.arrayBuffer(),{type:"array"});
+    let best=[]; wb.SheetNames.forEach(n=>{ const j=XLSX.utils.sheet_to_json(wb.Sheets[n],{defval:""}); if(j.length>best.length) best=j; });
+    return best;
+  };
+  const onAuditFile=async(file)=>{
+    try{
+      const rows=await readSheet(file);
+      if(!rows.length){ flash("Audit Enquiry file has no data rows."); return; }
+      const cleaned=cleanAuditEnquiry(rows);
+      if(!cleaned.length){ flash(`Read ${rows.length} rows but none were PICK/BREC/RECN/TREC, or no Client column found.`); return; }
+      setAeRows(cleaned); setAeFile(file.name); setTransformed(null); setResult(null);
+      flash(`Audit Enquiry: kept ${cleaned.length} of ${rows.length} rows (PICK/BREC/RECN/TREC)`);
+    }catch(e){ flash("Could not read Audit Enquiry: "+e.message); }
+  };
+  const onManualFile=async(file)=>{
+    try{
+      const rows=await readSheet(file);
+      if(!rows.length){ flash("Manual Task file has no data rows."); return; }
+      const cleaned=cleanManualTask(rows);
+      if(!cleaned.length){ flash(`Read ${rows.length} rows but couldn't map Manual Task columns.`); return; }
+      setMtRows(cleaned); setMtFile(file.name); setTransformed(null); setResult(null);
+      flash(`Manual Task: loaded ${cleaned.length} rows (Product set to "~")`);
+    }catch(e){ flash("Could not read Manual Task: "+e.message); }
+  };
+  const clearAe=()=>{ setAeRows([]); setAeFile(""); setTransformed(null); setResult(null); };
+  const clearMt=()=>{ setMtRows([]); setMtFile(""); setTransformed(null); setResult(null); };
+  const loadSampleWMS=()=>{
+    setAeRows(SAMPLE_AE); setAeFile("sample_audit_enquiry.xls");
+    setMtRows(SAMPLE_MT); setMtFile("sample_manual_task.xls");
+    setTransformed(null); setResult(null);
+    flash(`Loaded sample: ${SAMPLE_AE.length} audit + ${SAMPLE_MT.length} manual rows`);
+  };
+
+  /* ---- PDF upload ---- */
+  const [pdfBusy,setPdfBusy]=useState(false);
+  const onPDFFiles=async(files)=>{
+    setPdfBusy(true);
+    const arr=Array.from(files).filter(f=>f.name.toLowerCase().endsWith(".pdf"));
+    const got=[];
+    for(const f of arr){
+      try{
+        const text=await extractPdfText(f);
+        const parsed=parseChargeText(text);
+        const code=resolveCode(parsed.customer);
+        got.push({name:f.name, customer:parsed.customer, code, lines:parsed.lines, warnings:[...parsed.warnings, ...(code?[]:["Customer name could not be matched to a WMS code"])]});
+      }catch(e){ got.push({name:f.name, customer:null, code:null, lines:[], warnings:["Extraction failed: "+e.message]}); }
+    }
+    setPdfs(p=>[...p,...got]); setResult(null);
+    setPdfBusy(false);
+    flash(`Processed ${got.length} PDF${got.length!==1?"s":""}`);
+  };
+  const loadSamplePDFs=()=>{
+    // build sample charge detail per customer from WMS expectation, but introduce deliberate variances
+    const samples=[
+      {code:"ANTAP", name:"ANTAP Foods Pty Ltd", lines:[
+        {task:"PICK",order:"SO10231",product:"FROZEN-PEAS-1KG",units:"CTN",qty:10},
+        {task:"PICK",order:"SO10232",product:"FROZEN-CORN-1KG",units:"CTN",qty:4}, // under (should be 6)
+        // SO10233 PICK missing entirely (should be 4)
+        {task:"STOR",order:"SO10231",product:"FROZEN-PEAS-1KG",units:"CTN",qty:10},
+        {task:"STOR",order:"~",product:"FROZEN-PEAS-1KG",units:"CTN",qty:43}, // stock on hand
+        {task:"STOR",order:"~",product:"FROZEN-CORN-1KG",units:"CTN",qty:14}, // SOH
+      ]},
+      {code:"ANZ", name:"ANZ Cold Logistics", lines:[
+        {task:"REC",order:"PO55001",product:"CHICKEN-BULK",units:"CTN",qty:20},
+        {task:"SCAN",order:"PO55001",product:"CHICKEN-BULK",units:"CTN",qty:20},
+        {task:"PICK",order:"SO55010",product:"BEEF-PATTY-2KG",units:"CTN",qty:15}, // over (should be 12)
+        {task:"PICK",order:"SO55011",product:"LAMB-CUTLET",units:"CTN",qty:5},
+        {task:"STOR",order:"SO55010",product:"BEEF-PATTY-2KG",units:"CTN",qty:12},
+      ]},
+      {code:"MCG", name:"MCG Distribution", lines:[
+        {task:"PICKP",order:"SO77001",product:"ICE-CREAM-VAN",units:"PLT",qty:1},
+        {task:"STOPP",order:"SO77001",product:"ICE-CREAM-VAN",units:"PLT",qty:1},
+        // RECP for PO77010 missing (should be 1, Force1)
+      ]},
+      {code:"HAR", name:"Harvest Wholesale (HAR)", lines:[
+        {task:"PICK",order:"SO88001",product:"VEG-SPRING-ROLL",units:"CTN",qty:14},
+        {task:"STOR",order:"SO88001",product:"VEG-SPRING-ROLL",units:"CTN",qty:14},
+        {task:"BREC",order:"PO88010",product:"MIXED-VEG-PALLET",units:"CTN",qty:9},
+        {task:"REC",order:"PO88010",product:"MIXED-VEG-PALLET",units:"CTN",qty:7}, // under (should be 9)
+        {task:"SCAN",order:"PO88010",product:"MIXED-VEG-PALLET",units:"CTN",qty:9},
+        {task:"REC",order:"PO88011",product:"SEAFOOD-BULK",units:"CTN",qty:7},
+        {task:"SCAN",order:"PO88011",product:"SEAFOOD-BULK",units:"CTN",qty:7},
+      ]},
+      {code:"GV", name:"GV Frozen", lines:[
+        {task:"PICKP",order:"SO99001",product:"GELATO-TUB",units:"PLT",qty:1},
+        // STOPP missing (should be 1), RECP n/a
+      ]},
+      {code:"OCC", name:"Ocean Catch Co (OCC)", lines:[
+        {task:"PICKP",order:"SO66001",product:"FISH-FILLET",units:"CTN",qty:1},
+        {task:"STOP",order:"SO66001",product:"FISH-FILLET",units:"CTN",qty:1},
+        {task:"RECP",order:"PO66010",product:"PRAWN-BULK",units:"CTN",qty:1},
+        {task:"SCAN",order:"PO66010",product:"PRAWN-BULK",units:"CTN",qty:11},
+        {task:"STOP",order:"~",product:"FISH-FILLET",units:"CTN",qty:8}, // SOH
+      ]},
+    ];
+    const got=samples.map(s=>({name:`charge_detail_${s.code}.pdf`, customer:s.name, code:s.code, lines:s.lines, warnings:[]}));
+    setPdfs(p=>[...p,...got]); setResult(null);
+    flash(`Loaded ${got.length} sample charge-detail PDFs`);
+  };
+  const removePdf=(i)=>setPdfs(p=>p.filter((_,j)=>j!==i));
+
+  /* ---- transform ---- */
+  const doTransform=()=>{
+    const t=transformWMS(rawWMS, rules);
+    setTransformed(t); setResult(null);
+    flash(`Transformed ${rawWMS.length} → ${t.rows.length} audit-ready rows`);
+    setView("transform");
+  };
+
+  /* ---- compare ---- */
+  const doCompare=()=>{
+    let t=transformed;
+    if(!t){ t=transformWMS(rawWMS, rules); setTransformed(t); }
+    const chargeByCust={};
+    pdfs.forEach(p=>{ if(p.code){ chargeByCust[p.code]=(chargeByCust[p.code]||[]).concat(p.lines); } });
+    const r=compare(t.rows, chargeByCust, rules.customers);
+    setResult(r);
+    flash(`Comparison complete — ${r.summary.length} variance group${r.summary.length!==1?"s":""} found`);
+    setView("summary");
+  };
+
+  /* ---- rules ---- */
+  const saveRules=async()=>{ await sSet("wms:rules",rules); setTransformed(null); setResult(null); flash("Audit rules saved as the active rule set"); };
+  const resetRules=()=>{ setRules(DEFAULT_RULES); flash("Rules reset to default — remember to save"); };
+
+  /* ---- save run ---- */
+  const saveRun=async(name)=>{
+    if(!result) return;
+    const id="wms:run:"+Date.now();
+    const run={ id, name, savedAt:Date.now(),
+      summary:result.summary, detail:result.detail, soh:result.soh||[],
+      counts:{ wmsRaw:rawWMS.length, wmsAE:aeRows.length, wmsMT:mtRows.length, wmsT:transformed?.rows.length||0, pdfs:pdfs.length,
+               lines: pdfs.reduce((a,p)=>a+p.lines.length,0), variances:result.summary.length },
+      ruleSnapshot: rules,
+      pdfInfo: pdfs.map(p=>({name:p.name,customer:p.customer,code:p.code,lines:p.lines.length})),
+    };
+    await sSet(id,run); await loadRuns(); flash(`Saved run "${name}"`);
+  };
+  const deleteRun=async(id)=>{ await sDel(id); await loadRuns(); flash("Run deleted"); };
+
+  /* ---- excel export ---- */
+  const exportExcel=(src)=>{
+    const sum = src ? src.summary : result.summary;
+    const det = src ? src.detail : result.detail;
+    const sohRows = (src ? src.soh : result.soh) || [];
+    const wb=XLSX.utils.book_new();
+    // summary sheet
+    const sumRows=sum.map(s=>({
+      Customer:s.customer, Task:s.task,
+      "Charge Detail Qty":s.chargeQty, "Should Be (WMS)":s.wmsQty,
+      Difference:s.diff, "Variance Type":({MISSING:"Missing row",UNDER:"Undercharge",OVER:"Overcharge"})[s.type],
+    }));
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(sumRows), "Variance Summary");
+    // breakdown
+    const detRows=det.map(d=>({
+      Customer:d.customer, Task:d.task, "Order No":d.order, Product:d.product, Units:d.units,
+      "Charge Detail Qty":d.chargeQty, "Should Be (WMS)":d.wmsQty, Difference:d.diff,
+      "Variance Type":({MISSING:"Missing row",UNDER:"Undercharge",OVER:"Overcharge"})[d.type],
+    }));
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(detRows), "Variance Breakdown");
+    // stock on hand: summary (customer+task+unit) + product detail
+    if(sohRows.length){
+      const sm={};
+      sohRows.forEach(s=>{ const k=[s.customer,s.task,s.units].join("¦");
+        sm[k]=sm[k]||{Customer:s.customer,Task:s.task,Units:s.units,"Total Qty":0};
+        sm[k]["Total Qty"]+=s.qty; });
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(Object.values(sm)), "Stock On Hand");
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(sohRows.map(s=>({
+        Customer:s.customer, Task:s.task, Product:s.product, Units:s.units, Qty:s.qty,
+      }))), "Stock On Hand (Products)");
+    }
+    // transformed WMS
+    if(transformed && !src){
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(transformed.rows.map(r=>({
+        Customer:r.customer,"Source Task":r.srcTask,"Output Task":r.task,
+        "Qty Mode":r.qtyMode,"Order No":r.order,Product:r.product,Units:r.units,Qty:r.qty,
+      }))), "Transformed WMS");
+    }
+    // pdf detail
+    const pdfRows=[];
+    pdfs.forEach(p=>p.lines.forEach(l=>pdfRows.push({Source:p.name,Customer:p.customer,Code:p.code,Task:l.task,"Order No":l.order,Product:l.product,Units:l.units,Qty:l.qty})));
+    if(pdfRows.length && !src) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(pdfRows),"Charge Detail (Extracted)");
+    // rule version (per customer)
+    const ruleRows=[];
+    ((src? src.ruleSnapshot: rules).customers||[]).forEach(c=>{
+      if(!c.rules || c.rules.length===0){ ruleRows.push({Customer:c.code,"Source Task":"(no rules)","Output Task":"","Qty Mode":""}); return; }
+      c.rules.forEach(r=>ruleRows.push({Customer:c.code,"Source Task":r.in,"Output Task":r.out,"Qty Mode":r.qty}));
+    });
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(ruleRows),"Audit Rules Used");
+    const fn=(src? src.name.replace(/[^\w]+/g,"_"): "WMS_Reconciliation_"+new Date().toISOString().slice(0,10))+".xlsx";
+    XLSX.writeFile(wb, fn);
+    flash("Excel report downloaded");
+  };
+
+  const NAV=[
+    {grp:"Overview"},
+    {id:"dash",label:"Dashboard",ic:I.dash},
+    {grp:"Inputs"},
+    {id:"wms",label:"Upload WMS Data",ic:I.wms,badge:pipeline.wms?String(rawWMS.length):null,bk:"ok"},
+    {id:"pdf",label:"Charge Detail PDFs",ic:I.pdf,badge:pipeline.pdf?String(pdfs.length):null,bk:"ok"},
+    {id:"rules",label:"Audit Rules",ic:I.rules},
+    {grp:"Process"},
+    {id:"transform",label:"Transform WMS",ic:I.transform,badge:transformed?"✓":null,bk:"ok"},
+    {id:"summary",label:"Variance Summary",ic:I.variance,badge:result?String(result.summary.length):null,bk:result&&result.summary.length?"warn":null},
+    {id:"breakdown",label:"Variance Breakdown",ic:I.drill},
+    {id:"soh",label:"Stock on Hand",ic:I.archive,badge:result&&result.soh&&result.soh.length?String(result.soh.length):null},
+    {grp:"Output"},
+    {id:"save",label:"Save Run",ic:I.save},
+    {id:"runs",label:"Saved Runs",ic:I.archive,badge:runs.length?String(runs.length):null},
+  ];
+  const TITLES={
+    dash:["Overview","Reconciliation Dashboard","End-to-end status of the current audit variance run"],
+    wms:["Inputs","Upload WMS Data","Operational pick / receipt data exported from the warehouse system"],
+    pdf:["Inputs","Charge Detail PDFs","Customer charge-detail documents to reconcile against WMS"],
+    rules:["Inputs","Audit Rules","Customer rule-group mapping and task transformation logic"],
+    transform:["Process","Transform WMS Data","Apply audit rules to produce audit-ready WMS rows"],
+    summary:["Results","Variance Summary","Only the customer / task combinations that differ"],
+    breakdown:["Results","Variance Breakdown","Exact rows driving each variance, for operational review"],
+    soh:["Results","Stock on Hand","Charge-detail lines with Order No = \"~\", excluded from variance"],
+    save:["Output","Save Run","Archive this reconciliation by week ending"],
+    runs:["Output","Saved Runs","Browse and re-open past reconciliation runs"],
+  };
+  const t=TITLES[view]||["",""];
+
+  return (
+    <div className="app">
+      {/* SIDEBAR */}
+      <aside className="side">
+        <div className="brand">
+          <div className="logo">
+            <div className="mark">VR</div>
+            <div><div className="name">Variance&nbsp;Reconcile</div><div className="sub">Cold Storage · 3PL</div></div>
+          </div>
+        </div>
+        <nav className="nav">
+          {NAV.map((n,i)=> n.grp
+            ? <div className="grp" key={"g"+i}>{n.grp}</div>
+            : <button key={n.id} className={view===n.id?"on":""} onClick={()=>setView(n.id)}>
+                <svg className="ic" width="17" height="17" viewBox="0 0 24 24" fill={["dash","pdf","wms"].includes(n.id)?"currentColor":"none"}>{n.ic}</svg>
+                {n.label}
+                {n.badge && <span className={"badge "+(n.bk==="warn"?"warn":n.bk==="ok"?"ok":"")}>{n.badge}</span>}
+              </button>
+          )}
+        </nav>
+        <div className="foot">Internal tool · data stays in your session</div>
+      </aside>
+
+      {/* MAIN */}
+      <div className="main">
+        <header className="topbar">
+          <div>
+            <div className="crumb">{t[0]}</div>
+            <h2>{t[1]}</h2>
+            <div className="desc">{t[2]}</div>
+          </div>
+          <div className="right">
+            <Pipeline p={pipeline}/>
+          </div>
+        </header>
+
+        <div className="content">
+          {view==="dash" && <Dashboard {...{pipeline,rawWMS,pdfs,transformed,result,runs,setView,doTransform,doCompare,exportExcel,resolveCode}}/>}
+          {view==="wms" && <WMSView {...{aeRows,aeFile,mtRows,mtFile,onAuditFile,onManualFile,clearAe,clearMt,loadSampleWMS,rawWMS,transformed,setView,doTransform}}/>}
+          {view==="pdf" && <PDFView {...{pdfs,onPDFFiles,loadSamplePDFs,removePdf,pdfBusy,resolveCode,setView,doCompare,pipeline}}/>}
+          {view==="rules" && <RulesView {...{rules,setRules,saveRules,resetRules}}/>}
+          {view==="transform" && <TransformView {...{rawWMS,transformed,doTransform,rules,setView,doCompare,pipeline}}/>}
+          {view==="summary" && <SummaryView {...{result,doCompare,pipeline,setView}}/>}
+          {view==="breakdown" && <BreakdownView {...{result,doCompare,pipeline,setView}}/>}
+          {view==="soh" && <SOHView {...{result,doCompare,pipeline,setView}}/>}
+          {view==="save" && <SaveView {...{result,saveRun,setView}}/>}
+          {view==="runs" && <RunsView {...{runs,deleteRun,exportExcel,setView}}/>}
+        </div>
+      </div>
+
+      {toast && <div className="toast"><Ic d={I.check} s={16}/>{toast}</div>}
+    </div>
+  );
+}
+
+/* ───────────────────────── PIPELINE INDICATOR ───────────────────────── */
+function Pipeline({p}){
+  const steps=[["WMS",p.wms],["PDFs",p.pdf],["Transform",p.transform],["Compare",p.compare]];
+  return <div className="pipe">{steps.map(([l,d],i)=>
+    <React.Fragment key={l}>
+      {i>0 && <span className="sep"/>}
+      <span className={"pdot"+(d?" done":"")}><span className="d"/>{l}</span>
+    </React.Fragment>)}</div>;
+}
+
+/* ───────────────────────── DASHBOARD ───────────────────────── */
+function Dashboard({pipeline,rawWMS,pdfs,transformed,result,runs,setView,doTransform,doCompare,exportExcel,resolveCode}){
+  const matched=pdfs.filter(p=>p.code).length;
+  const lines=pdfs.reduce((a,p)=>a+p.lines.length,0);
+  const totalVar = result? result.detail.reduce((a,d)=>a+Math.abs(d.diff),0):0;
+  return <>
+    <div className="kpiwrap">
+      <Stat lab="WMS rows" ic={I.wms} val={fmt(rawWMS.length)} sub={transformed?`${fmt(transformed.rows.length)} after transform`:"raw operational rows"} k="blue"/>
+      <Stat lab="Charge PDFs" ic={I.pdf} val={fmt(pdfs.length)} sub={`${matched} matched · ${fmt(lines)} lines`} k="blue"/>
+      <Stat lab="Variance groups" ic={I.variance} val={result?fmt(result.summary.length):"—"} sub={result?"customer / task combos":"run compare first"} k={result&&result.summary.length?"amber":""}/>
+      <Stat lab="Net unit variance" ic={I.drill} val={result?fmt(totalVar):"—"} sub="total quantity in dispute" k={totalVar?"red":""}/>
+    </div>
+
+    <div className="card" style={{marginBottom:18}}>
+      <div className="hd"><Ic d={I.transform} s={17}/><h4>Reconciliation workflow</h4><span className="sub">Run each step in order</span></div>
+      <div className="bd">
+        <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:12}}>
+          <Step n="1" t="Upload WMS" done={pipeline.wms} onClick={()=>setView("wms")} ic={I.wms}/>
+          <Step n="2" t="Upload PDFs" done={pipeline.pdf} onClick={()=>setView("pdf")} ic={I.pdf}/>
+          <Step n="3" t="Transform" done={pipeline.transform} onClick={()=>setView("transform")} ic={I.transform} disabled={!pipeline.wms}/>
+          <Step n="4" t="Compare" done={pipeline.compare} onClick={()=> (pipeline.wms&&pipeline.pdf)?doCompare():setView("pdf")} ic={I.compare} disabled={!pipeline.wms||!pipeline.pdf}/>
+          <Step n="5" t="Export" done={false} onClick={()=> result?exportExcel():setView("summary")} ic={I.excel} disabled={!result}/>
+        </div>
+      </div>
+    </div>
+
+    <div className="grid g2">
+      <div className="card">
+        <div className="hd"><Ic d={I.warn} s={17}/><h4>Top variances</h4>
+          <div className="right">{result && <button className="btn gh sm" onClick={()=>setView("summary")}>View all<Ic d={I.chev} s={13}/></button>}</div></div>
+        <div className="bd" style={{paddingTop:6}}>
+          {!result ? <MiniEmpty msg="No comparison yet. Upload inputs and run Compare."/> :
+            <div className="tw">
+              <table><thead><tr><th>Customer</th><th>Task</th><th className="num">Charged</th><th className="num">Should be</th><th className="num">Diff</th><th>Type</th></tr></thead>
+              <tbody>{result.summary.slice(0,6).map((s,i)=>
+                <tr key={i}><td><b>{s.customer}</b></td><td>{s.task}</td><td className="num">{fmt(s.chargeQty)}</td><td className="num">{fmt(s.wmsQty)}</td>
+                <td className="num" style={{color:s.diff>0?"var(--red)":"var(--blue)",fontWeight:600}}>{s.diff>0?"+":""}{s.diff}</td><td><TypeTag t={s.type}/></td></tr>)}</tbody></table>
+            </div>}
+        </div>
+      </div>
+      <div className="card">
+        <div className="hd"><Ic d={I.archive} s={17}/><h4>Recent saved runs</h4>
+          <div className="right"><button className="btn gh sm" onClick={()=>setView("runs")}>Archive<Ic d={I.chev} s={13}/></button></div></div>
+        <div className="bd" style={{paddingTop:10,display:"flex",flexDirection:"column",gap:10}}>
+          {runs.length===0 ? <MiniEmpty msg="No saved runs yet. Reconcile then save by week ending."/> :
+            runs.slice(0,4).map(r=>
+              <div className="runrow" key={r.id} style={{cursor:"pointer"}} onClick={()=>setView("runs")}>
+                <div className="fic"><Ic d={I.folder} s={18}/></div>
+                <div className="meta"><div className="nm">{r.name}</div><div className="dt">{r.counts.variances} variances · {new Date(r.savedAt).toLocaleDateString()}</div></div>
+              </div>)}
+        </div>
+      </div>
+    </div>
+  </>;
+}
+const Stat=({lab,val,sub,ic,k})=> <div className={"stat "+(k||"")}><div className="lab"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" style={{opacity:.7}}>{ic}</svg>{lab}</div><div className="val">{val}</div><div className="sub">{sub}</div></div>;
+const Step=({n,t,done,onClick,ic,disabled})=>
+  <button onClick={disabled?undefined:onClick} disabled={disabled}
+    style={{textAlign:"left",border:"1px solid "+(done?"var(--green)":"var(--line)"),background:done?"var(--green-wash)":"#fff",
+    borderRadius:10,padding:"13px 13px",display:"flex",flexDirection:"column",gap:8,opacity:disabled?.5:1,cursor:disabled?"not-allowed":"pointer"}}>
+    <div style={{display:"flex",alignItems:"center",gap:8}}>
+      <span style={{width:24,height:24,borderRadius:7,background:done?"var(--green)":"var(--blue-wash)",color:done?"#fff":"var(--blue)",
+        display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:12}}>{done?"✓":n}</span>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill={["dash","pdf","wms"].includes("")?"currentColor":"none"} style={{color:done?"var(--green)":"var(--steel)"}}>{ic}</svg>
+    </div>
+    <div style={{fontWeight:600,fontSize:13,color:"var(--ink)"}}>{t}</div>
+  </button>;
+const MiniEmpty=({msg})=> <div style={{padding:"22px 6px",textAlign:"center",color:"var(--muted)",fontSize:13}}>{msg}</div>;
+
+/* ───────────────────────── DROPZONE ───────────────────────── */
+function Drop({onFiles,accept,multiple,webkitdirectory,title,sub,formats,busy}){
+  const [hot,setHot]=useState(false); const ref=useRef();
+  return <div className={"drop"+(hot?" hot":"")} onClick={()=>ref.current.click()}
+    onDragOver={e=>{e.preventDefault();setHot(true);}} onDragLeave={()=>setHot(false)}
+    onDrop={e=>{e.preventDefault();setHot(false);onFiles(e.dataTransfer.files);}}>
+    <input ref={ref} type="file" accept={accept} multiple={multiple}
+      {...(webkitdirectory?{webkitdirectory:"",directory:""}:{})}
+      style={{display:"none"}} onChange={e=>{onFiles(e.target.files);e.target.value="";}}/>
+    <div className="ring">{busy?<span className="spin dk"/>:<Ic d={I.up} s={22}/>}</div>
+    <h4>{title}</h4>{sub && <p>{sub}</p>}
+    {formats && <div className="formats">{formats.map(f=><span className="chipfmt" key={f}>{f}</span>)}</div>}
+  </div>;
+}
+
+/* ───────────────────────── WMS VIEW ───────────────────────── */
+function normalizeWMS(r){
+  const g=(...keys)=>{ for(const k of Object.keys(r)){ const kk=k.toLowerCase().replace(/[^a-z]/g,""); if(keys.includes(kk)) return r[k]; } return ""; };
+  return {
+    customer: String(g("client","customercode","customer","custcode","code","cust","clientcode")||"").trim(),
+    task: String(g("task","billingtask","tasktype","billtask")||"").trim().toUpperCase(),
+    order: String(g("orderno","ordernumber","order")||"").trim(),
+    product: String(g("product","item","sku","productcode")||"").trim(),
+    units: String(g("packtype","units","unit","uom","packsize")||"").trim(),
+    qty: Number(g("quantity","qty","quantityqty","qtyquantity"))||0,
+  };
+}
+function parseCSV(text){
+  const lines=text.split(/\r?\n/).filter(l=>l.trim());
+  if(!lines.length) return [];
+  const split=(l)=>{ const out=[];let cur="",q=false; for(let i=0;i<l.length;i++){const c=l[i]; if(c=='"'){q=!q;} else if(c==","&&!q){out.push(cur);cur="";} else cur+=c;} out.push(cur); return out.map(s=>s.trim().replace(/^"|"$/g,"")); };
+  const hd=split(lines[0]);
+  return lines.slice(1).map(l=>{ const c=split(l); const o={}; hd.forEach((h,i)=>o[h]=c[i]||""); return o; });
+}
+function WMSView({aeRows,aeFile,mtRows,mtFile,onAuditFile,onManualFile,clearAe,clearMt,loadSampleWMS,rawWMS,transformed,setView,doTransform}){
+  const [srcFilter,setSrcFilter]=useState("ALL");
+  const preview = rawWMS.filter(r=> srcFilter==="ALL" || (srcFilter==="AE"&&r.source==="Audit Enquiry") || (srcFilter==="MT"&&r.source==="Manual Task"));
+  return <>
+    <div className="grid g2" style={{marginBottom:18}}>
+      {/* Audit Enquiry slot */}
+      <div className="card">
+        <div className="hd"><Ic d={I.wms} s={17}/><h4>Audit Enquiry</h4><span className="sub">operational tasks</span>
+          {aeRows.length>0 && <div className="right"><span className="tag t-same">{aeRows.length} rows</span></div>}</div>
+        <div className="bd">
+          {aeRows.length===0
+            ? <Drop onFiles={f=>f[0]&&onAuditFile(f[0])} accept=".xlsx,.xls,.csv"
+                title="Drop Audit Enquiry export" sub="" formats={[".xls",".xlsx",".csv"]}/>
+            : <div>
+                <div className="runrow"><div className="fic"><Ic d={I.file} s={18}/></div>
+                  <div className="meta"><div className="nm mono" style={{fontSize:12.5}}>{aeFile}</div><div className="dt">{aeRows.length} rows kept after cleaning</div></div>
+                  <button className="btn sm danger" onClick={clearAe}><Ic d={I.trash} s={14}/></button></div>
+              </div>}
+        </div>
+      </div>
+      {/* Manual Task slot */}
+      <div className="card">
+        <div className="hd"><Ic d={I.rules} s={17}/><h4>Manual Task Entry</h4><span className="sub">manual billing</span>
+          {mtRows.length>0 && <div className="right"><span className="tag t-same">{mtRows.length} rows</span></div>}</div>
+        <div className="bd">
+          {mtRows.length===0
+            ? <Drop onFiles={f=>f[0]&&onManualFile(f[0])} accept=".xlsx,.xls,.csv"
+                title="Drop Manual Task Entry export" sub="" formats={[".xls",".xlsx",".csv"]}/>
+            : <div>
+                <div className="runrow"><div className="fic" style={{background:"#f3eefb",color:"#6b3fb0"}}><Ic d={I.file} s={18}/></div>
+                  <div className="meta"><div className="nm mono" style={{fontSize:12.5}}>{mtFile}</div><div className="dt">{mtRows.length} manual rows · Product set to "~"</div></div>
+                  <button className="btn sm danger" onClick={clearMt}><Ic d={I.trash} s={14}/></button></div>
+              </div>}
+        </div>
+      </div>
+    </div>
+
+    {rawWMS.length===0 &&
+      <div className="card"><div className="bd">
+        <Empty ic={I.wms} h="No WMS data loaded yet" p="Upload your Audit Enquiry and Manual Task Entry exports above — or load the sample to explore the workflow."
+          cta="Load sample WMS data" onCta={loadSampleWMS}/>
+      </div></div>}
+
+    {rawWMS.length>0 && <div className="card">
+      <div className="hd"><Ic d={I.wms} s={17}/><h4>Normalized WMS (tblWMS)</h4>
+        <span className="sub">{aeRows.length} audit + {mtRows.length} manual = {rawWMS.length} rows</span>
+        <div className="right">
+          <div className="seg" style={{marginRight:8}}>
+            <button className={srcFilter==="ALL"?"on":""} onClick={()=>setSrcFilter("ALL")}>All</button>
+            <button className={srcFilter==="AE"?"on":""} onClick={()=>setSrcFilter("AE")}>Audit</button>
+            <button className={srcFilter==="MT"?"on":""} onClick={()=>setSrcFilter("MT")}>Manual</button>
+          </div>
+          <button className="btn pri sm" onClick={doTransform}><Ic d={I.transform} s={14}/>Transform with audit rules</button>
+        </div></div>
+      <div className="bd">
+        <div className="tw tall">
+          <table><thead><tr><th>Customer</th><th>Billing task</th><th>Order no</th><th>Product</th><th>Units</th><th className="num">Qty</th><th>Source</th></tr></thead>
+          <tbody>{preview.slice(0,500).map((r,i)=>
+            <tr key={i}>
+              <td><b>{r.customer}</b></td>
+              <td><span className={"pill"+(r.source==="Manual Task"?" force":"")}>{r.task}</span></td>
+              <td className="mono">{r.order}</td>
+              <td>{r.product==="~"? <span className="tag t-soh">~ manual</span> : r.product}</td>
+              <td>{r.units}</td><td className="num">{fmt(r.qty)}</td>
+              <td><span style={{fontSize:11,color:"var(--muted)"}}>{r.source}</span></td>
+            </tr>)}</tbody></table>
+        </div>
+        {preview.length>500 && <p className="help">Showing first 500 of {preview.length} rows.</p>}
+      </div>
+    </div>}
+  </>;
+}
+
+/* ───────────────────────── PDF VIEW ───────────────────────── */
+function PDFView({pdfs,onPDFFiles,loadSamplePDFs,removePdf,pdfBusy,setView,doCompare,pipeline}){
+  const [openPdf,setOpenPdf]=useState(null);
+  const matched=pdfs.filter(p=>p.code).length;
+  const lines=pdfs.reduce((a,p)=>a+p.lines.length,0);
+  const warns=pdfs.reduce((a,p)=>a+p.warnings.length,0);
+  return <>
+    <div className="grid g2" style={{marginBottom:18}}>
+      <div className="card">
+        <div className="hd"><Ic d={I.folder} s={17}/><h4>Upload a folder of PDFs</h4></div>
+        <div className="bd">
+          <Drop onFiles={onPDFFiles} accept=".pdf" multiple webkitdirectory busy={pdfBusy}
+            title="Drop a whole folder of charge-detail PDFs"
+            sub="Selects every PDF in the folder at once" formats={["folder","*.pdf"]}/>
+        </div>
+      </div>
+      <div className="card">
+        <div className="hd"><Ic d={I.pdf} s={17}/><h4>Or upload individual PDFs</h4></div>
+        <div className="bd">
+          <Drop onFiles={onPDFFiles} accept=".pdf" multiple busy={pdfBusy}
+            title="Drop up to 20+ PDF files"
+            sub="Select multiple charge-detail documents individually" formats={["*.pdf","multi-select"]}/>
+          <div style={{display:"flex",justifyContent:"flex-end",marginTop:13}}>
+            <button className="btn sm" onClick={loadSamplePDFs}><Ic d={I.play} s={13}/>Load sample charge details</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {pdfs.length>0 && <>
+      <div className="kpiwrap" style={{gridTemplateColumns:"repeat(4,1fr)"}}>
+        <Stat lab="PDFs uploaded" ic={I.pdf} val={fmt(pdfs.length)} sub="charge-detail documents" k="blue"/>
+        <Stat lab="Customers matched" ic={I.check} val={`${matched}/${pdfs.length}`} sub="resolved to a WMS code" k={matched<pdfs.length?"amber":"green"}/>
+        <Stat lab="Lines extracted" ic={I.drill} val={fmt(lines)} sub="charge-detail rows" k="blue"/>
+        <Stat lab="Warnings" ic={I.warn} val={fmt(warns)} sub="extraction / match issues" k={warns?"amber":""}/>
+      </div>
+
+      <div className="card" style={{marginBottom:18}}>
+        <div className="hd"><Ic d={I.pdf} s={17}/><h4>Uploaded charge-detail sources</h4>
+          <span className="sub">click a row to preview extracted lines</span>
+          <div className="right"><button className="btn pri sm" disabled={!pipeline.wms} onClick={doCompare}><Ic d={I.compare} s={14}/>Compare vs WMS</button></div></div>
+        <div className="bd">
+          {!pipeline.wms && <div className="note warn" style={{marginBottom:13}}><Ic d={I.warn} s={15}/><span>Upload WMS data before comparing. The PDFs are ready and waiting.</span></div>}
+          <div className="tw mid">
+            <table><thead><tr><th style={{width:30}}></th><th>File</th><th>Client code</th><th>Matched</th><th className="num">Lines</th><th className="num">Stock on hand</th><th>Status</th><th></th></tr></thead>
+            <tbody>{pdfs.map((p,i)=>{
+              const sohCount=p.lines.filter(l=>String(l.order).trim()==="~").length;
+              const isOpen=openPdf===i;
+              return <React.Fragment key={i}>
+              <tr style={{cursor:"pointer"}} onClick={()=>setOpenPdf(isOpen?null:i)}>
+                <td><span style={{display:"inline-flex",transform:isOpen?"rotate(90deg)":"none",transition:".15s",color:"var(--muted)"}}><Ic d={I.chev} s={13}/></span></td>
+                <td><span style={{display:"flex",alignItems:"center",gap:7}}><span style={{color:"var(--red)"}}><Ic d={I.file} s={15}/></span><span className="mono" style={{fontSize:12}}>{p.name}</span></span></td>
+                <td>{p.customer? <b>{p.customer}</b> : <span style={{color:"var(--muted)"}}>not found</span>}</td>
+                <td>{p.code? <span className="pill same">{p.code}</span> : <span className="pill" style={{background:"var(--amber-wash)",color:"var(--amber)",borderColor:"#f0d9b0"}}>unmatched</span>}</td>
+                <td className="num">{p.lines.length}</td>
+                <td className="num">{sohCount? <span className="tag t-soh">{sohCount}</span> : <span style={{color:"var(--line)"}}>—</span>}</td>
+                <td>{p.warnings.length? <span className="tag t-under" title={p.warnings.join(" · ")}>{p.warnings.length} warning{p.warnings.length>1?"s":""}</span> : <span className="tag t-same">OK</span>}</td>
+                <td><button className="btn gh sm" onClick={e=>{e.stopPropagation();removePdf(i);setOpenPdf(null);}}><Ic d={I.trash} s={14}/></button></td>
+              </tr>
+              {isOpen && <tr className="expandrow"><td colSpan={8}>
+                <div className="subtw" style={{padding:"4px 4px 4px 30px",maxHeight:280,overflow:"auto"}}>
+                  <table><thead><tr><th>Task</th><th>Order no</th><th>Product</th><th>Units</th><th className="num">Qty</th></tr></thead>
+                  <tbody>{p.lines.map((l,j)=>
+                    <tr key={j}>
+                      <td><span className="pill">{l.task}</span></td>
+                      <td className="mono">{l.order}{String(l.order).trim()==="~"&&<span className="tag t-soh" style={{marginLeft:6}}>SOH</span>}</td>
+                      <td>{l.product}</td><td>{l.units}</td><td className="num">{fmt(l.qty)}</td>
+                    </tr>)}</tbody></table>
+                </div>
+              </td></tr>}
+              </React.Fragment>;
+            })}</tbody></table>
+          </div>
+          {warns>0 && <div style={{marginTop:13}}>
+            {pdfs.filter(p=>p.warnings.length).map((p,i)=>
+              <div className="note warn" key={i} style={{marginBottom:6}}><Ic d={I.warn} s={15}/><span><b>{p.name}:</b> {p.warnings.join(" · ")}</span></div>)}
+          </div>}
+        </div>
+      </div>
+    </>}
+
+    {pdfs.length===0 && <div className="card"><div className="bd"><Empty ic={I.pdf} h="No charge-detail PDFs uploaded" p="Upload a folder or select individual PDF files. Each document's customer name is matched to a WMS customer code automatically."/></div></div>}
+  </>;
+}
+
+/* ───────────────────────── RULES VIEW (per customer) ───────────────────────── */
+function RulesView({rules,setRules,saveRules,resetRules}){
+  const customers=rules.customers||[];
+  const [active,setActive]=useState(customers[0]?.code||null);
+  const [adding,setAdding]=useState(false);
+  const [q,setQ]=useState("");
+
+  const activeCust=customers.find(c=>c.code===active)||customers[0];
+  const list=customers.filter(c=> !q || c.code.toUpperCase().includes(q.toUpperCase()));
+
+  const setCustomers=(next)=>setRules({...rules,customers:next});
+  const updRule=(i,field,val)=>{
+    setCustomers(customers.map(c=> c.code===active ? {...c, rules:c.rules.map((r,j)=>j===i?{...r,[field]:val}:r)} : c));
+  };
+  const addRule=()=>setCustomers(customers.map(c=> c.code===active ? {...c, rules:[...c.rules,{in:"PICK",out:"PICK",qty:"Same"}]} : c));
+  const delRule=(i)=>setCustomers(customers.map(c=> c.code===active ? {...c, rules:c.rules.filter((_,j)=>j!==i)} : c));
+  const delCustomer=(code)=>{
+    const next=customers.filter(c=>c.code!==code);
+    setCustomers(next);
+    if(active===code) setActive(next[0]?.code||null);
+  };
+  const addCustomer=(code, copyFrom)=>{
+    const up=code.trim().toUpperCase();
+    if(!up) return;
+    if(customers.some(c=>c.code.toUpperCase()===up)){ setActive(up); setAdding(false); return; }
+    const src=copyFrom? customers.find(c=>c.code===copyFrom) : null;
+    const rulesCopy = src ? src.rules.map(r=>({...r})) : [];
+    setCustomers([...customers, {code:up, rules:rulesCopy}]);
+    setActive(up); setAdding(false);
+  };
+
+  return <>
+    <div className="section-intro" style={{display:"flex",alignItems:"center"}}>
+      <div><h3>Audit rules</h3></div>
+      <div style={{marginLeft:"auto",display:"flex",gap:8}}>
+        <button className="btn sm" onClick={resetRules}><Ic d={I.reset} s={14}/>Reset to default</button>
+        <button className="btn pri sm" onClick={saveRules}><Ic d={I.save} s={14}/>Save active rule set</button>
+      </div>
+    </div>
+
+    <div className="grid" style={{gridTemplateColumns:"240px 1fr",gap:18}}>
+      {/* customer list */}
+      <div className="card" style={{alignSelf:"start"}}>
+        <div className="hd" style={{padding:"13px 14px"}}><h4 style={{fontSize:12.5}}>Customers</h4>
+          <div className="right"><span style={{fontSize:11,color:"var(--muted)"}}>{customers.length}</span></div></div>
+        <div style={{padding:"10px 10px 8px"}}>
+          <input className="f" placeholder="Search…" value={q} onChange={e=>setQ(e.target.value)} style={{fontSize:12.5,padding:"6px 9px"}}/>
+        </div>
+        <div style={{padding:"0 8px 8px",display:"flex",flexDirection:"column",gap:2,maxHeight:440,overflow:"auto"}}>
+          {list.map(c=>
+            <div key={c.code} className="linkbtn"
+              style={{display:"flex",alignItems:"center",gap:6,padding:"8px 10px",borderRadius:8,cursor:"pointer",
+              background:active===c.code?"var(--blue-wash)":"transparent"}}
+              onClick={()=>setActive(c.code)}>
+              <span style={{fontWeight:active===c.code?700:560,color:active===c.code?"var(--blue-deep)":"var(--ink-soft)",flex:1}}>{c.code}</span>
+              <span style={{fontSize:11,color:"var(--muted)"}}>{c.rules.length}</span>
+            </div>)}
+          {list.length===0 && <div style={{padding:"14px 10px",color:"var(--muted)",fontSize:12.5,textAlign:"center"}}>No match</div>}
+        </div>
+        <div style={{padding:"8px 10px 12px",borderTop:"1px solid var(--line-soft)"}}>
+          <button className="btn pri sm" style={{width:"100%",justifyContent:"center"}} onClick={()=>setAdding(true)}><Ic d={I.plus} s={14}/>Add customer</button>
+        </div>
+      </div>
+
+      {/* rules for active customer */}
+      <div className="card">
+        {!activeCust ? <div className="bd"><Empty ic={I.rules} h="No customers" p="Add a customer to start defining task transformation rules." cta="Add customer" onCta={()=>setAdding(true)}/></div>
+        : <>
+          <div className="hd"><Ic d={I.transform} s={17}/><h4>{activeCust.code} · task transformation</h4>
+            <span className="sub">{activeCust.rules.length} rule{activeCust.rules.length!==1?"s":""}</span>
+            <div className="right">
+              <button className="btn sm" onClick={addRule}><Ic d={I.plus} s={14}/>Add rule</button>
+              <button className="btn sm danger" onClick={()=>delCustomer(activeCust.code)}><Ic d={I.trash} s={14}/>Delete customer</button>
+            </div></div>
+          <div className="bd rule-edit">
+            {activeCust.rules.length===0
+              ? <Empty ic={I.transform} h="No rules yet" p="Add a transformation rule, or this customer's tasks will be reported as having no rule." cta="Add rule" onCta={addRule}/>
+              : <div className="tw">
+                <table><thead><tr><th>Source task</th><th></th><th>Output task</th><th>Quantity mode</th><th style={{width:50}}></th></tr></thead>
+                <tbody>{activeCust.rules.map((r,i)=>
+                  <tr key={i}>
+                    <td><input value={r.in} onChange={e=>updRule(i,"in",e.target.value.toUpperCase())}/></td>
+                    <td style={{color:"var(--muted)",textAlign:"center"}}><Ic d={I.chev} s={13}/></td>
+                    <td><input value={r.out} onChange={e=>updRule(i,"out",e.target.value.toUpperCase())}/></td>
+                    <td><select className="f" style={{padding:"5px 8px"}} value={r.qty} onChange={e=>updRule(i,"qty",e.target.value)}><option>Same</option><option>Force1</option></select></td>
+                    <td><button className="btn gh sm" onClick={()=>delRule(i)}><Ic d={I.trash} s={14}/></button></td>
+                  </tr>)}</tbody></table>
+              </div>}
+          </div>
+        </>}
+      </div>
+    </div>
+
+    {adding && <AddCustomerModal customers={customers} onCancel={()=>setAdding(false)} onAdd={addCustomer}/>}
+
+    <div className="note info" style={{marginTop:18}}><Ic d={I.info} s={15}/><span>Saving rules clears the current transform and comparison so they always reflect the latest logic. The saved rule set is snapshotted into every reconciliation run.</span></div>
+  </>;
+}
+
+function AddCustomerModal({customers,onCancel,onAdd}){
+  const [code,setCode]=useState("");
+  const [copyFrom,setCopyFrom]=useState("");   // "" = start blank
+  const sorted=[...customers].sort((a,b)=>a.code.localeCompare(b.code));
+  return <div className="modal-bg" onClick={onCancel}>
+    <div className="modal" onClick={e=>e.stopPropagation()}>
+      <div className="mh"><Ic d={I.plus} s={17}/><h4>Add customer</h4></div>
+      <div className="mb">
+        <label className="fl">Customer code</label>
+        <input className="f" autoFocus value={code} onChange={e=>setCode(e.target.value.toUpperCase())} placeholder="e.g. ACA"/>
+
+        <label className="fl" style={{marginTop:16}}>Does this customer use the same rules as an existing customer?</label>
+        <select className="f" value={copyFrom} onChange={e=>setCopyFrom(e.target.value)}>
+          <option value="">No — start with no rules</option>
+          {sorted.map(c=><option key={c.code} value={c.code}>Copy rules from {c.code} ({c.rules.length} rule{c.rules.length!==1?"s":""})</option>)}
+        </select>
+        <p className="help">You can edit or add more rules after creating the customer.</p>
+      </div>
+      <div className="mf">
+        <button className="btn" onClick={onCancel}>Cancel</button>
+        <button className="btn pri" disabled={!code.trim()} onClick={()=>onAdd(code,copyFrom||null)}><Ic d={I.plus} s={14}/>Add customer</button>
+      </div>
+    </div>
+  </div>;
+}
+
+/* ───────────────────────── TRANSFORM VIEW ───────────────────────── */
+function TransformView({rawWMS,transformed,doTransform,rules,setView,doCompare,pipeline}){
+  if(rawWMS.length===0) return <div className="card"><div className="bd"><Empty ic={I.transform} h="Nothing to transform yet" p="Upload WMS data first, then return here to apply the audit rules." cta="Upload WMS data" onCta={()=>setView("wms")}/></div></div>;
+  return <>
+    <div className="kpiwrap" style={{gridTemplateColumns:"repeat(3,1fr)"}}>
+      <Stat lab="Raw WMS rows" ic={I.wms} val={fmt(rawWMS.length)} sub="as uploaded" k="blue"/>
+      <Stat lab="Audit-ready rows" ic={I.transform} val={transformed?fmt(transformed.rows.length):"—"} sub="after task expansion" k="green"/>
+      <Stat lab="Unmapped rows" ic={I.warn} val={transformed?fmt(transformed.issues.length):"—"} sub="skipped — no rule" k={transformed&&transformed.issues.length?"amber":""}/>
+    </div>
+
+    <div className="card" style={{marginBottom:18}}>
+      <div className="hd"><Ic d={I.transform} s={17}/><h4>Apply audit rules to WMS</h4>
+        <span className="sub">Customer mapping · task expansion · quantity mode</span>
+        <div className="right">
+          <button className="btn sm" onClick={doTransform}><Ic d={I.reset} s={14}/>{transformed?"Re-run transform":"Run transform"}</button>
+          {transformed && <button className="btn pri sm" disabled={!pipeline.pdf} onClick={doCompare}><Ic d={I.compare} s={14}/>Compare vs charge detail</button>}
+        </div></div>
+      <div className="bd">
+        {!transformed && <Empty ic={I.transform} h="Ready to transform" p="Run the transform to expand each WMS task into its audit-ready output tasks." cta="Run transform now" onCta={doTransform}/>}
+        {transformed && <>
+          {transformed.issues.length>0 && <div className="note warn" style={{marginBottom:13}}><Ic d={I.warn} s={15}/><span><b>{transformed.issues.length} rows skipped</b> — {transformed.issues.slice(0,3).join("; ")}{transformed.issues.length>3?" …":""}</span></div>}
+          <div className="tw tall">
+            <table><thead><tr><th>Customer</th><th>Source</th><th></th><th>Output task</th><th>Qty mode</th><th>Order no</th><th>Product</th><th>Units</th><th className="num">Qty</th></tr></thead>
+            <tbody>{transformed.rows.map((r,i)=>
+              <tr key={i}>
+                <td><b>{r.customer}</b></td>
+                <td>{r.srcTask}</td><td style={{color:"var(--muted)"}}><Ic d={I.chev} s={12}/></td>
+                <td><span className="pill same">{r.task}</span></td>
+                <td><span className={"pill "+(r.qtyMode==="Force1"?"force":r.qtyMode==="Manual"?"":"same")}>{r.qtyMode}</span></td>
+                <td className="mono">{r.order}</td><td>{r.product}</td><td>{r.units}</td><td className="num">{fmt(r.qty)}</td>
+              </tr>)}</tbody></table>
+          </div>
+        </>}
+      </div>
+    </div>
+  </>;
+}
+
+/* ───────────────────────── SUMMARY VIEW ───────────────────────── */
+function SummaryView({result,doCompare,pipeline,setView}){
+  const [filter,setFilter]=useState("ALL");
+  if(!result) return <NeedCompare {...{pipeline,doCompare,setView}}/>;
+  const rows=result.summary.filter(s=> filter==="ALL"||s.type===filter);
+  const counts={ALL:result.summary.length,MISSING:0,UNDER:0,OVER:0};
+  result.summary.forEach(s=>{counts[s.type]++;});
+  const totUnder=result.summary.filter(s=>s.type!=="OVER").reduce((a,s)=>a+Math.max(0,s.diff),0);
+  const totOver=result.summary.filter(s=>s.type==="OVER").reduce((a,s)=>a+Math.abs(s.diff),0);
+  const sohTotal=(result.soh||[]).reduce((a,s)=>a+s.qty,0);
+  return <>
+    <div className="kpiwrap">
+      <Stat lab="Variance groups" ic={I.variance} val={fmt(result.summary.length)} sub="customer / task combinations" k="amber"/>
+      <Stat lab="Under / missing units" ic={I.warn} val={fmt(totUnder)} sub="not yet charged" k="red"/>
+      <Stat lab="Over-charged units" ic={I.drill} val={fmt(totOver)} sub="charged in excess" k="blue"/>
+      <Stat lab="Stock on hand" ic={I.info} val={fmt(sohTotal)} sub="excluded from variance" k=""/>
+    </div>
+
+    <div className="card">
+      <div className="hd"><Ic d={I.variance} s={17}/><h4>Variance summary</h4><span className="sub">matched & stock-on-hand rows hidden</span>
+        <div className="right">
+          <div className="filterbar">
+            {[["ALL","All"],["MISSING","Missing"],["UNDER","Undercharge"],["OVER","Overcharge"]].map(([k,l])=>
+              <button key={k} className={"fchip"+(filter===k?" on":"")} onClick={()=>setFilter(k)}>{l}<span style={{opacity:.6,marginLeft:5}}>{counts[k]}</span></button>)}
+          </div>
+          <button className="btn gh sm" onClick={()=>setView("breakdown")}>Breakdown<Ic d={I.chev} s={13}/></button>
+        </div></div>
+      <div className="bd">
+        {rows.length===0 ? <MiniEmpty msg="No variances in this filter."/> :
+        <div className="tw tall">
+          <table><thead><tr><th>Customer</th><th>Task</th><th className="num">In charge detail</th><th className="num">Should be (WMS)</th><th className="num">Difference</th><th>Variance</th></tr></thead>
+          <tbody>{rows.map((s,i)=>
+            <tr key={i}>
+              <td><b>{s.customer}</b></td>
+              <td><span className="pill">{s.task}</span></td>
+              <td className="num">{fmt(s.chargeQty)}</td>
+              <td className="num">{fmt(s.wmsQty)}</td>
+              <td className="num" style={{fontWeight:700,color:s.diff>0?"var(--red)":"var(--blue)"}}>{s.diff>0?"+":""}{s.diff}</td>
+              <td><TypeTag t={s.type}/>{" "}
+                <span style={{fontSize:11.5,color:"var(--muted)"}}>{s.diff>0?`${Math.abs(s.diff)} missing`:`${Math.abs(s.diff)} overcharged`}</span></td>
+            </tr>)}</tbody></table>
+        </div>}
+        {sohTotal>0 && <div className="note soh" style={{marginTop:14}}><Ic d={I.info} s={15}/><span>Stock-on-hand lines are excluded from variance. See the <button className="linkbtn" onClick={()=>setView("soh")}>Stock on Hand</button> tab for the breakdown by customer.</span></div>}
+      </div>
+    </div>
+  </>;
+}
+
+/* ───────────────────────── BREAKDOWN VIEW ───────────────────────── */
+function BreakdownView({result,doCompare,pipeline,setView}){
+  const [open,setOpen]=useState({});
+  const [filter,setFilter]=useState("ALL");
+  if(!result) return <NeedCompare {...{pipeline,doCompare,setView}}/>;
+  // group breakdown rows under their summary
+  const groups=result.summary.map(s=>({...s, rows:result.detail.filter(d=>d.customer===s.customer&&d.task===s.task)}))
+    .filter(s=> filter==="ALL"||s.type===filter);
+  return <>
+    <div className="section-intro" style={{display:"flex",alignItems:"center"}}>
+      <div><h3>Detailed variance breakdown</h3><p>Expand a summary line to see the exact rows that explain the difference.</p></div>
+      <div style={{marginLeft:"auto"}} className="filterbar">
+        {[["ALL","All"],["MISSING","Missing"],["UNDER","Undercharge"],["OVER","Overcharge"]].map(([k,l])=>
+          <button key={k} className={"fchip"+(filter===k?" on":"")} onClick={()=>setFilter(k)}>{l}</button>)}
+      </div>
+    </div>
+    <div className="card">
+      <div className="bd" style={{padding:0}}>
+        <div className="tw" style={{border:0,borderRadius:0}}>
+          <table>
+            <thead><tr><th style={{width:34}}></th><th>Customer</th><th>Task</th><th className="num">Charged</th><th className="num">Should be</th><th className="num">Diff</th><th>Variance</th><th className="num">Rows</th></tr></thead>
+            <tbody>{groups.map((g,i)=>{
+              const key=g.customer+g.task; const isOpen=open[key];
+              return <React.Fragment key={key}>
+                <tr style={{cursor:"pointer"}} onClick={()=>setOpen(o=>({...o,[key]:!o[key]}))}>
+                  <td><span style={{display:"inline-flex",transform:isOpen?"rotate(90deg)":"none",transition:".15s",color:"var(--muted)"}}><Ic d={I.chev} s={14}/></span></td>
+                  <td><b>{g.customer}</b></td><td><span className="pill">{g.task}</span></td>
+                  <td className="num">{fmt(g.chargeQty)}</td><td className="num">{fmt(g.wmsQty)}</td>
+                  <td className="num" style={{fontWeight:700,color:g.diff>0?"var(--red)":"var(--blue)"}}>{g.diff>0?"+":""}{g.diff}</td>
+                  <td><TypeTag t={g.type}/></td><td className="num">{g.rows.length}</td>
+                </tr>
+                {isOpen && <tr className="expandrow"><td colSpan={8}>
+                  <div className="subtw" style={{padding:"4px 4px 4px 34px"}}>
+                    <table><thead><tr><th>Order no</th><th>Product</th><th>Units</th><th className="num">Charged</th><th className="num">Should be (WMS)</th><th className="num">Diff</th><th>Detail</th></tr></thead>
+                    <tbody>{g.rows.map((d,j)=>
+                      <tr key={j}>
+                        <td className="mono">{d.order}{String(d.order).trim()==="~"&&<span className="tag t-soh" style={{marginLeft:6}}>stock on hand</span>}</td>
+                        <td>{d.product}</td><td>{d.units}</td>
+                        <td className="num">{fmt(d.chargeQty)}</td><td className="num">{fmt(d.wmsQty)}</td>
+                        <td className="num" style={{fontWeight:600,color:d.diff>0?"var(--red)":"var(--blue)"}}>{d.diff>0?"+":""}{d.diff}</td>
+                        <td><TypeTag t={d.type}/>{" "}<span style={{fontSize:11.5,color:"var(--muted)"}}>
+                          {d.type==="MISSING"?"whole row absent from charge detail":d.type==="UNDER"?`short by ${Math.abs(d.diff)}`:`charged ${Math.abs(d.diff)} too many`}</span></td>
+                      </tr>)}</tbody></table>
+                  </div>
+                </td></tr>}
+              </React.Fragment>;
+            })}</tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </>;
+}
+
+/* ───────────────────────── STOCK ON HAND VIEW ───────────────────────── */
+function SOHView({result,doCompare,pipeline,setView}){
+  const [cust,setCust]=useState("ALL");
+  const [open,setOpen]=useState({});
+  if(!result) return <NeedCompare {...{pipeline,doCompare,setView}}/>;
+  const soh=result.soh||[];   // line detail: {customer,task,product,units,qty}
+  if(soh.length===0) return <div className="card"><div className="bd"><Empty ic={I.box} h="No stock on hand" p="No charge-detail lines had Order No = &quot;~&quot; in this run."/></div></div>;
+
+  const customers=[...new Set(soh.map(s=>s.customer))].sort();
+  const byCust={};
+  soh.forEach(s=>{ byCust[s.customer]=(byCust[s.customer]||0)+s.qty; });
+
+  // group into summary: customer + task + unit  →  total qty + product rows
+  const grpMap={};
+  soh.forEach(s=>{
+    const k=[s.customer,s.task,s.units].join("¦");
+    grpMap[k]=grpMap[k]||{customer:s.customer,task:s.task,units:s.units,qty:0,products:[]};
+    grpMap[k].qty+=s.qty;
+    grpMap[k].products.push({product:s.product,qty:s.qty});
+  });
+  let groups=Object.values(grpMap).sort((a,b)=> a.customer.localeCompare(b.customer) || a.task.localeCompare(b.task) || b.qty-a.qty);
+  if(cust!=="ALL") groups=groups.filter(g=>g.customer===cust);
+  // collapse duplicate products inside a group
+  groups.forEach(g=>{
+    const pm={}; g.products.forEach(p=>{ pm[p.product]=(pm[p.product]||0)+p.qty; });
+    g.products=Object.entries(pm).map(([product,qty])=>({product,qty})).sort((a,b)=>b.qty-a.qty);
+  });
+  const total=groups.reduce((a,g)=>a+g.qty,0);
+
+  return <>
+    <div className="kpiwrap" style={{gridTemplateColumns:"repeat(3,1fr)"}}>
+      <Stat lab="SOH groups" ic={I.box} val={fmt(groups.length)} sub="customer / task / unit" k="blue"/>
+      <Stat lab="SOH units" ic={I.drill} val={fmt(soh.reduce((a,s)=>a+s.qty,0))} sub="excluded from variance" k="blue"/>
+      <Stat lab="Customers with SOH" ic={I.archive} val={fmt(customers.length)} sub="have stock on hand" k=""/>
+    </div>
+
+    <div className="card">
+      <div className="hd"><Ic d={I.box} s={17}/><h4>Stock on hand by customer</h4>
+        <span className="sub">Order No = "~" · click a row to see products</span>
+        <div className="right">
+          <select className="f" style={{width:"auto",padding:"6px 10px"}} value={cust} onChange={e=>{setCust(e.target.value);setOpen({});}}>
+            <option value="ALL">All customers ({customers.length})</option>
+            {customers.map(c=><option key={c} value={c}>{c} — {fmt(byCust[c])} units</option>)}
+          </select>
+        </div></div>
+      <div className="bd" style={{padding:0}}>
+        <div className="tw tall" style={{border:0,borderRadius:0}}>
+          <table>
+            <thead><tr><th style={{width:34}}></th><th>Customer</th><th>Task</th><th>Units</th><th className="num">Total qty</th><th className="num">Products</th></tr></thead>
+            <tbody>{groups.map((g,i)=>{
+              const key=g.customer+g.task+g.units; const isOpen=open[key];
+              return <React.Fragment key={key}>
+                <tr style={{cursor:"pointer"}} onClick={()=>setOpen(o=>({...o,[key]:!o[key]}))}>
+                  <td><span style={{display:"inline-flex",transform:isOpen?"rotate(90deg)":"none",transition:".15s",color:"var(--muted)"}}><Ic d={I.chev} s={14}/></span></td>
+                  <td><b>{g.customer}</b></td>
+                  <td><span className="pill">{g.task}</span></td>
+                  <td>{g.units}</td>
+                  <td className="num" style={{fontWeight:700}}>{fmt(g.qty)}</td>
+                  <td className="num">{g.products.length}</td>
+                </tr>
+                {isOpen && <tr className="expandrow"><td colSpan={6}>
+                  <div className="subtw" style={{padding:"4px 4px 4px 34px",maxHeight:300,overflow:"auto"}}>
+                    <table><thead><tr><th>Product</th><th className="num">Qty</th></tr></thead>
+                    <tbody>{g.products.map((p,j)=>
+                      <tr key={j}><td>{p.product}</td><td className="num">{fmt(p.qty)}</td></tr>)}</tbody></table>
+                  </div>
+                </td></tr>}
+              </React.Fragment>;
+            })}</tbody>
+            <tfoot><tr style={{background:"#f6f9fd",fontWeight:700}}>
+              <td colSpan={4} style={{padding:"9px 12px",borderTop:"2px solid var(--line)"}}>{cust==="ALL"?"All customers":cust} — total</td>
+              <td className="num" style={{padding:"9px 12px",borderTop:"2px solid var(--line)"}}>{fmt(total)}</td>
+              <td style={{borderTop:"2px solid var(--line)"}}></td>
+            </tr></tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+  </>;
+}
+
+/* ───────────────────────── SAVE VIEW ───────────────────────── */
+function SaveView({result,saveRun,setView}){
+  const [name,setName]=useState(()=>{ const d=new Date(); const ws=new Date(d.setDate(d.getDate()+(7-d.getDay())%7)); return "Week Ending "+ws.toLocaleDateString("en-GB").replace(/\//g,"-"); });
+  const [done,setDone]=useState(false);
+  if(!result) return <div className="card"><div className="bd"><Empty ic={I.save} h="Nothing to save yet" p="Run a comparison first, then archive the result by week ending." cta="Go to comparison" onCta={()=>setView("summary")}/></div></div>;
+  return <div className="grid g2">
+    <div className="card">
+      <div className="hd"><Ic d={I.save} s={17}/><h4>Archive this reconciliation</h4></div>
+      <div className="bd">
+        <label className="fl">Run name</label>
+        <input className="f" value={name} onChange={e=>setName(e.target.value)} placeholder="Week Ending 24-05-2026"/>
+        <p className="help">Runs are usually named by week ending so they sort neatly in the archive.</p>
+        <div style={{display:"flex",gap:8,marginTop:14}}>
+          <button className="btn pri" disabled={!name.trim()} onClick={async()=>{await saveRun(name.trim());setDone(true);}}><Ic d={I.save} s={15}/>Save run to archive</button>
+          <button className="btn" onClick={()=>setView("runs")}><Ic d={I.archive} s={15}/>View archive</button>
+        </div>
+        {done && <div className="note info" style={{marginTop:14}}><Ic d={I.check} s={15}/><span>Saved. The run, its variances and the audit-rule snapshot are stored and can be re-opened from Saved Runs.</span></div>}
+      </div>
+    </div>
+    <div className="card">
+      <div className="hd"><Ic d={I.info} s={17}/><h4>What gets saved</h4></div>
+      <div className="bd">
+        <ul style={{margin:0,paddingLeft:18,color:"var(--ink-soft)",fontSize:13,lineHeight:1.9}}>
+          <li>{result.summary.length} variance summary groups</li>
+          <li>{result.detail.length} breakdown rows</li>
+          <li>The exact audit-rule set used for this run</li>
+          <li>PDF sources and matched customer codes</li>
+        </ul>
+        <div className="note soh" style={{marginTop:14}}><Ic d={I.info} s={15}/><span>Saved runs can be downloaded as Excel at any time from the archive.</span></div>
+      </div>
+    </div>
+  </div>;
+}
+
+/* ───────────────────────── RUNS VIEW ───────────────────────── */
+function RunsView({runs,deleteRun,exportExcel,setView}){
+  const [openRun,setOpenRun]=useState(null);
+  if(runs.length===0) return <div className="card"><div className="bd"><Empty ic={I.archive} h="No saved runs" p="Reconciliation runs you save will appear here, grouped by week ending." cta="Start a reconciliation" onCta={()=>setView("wms")}/></div></div>;
+  if(openRun){
+    const r=openRun;
+    return <>
+      <div className="section-intro" style={{display:"flex",alignItems:"center"}}>
+        <button className="btn sm" onClick={()=>setOpenRun(null)} style={{transform:"scaleX(-1)"}}><Ic d={I.chev} s={14}/></button>
+        <div style={{marginLeft:12}}><h3>{r.name}</h3><p>Saved {new Date(r.savedAt).toLocaleString()} · {r.counts.variances} variance groups</p></div>
+        <button className="btn pri sm" style={{marginLeft:"auto"}} onClick={()=>exportExcel(r)}><Ic d={I.excel} s={14}/>Download Excel</button>
+      </div>
+      <div className="kpiwrap">
+        <Stat lab="WMS rows" ic={I.wms} val={fmt(r.counts.wmsRaw)} sub={`${fmt(r.counts.wmsT)} transformed`} k="blue"/>
+        <Stat lab="Charge PDFs" ic={I.pdf} val={fmt(r.counts.pdfs)} sub={`${fmt(r.counts.lines)} lines`} k="blue"/>
+        <Stat lab="Variance groups" ic={I.variance} val={fmt(r.counts.variances)} sub="customer / task" k="amber"/>
+        <Stat lab="Breakdown rows" ic={I.drill} val={fmt(r.detail.length)} sub="line-level" k=""/>
+      </div>
+      <div className="card">
+        <div className="hd"><Ic d={I.variance} s={17}/><h4>Variance summary (archived)</h4></div>
+        <div className="bd"><div className="tw mid">
+          <table><thead><tr><th>Customer</th><th>Task</th><th className="num">Charged</th><th className="num">Should be</th><th className="num">Diff</th><th>Variance</th></tr></thead>
+          <tbody>{r.summary.map((s,i)=><tr key={i}><td><b>{s.customer}</b></td><td><span className="pill">{s.task}</span></td><td className="num">{fmt(s.chargeQty)}</td><td className="num">{fmt(s.wmsQty)}</td><td className="num" style={{fontWeight:700,color:s.diff>0?"var(--red)":"var(--blue)"}}>{s.diff>0?"+":""}{s.diff}</td><td><TypeTag t={s.type}/></td></tr>)}</tbody></table>
+        </div></div>
+      </div>
+    </>;
+  }
+  return <>
+    <div className="section-intro"><h3>Reconciliation archive</h3><p>{runs.length} saved run{runs.length!==1?"s":""}. Open one to review its variances or download the Excel report.</p></div>
+    <div style={{display:"flex",flexDirection:"column",gap:10}}>
+      {runs.map(r=>
+        <div className="runrow" key={r.id}>
+          <div className="fic"><Ic d={I.folder} s={18}/></div>
+          <div className="meta" style={{cursor:"pointer"}} onClick={()=>setOpenRun(r)}>
+            <div className="nm">{r.name}</div>
+            <div className="dt">{r.counts.variances} variance groups · {r.counts.pdfs} PDFs · saved {new Date(r.savedAt).toLocaleDateString()}</div>
+          </div>
+          <button className="btn sm" onClick={()=>setOpenRun(r)}>Open</button>
+          <button className="btn sm" onClick={()=>exportExcel(r)}><Ic d={I.excel} s={14}/>Excel</button>
+          <button className="btn sm danger" onClick={()=>deleteRun(r.id)}><Ic d={I.trash} s={14}/></button>
+        </div>)}
+    </div>
+  </>;
+}
+
+/* ───────────────────────── SHARED ───────────────────────── */
+function Empty({ic,h,p,cta,onCta}){
+  return <div className="empty"><div className="ring"><svg width="24" height="24" viewBox="0 0 24 24" fill="none">{ic}</svg></div>
+    <h4>{h}</h4><p>{p}</p>{cta && <div style={{marginTop:14}}><button className="btn pri" onClick={onCta}>{cta}</button></div>}</div>;
+}
+function NeedCompare({pipeline,doCompare,setView}){
+  const ready=pipeline.wms&&pipeline.pdf;
+  return <div className="card"><div className="bd">
+    <Empty ic={I.compare} h="No comparison results yet"
+      p={ready?"Inputs are ready. Run the comparison to surface variances.":"Upload both WMS data and charge-detail PDFs, then run the comparison."}
+      cta={ready?"Run comparison now":"Go to inputs"} onCta={ready?doCompare:()=>setView(pipeline.wms?"pdf":"wms")}/>
+  </div></div>;
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
