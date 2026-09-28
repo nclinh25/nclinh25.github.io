@@ -120,6 +120,99 @@ input, textarea, select, [contenteditable="true"] { user-select: text; -webkit-u
 .onboardMeta span{font-size:9px;background:#edf7fc;color:#50697b;border-radius:999px;padding:3px 7px}
 .dbStatus{position:fixed;right:14px;bottom:14px;z-index:9999;padding:7px 10px;border-radius:999px;font:600 10px Inter,"Segoe UI",Arial;box-shadow:0 3px 14px #17324622;border:1px solid #d6e4ec;background:#fff;color:#50697b;opacity:.8}
 
+
+/* v8.1 onboarding compact layout + named multi-owner selector */
+.taskRow{
+  align-items:start !important;
+  font-size:11px !important;
+}
+.taskRow input[type="text"],
+.taskRow input[type="date"],
+.taskRow select,
+.ownerMultiBtn{
+  height:36px !important;
+  min-height:36px;
+  padding:7px 9px !important;
+  margin:0 !important;
+  font-size:11px !important;
+  line-height:1.2;
+}
+.taskRow .hint{
+  font-size:9px !important;
+  line-height:1.3;
+  margin-top:3px;
+}
+.taskCheck{
+  width:16px !important;
+  height:16px !important;
+  margin-top:10px !important;
+}
+.taskDelete{
+  font-size:17px !important;
+  margin-top:6px !important;
+}
+.ownerMulti{
+  position:relative;
+  width:100%;
+}
+.ownerMultiBtn{
+  width:100%;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  border:1px solid #cbdde7;
+  border-radius:9px;
+  background:#fbfdfe;
+  color:#17394f;
+  cursor:pointer;
+  text-align:left;
+  overflow:hidden;
+}
+.ownerText{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.ownerChev{
+  flex:0 0 auto;
+  color:#60798a;
+}
+.ownerMenu{
+  display:none;
+  position:absolute;
+  z-index:120;
+  top:40px;
+  left:0;
+  width:100%;
+  min-width:190px;
+  padding:6px;
+  background:#fff;
+  border:1px solid #cbdde7;
+  border-radius:9px;
+  box-shadow:0 10px 24px #17324624;
+}
+.ownerMenu.on{display:block}
+.ownerChoice{
+  display:flex !important;
+  align-items:center;
+  gap:8px;
+  margin:0 !important;
+  padding:7px 8px;
+  border-radius:7px;
+  cursor:pointer;
+  font-size:11px !important;
+  font-weight:500 !important;
+  color:#17394f !important;
+}
+.ownerChoice:hover{background:#eef7fc}
+.ownerChoice input{
+  width:15px !important;
+  height:15px !important;
+  margin:0 !important;
+  flex:0 0 auto;
+}
+
 </style></head><body>
 <header><div class=brand><b>Austco Polar Cold Storage</b><small>Commercial Management</small></div><div class=nav><button id=nrate class=on onclick="go('rate')">Rate Card</button><div class=navGroup><button id=nquotesMain class=navMain onclick="go('quotes')">Quotes <span class=chev>▼</span></button><div class=navDrop><button id=subquote onclick="go('quote')">Create Quote</button><button id=subquotes onclick="go('quotes')">Quote List</button></div></div><div class=navGroup><button id=ncustomersMain class=navMain onclick="go('onboarding')">Our Customers <span class=chev>▼</span></button><div class=navDrop><button id=subonboarding onclick="go('onboarding')">Onboarding Customers</button><button id=subprofile onclick="go('profile')">Active Customers</button></div></div></div></header>
 
@@ -176,26 +269,26 @@ let qm='3PL',pm='3PL',selected=null,timer,chosenMatch=null;
 let suppressAutosave=false,currentBillingBasis='',workflowCallback=null;
 const PALLET_CODES=['RECP','PICKP','STOP'];
 const CARTON_CODES=['REC','PICK','STOR'];
-const ONBOARDING_OWNERS=['Commercial','Operations','Documentation','Finance','IT / WMS','Management','Linh','Shea'];
+const ONBOARDING_OWNERS=['Tharun','Shea','Linh','Glenn','Kevin'];
 const DEFAULT_ONBOARDING={
   '3PL':[
-    {name:'Customer / account setup',description:'Create the customer/account and confirm master data.',owners:'Commercial'},
-    {name:'Final rate card confirmed',description:'Confirm billing basis, included services and agreed commercial rates.',owners:'Commercial'},
-    {name:'WMS customer setup',description:'Complete WMS configuration, codes and operational setup.',owners:'IT / WMS'},
-    {name:'Documentation requirements confirmed',description:'Confirm export, certificates, reporting and documentation requirements.',owners:'Documentation'},
-    {name:'Receivable process confirmed',description:'Confirm booking, receivable, pallet/carton and scanning requirements.',owners:'Operations'},
-    {name:'Load out process confirmed',description:'Confirm dispatch, picking, container and transport requirements.',owners:'Operations'},
-    {name:'Special handling requirements confirmed',description:'Confirm blast, scanning, labels, mixed product or other handling.',owners:'Operations'},
-    {name:'Billing / credit setup confirmed',description:'Confirm invoicing, account setup and billing contacts.',owners:'Finance'},
-    {name:'First receivable / start date confirmed',description:'Confirm the operational go-live date with all parties.',owners:'Commercial'}
+    {name:'Customer / account setup',description:'Create the customer/account and confirm master data.',owners:''},
+    {name:'Final rate card confirmed',description:'Confirm billing basis, included services and agreed commercial rates.',owners:''},
+    {name:'WMS customer setup',description:'Complete WMS configuration, codes and operational setup.',owners:''},
+    {name:'Documentation requirements confirmed',description:'Confirm export, certificates, reporting and documentation requirements.',owners:''},
+    {name:'Receivable process confirmed',description:'Confirm booking, receivable, pallet/carton and scanning requirements.',owners:''},
+    {name:'Load out process confirmed',description:'Confirm dispatch, picking, container and transport requirements.',owners:''},
+    {name:'Special handling requirements confirmed',description:'Confirm blast, scanning, labels, mixed product or other handling.',owners:''},
+    {name:'Billing / credit setup confirmed',description:'Confirm invoicing, account setup and billing contacts.',owners:''},
+    {name:'First receivable / start date confirmed',description:'Confirm the operational go-live date with all parties.',owners:''}
   ],
   'Tenant':[
-    {name:'Commercial terms confirmed',description:'Confirm rent, outgoings, CPI and contract terms.',owners:'Commercial'},
-    {name:'Room allocation confirmed',description:'Confirm dedicated/shared rooms and agreed space.',owners:'Operations'},
-    {name:'Access / key / security setup',description:'Confirm access hours, keys and site access requirements.',owners:'Operations'},
-    {name:'Billing setup confirmed',description:'Confirm rent and outgoings billing setup.',owners:'Finance'},
-    {name:'Site induction completed',description:'Complete required site / safety induction.',owners:'Operations'},
-    {name:'Commencement date confirmed',description:'Confirm tenant commencement date.',owners:'Commercial'}
+    {name:'Commercial terms confirmed',description:'Confirm rent, outgoings, CPI and contract terms.',owners:''},
+    {name:'Room allocation confirmed',description:'Confirm dedicated/shared rooms and agreed space.',owners:''},
+    {name:'Access / key / security setup',description:'Confirm access hours, keys and site access requirements.',owners:''},
+    {name:'Billing setup confirmed',description:'Confirm rent and outgoings billing setup.',owners:''},
+    {name:'Site induction completed',description:'Complete required site / safety induction.',owners:''},
+    {name:'Commencement date confirmed',description:'Confirm tenant commencement date.',owners:''}
   ]
 };
 
@@ -425,7 +518,49 @@ function restoreRoomRows(rows){
   $('roomRows').innerHTML='';
   (rows&&rows.length?rows:[{}]).forEach(d=>{addRoom();let r=$('roomRows').lastElementChild;r.querySelector('.room').value=d.room||'';r.querySelector('.sqm').value=d.sqm||'';r.querySelector('.ded').value=d.ded||''})
 }
-function ownerOptions(current=''){let vals=[...ONBOARDING_OWNERS];if(current&&!vals.includes(current))vals.unshift(current);return vals.map(v=>`<option ${v===current?'selected':''}>${esc(v)}</option>`).join('')}
+function parseOwners(v){
+  if(Array.isArray(v))return v.filter(Boolean);
+  return String(v||'').split(',').map(x=>x.trim()).filter(Boolean)
+}
+function ownerMultiHtml(qid,t){
+  let selected=parseOwners(t.owners);
+  let label=selected.length?selected.join(' + '):'Select owner(s)';
+  return `<div class=ownerMulti>
+    <button type=button class=ownerMultiBtn onclick="toggleOwnerMenu(this,event)">
+      <span class=ownerText>${esc(label)}</span><span class=ownerChev>⌄</span>
+    </button>
+    <div class=ownerMenu onclick="event.stopPropagation()">
+      ${ONBOARDING_OWNERS.map(o=>`<label class=ownerChoice>
+        <input type=checkbox ${selected.includes(o)?'checked':''}
+          onchange="updateTaskOwner('${qid}','${t.id}','${o}',this.checked,this)">
+        <span>${o}</span>
+      </label>`).join('')}
+    </div>
+  </div>`
+}
+function toggleOwnerMenu(btn,e){
+  e?.stopPropagation();
+  let box=btn.closest('.ownerMulti'),menu=box.querySelector('.ownerMenu');
+  document.querySelectorAll('.ownerMenu.on').forEach(x=>{if(x!==menu)x.classList.remove('on')});
+  menu.classList.toggle('on')
+}
+function updateTaskOwner(qid,tid,owner,checked,el){
+  let a=quoteStore(),q=a.find(x=>x.id===qid);if(!q)return;
+  let t=ensureOnboarding(q).tasks.find(x=>x.id===tid);if(!t)return;
+  let owners=parseOwners(t.owners);
+  if(checked&&!owners.includes(owner))owners.push(owner);
+  if(!checked)owners=owners.filter(x=>x!==owner);
+  t.owners=owners.join(', ');
+  q.updatedAt=nowISO();
+  putQuotes(a);
+  let box=el.closest('.ownerMulti');
+  if(box){
+    let txt=box.querySelector('.ownerText');
+    if(txt)txt.textContent=owners.length?owners.join(' + '):'Select owner(s)'
+  }
+  renderOnboarding()
+}
+document.addEventListener('click',()=>document.querySelectorAll('.ownerMenu.on').forEach(x=>x.classList.remove('on')));
 
 function scoreProfile(p){
   let s=0;
@@ -750,7 +885,7 @@ function openOnboarding(qid){
       ${o.tasks.map(t=>`<div class=taskRow>
         <input class=taskCheck type=checkbox ${t.done?'checked':''} onchange="updateTask('${q.id}','${t.id}','done',this.checked)">
         <div><input type=text value="${esc(t.name)}" onchange="updateTask('${q.id}','${t.id}','name',this.value)"><div class=hint>${esc(t.description||'')}</div></div>
-        <select class=ownerSelect onchange="updateTask('${q.id}','${t.id}','owners',this.value)">${ownerOptions(t.owners||'Commercial')}</select>
+        ${ownerMultiHtml(q.id,t)}
         <input type=date value="${t.dueDate||''}" onchange="updateTask('${q.id}','${t.id}','dueDate',this.value)">
         <button class=taskDelete title="Delete task" onclick="openDeleteTask('${q.id}','${t.id}')">×</button>
       </div>`).join('')}
@@ -766,7 +901,7 @@ function openOnboarding(qid){
 function updateTask(qid,tid,field,val){let a=quoteStore(),q=a.find(x=>x.id===qid);if(!q)return;let t=ensureOnboarding(q).tasks.find(x=>x.id===tid);if(!t)return;t[field]=val;q.updatedAt=nowISO();putQuotes(a);renderOnboarding();openOnboarding(qid)}
 function addTask(qid){
   let a=quoteStore(),q=a.find(x=>x.id===qid);if(!q)return;
-  ensureOnboarding(q).tasks.push({id:'T-'+Date.now(),name:'New onboarding task',description:'',owners:'Commercial',dueDate:'',done:false,notes:''});
+  ensureOnboarding(q).tasks.push({id:'T-'+Date.now(),name:'New onboarding task',description:'',owners:'',dueDate:'',done:false,notes:''});
   q.updatedAt=nowISO();putQuotes(a);renderOnboarding();openOnboarding(qid)
 }
 function openDeleteTask(qid,tid){
