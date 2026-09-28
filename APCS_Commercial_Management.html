@@ -158,7 +158,7 @@ function go(p){
     requestAnimationFrame(()=>requestAnimationFrame(()=>renderList()));
   }
 }
-let timer=null,suppressAutosave=false;
+let suppressAutosave=false;
 function qmode(v){qm=v;$('q3').classList.toggle('hide',v!=='3PL');$('qt').classList.toggle('hide',v!=='Tenant');$('qm3').classList.toggle('on',v==='3PL');$('qmt').classList.toggle('on',v==='Tenant');$('budgetBtn').classList.toggle('hide',v!=='3PL');calc()}
 function pmode(v){pm=v;$('pm3').classList.toggle('on',v==='3PL');$('pmt').classList.toggle('on',v==='Tenant');selected=null;renderList()}
 function addRec(){let e=document.createElement('div');e.className='row';e.innerHTML=`<button class=x onclick="this.parentElement.remove();calc()">×</button><div class=grid><div><label>Receive type</label><select class=rt onchange="recUI(this)"><option value="">Select…</option><option>Pallets</option><option>Truck</option><option>Container</option></select><div class="csizeBox hide" style="margin-top:7px"><select class=cs onchange="calc()"><option value="">Container size…</option><option>20ft</option><option>40ft</option></select></div><div class=conv hint></div></div><div><label>Quantity per batch</label><input class=rq type=number></div><div><label>First load</label><input class=fd type=date></div><div><label>Frequency</label><div style="display:grid;grid-template-columns:0.8fr 1.2fr;gap:7px;align-items:center"><input class=rf type=number placeholder="Every"><select class=ru><option value="">Unit…</option><option>days</option><option>weeks</option><option>months</option></select></div></div></div><div class=loadnote hint></div>`;$('recRows').appendChild(e);calc()}
