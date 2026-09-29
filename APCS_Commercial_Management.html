@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>APCS Commercial Management</title>
-<!-- BUILD: Quote Type + Rate Card PDF v3 | legacy recovery + pending edit | 2026-09-29 --><style>
+<!-- BUILD: Quote Type + Standalone PDF v4 | edit restored | 2026-09-30 --><style>
 :root{--navy:#073d69;--blue:#0b6ea8;--purple:#7057c8;--teal:#16847a;--bg:#eef5f9;--line:#d6e4ec;--text:#173246;--muted:#6d8494}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,"Segoe UI",Arial;background:linear-gradient(#f8fbfd,#edf4f8);color:var(--text)}
 header{height:72px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 24px;position:sticky;top:0;z-index:30}.brand b{font-size:18px;color:#0b416c}.brand small{display:block;color:var(--muted);font-size:11px}.nav{margin-left:auto;height:100%;display:flex}.nav button{border:0;background:transparent;padding:0 20px;font-weight:650;color:#50697b;cursor:pointer;border-bottom:3px solid transparent}.nav button:hover{color:#075f98;background:#f6fbfe}.nav button:active{background:#e2f1f9}.nav button.on{color:#075f98;border-bottom-color:#0b78b8;background:#eef7fc}.navGroup{position:relative;height:100%;display:flex;align-items:stretch}.navGroup>.navMain{height:100%}.navDrop{display:none;position:absolute;top:68px;right:0;min-width:205px;background:#fff;border:1px solid var(--line);border-radius:0 0 10px 10px;box-shadow:0 10px 25px #12384d24;padding:7px;z-index:60}.navGroup:hover .navDrop,.navGroup:focus-within .navDrop{display:block}.navDrop button{display:block;width:100%;height:42px;padding:0 13px!important;text-align:left;border:0!important;border-radius:7px;background:#fff!important;color:#416278!important}.navDrop button:hover{background:#eef7fc!important;color:#075f98!important}.navDrop button.subon{background:#e5f3fb!important;color:#075f98!important;font-weight:750}.navMain .chev{font-size:10px;margin-left:6px}
@@ -100,12 +100,13 @@ input, textarea, select, [contenteditable="true"] { user-select: text; -webkit-u
 .pdfBtn{width:34px;height:34px;padding:0;display:inline-flex;align-items:center;justify-content:center;border:1px solid #cfe0ea;border-radius:9px;background:#fff;color:#b42318;cursor:pointer}
 .pdfBtn:hover{background:#fff4f3;border-color:#efb5b0}
 .pdfBtn:disabled{opacity:.35;cursor:not-allowed}
-.pdfBtn svg{width:17px;height:17px}.workflowActions{display:flex;align-items:center;gap:7px;flex-wrap:nowrap}.workflowActions .iconbtn{width:38px;height:38px;display:inline-flex;align-items:center;justify-content:center;font-size:17px}
+.pdfBtn svg{width:17px;height:17px}
+.editQuoteBtn{width:38px;height:38px;padding:0;display:inline-flex;align-items:center;justify-content:center;border:1px solid #cfe0ea;border-radius:9px;background:#fff;color:#075f98;cursor:pointer}
+.editQuoteBtn:hover{background:#edf7fc;border-color:#9fc4d8}
+.editQuoteBtn svg{width:18px;height:18px}.workflowActions{display:flex;align-items:center;gap:7px;flex-wrap:nowrap}.workflowActions .iconbtn{width:38px;height:38px;display:inline-flex;align-items:center;justify-content:center;font-size:17px}
 .rateInclude{width:17px;height:17px;accent-color:#0b6ea8}
 
 </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js"></script>
 
 </head><body>
 <header><div class=brand><b>Austco Polar Cold Storage</b><small>Commercial Management</small></div><div class=nav><button id=nrate class=on onclick="go('rate')">Rate Card</button><div class=navGroup><button id=nquotesMain class=navMain onclick="go('quotes')">Quotes <span class=chev>▼</span></button><div class=navDrop><button id=subquote onclick="go('quote')">Create Quote</button><button id=subquotes onclick="go('quotes')">Quote List</button></div></div><div class=navGroup><button id=ncustomersMain class=navMain onclick="go('onboarding')">Our Customers <span class=chev>▼</span></button><div class=navDrop><button id=subonboarding onclick="go('onboarding')">Onboarding Customers</button><button id=subprofile onclick="go('profile')">Active Customers</button></div></div></div></header>
@@ -507,8 +508,8 @@ function renderQuotes(){
           actions=q.stage==='Draft'
             ?`<button class=btn onclick="loadQuote('${q.id}')">Continue</button>${pdf}<button class="btn dangerBtn" onclick="deleteQuote('${q.id}')">Delete</button>`
             :q.status==='Pending'
-              ?`<button class="iconbtn" title="Edit quote" onclick="editSubmittedQuote('${q.id}')">✎</button>${pdf}<button class="btn wonBtn decisionBtn" onclick="changeQuoteStatus('${q.id}','Won',this)">Won</button><button class="btn dangerBtn decisionBtn" onclick="changeQuoteStatus('${q.id}','Lost',this)">Lost</button>`
-              :`${pdf}<button class="iconbtn" title="Manage record" onclick="openRecordMenu('${q.id}')">✎</button>`;
+              ?`<button class="editQuoteBtn" title="Edit quote" aria-label="Edit quote" onclick="editSubmittedQuote('${q.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg></button>${pdf}<button class="btn wonBtn decisionBtn" onclick="changeQuoteStatus('${q.id}','Won',this)">Won</button><button class="btn dangerBtn decisionBtn" onclick="changeQuoteStatus('${q.id}','Lost',this)">Lost</button>`
+              :`${pdf}<button class="editQuoteBtn" title="Manage record" aria-label="Manage record" onclick="openRecordMenu('${q.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg></button>`;
       return `<tr data-quote-id="${q.id}">
         <td><b>${esc(q.name||'Untitled quote')}</b><div class=hint>${q.id}</div>${hist}</td>
         <td>${q.model||'—'}</td>
@@ -562,74 +563,152 @@ function getQuoteRateCardRows(q){
   }
   return [];
 }
+
+function pdfAscii(v){
+  return String(v??'')
+    .replace(/[–—]/g,'-')
+    .replace(/[“”]/g,'"')
+    .replace(/[‘’]/g,"'")
+    .replace(/[^\x20-\x7E]/g,' ');
+}
+function pdfEsc(v){
+  return pdfAscii(v).replace(/\\/g,'\\\\').replace(/\(/g,'\\(').replace(/\)/g,'\\)');
+}
+function pdfText(x,y,size,text,bold=false,color='0.09 0.20 0.28'){
+  return `${color} rg\n/F${bold?'2':'1'} ${size} Tf\n1 0 0 1 ${x} ${y} Tm\n(${pdfEsc(text)}) Tj\n`;
+}
+function pdfLine(x1,y1,x2,y2,color='0.82 0.88 0.92',width=0.7){
+  return `${color} RG\n${width} w\n${x1} ${y1} m ${x2} ${y2} l S\n`;
+}
+function pdfRect(x,y,w,h,fill){
+  return `${fill} rg\n${x} ${y} ${w} ${h} re f\n`;
+}
+function buildStandaloneRateCardPdf(q,rows){
+  const W=595, H=842;
+  const margin=42, right=553;
+  const quoteType=q.quoteType||q.snapshot?.v?.quoteType||'New Quote';
+  const title=quoteType==='Contract Renewal'
+    ? `${q.name} - Contract Renewal Rate Card`
+    : `${q.name} - Rate Card`;
+  const prepared=new Date().toLocaleDateString('en-AU');
+  const perPage=22;
+  const chunks=[];
+  for(let i=0;i<rows.length;i+=perPage)chunks.push(rows.slice(i,i+perPage));
+  if(!chunks.length)chunks.push([]);
+
+  const streams=chunks.map((chunk,pageIndex)=>{
+    let s='';
+    // APCS branded header
+    s+=pdfRect(0,790,W,52,'0.03 0.24 0.41');
+    s+=pdfText(margin,812,16,'Austco Polar Cold Storage',true,'1 1 1');
+    s+=pdfText(margin,797,8.5,'Commercial Management',false,'0.86 0.93 0.97');
+
+    s+=pdfText(margin,754,19,title,true,'0.03 0.24 0.41');
+    s+=pdfText(margin,735,9,'Commercial Rate Schedule',false,'0.31 0.42 0.49');
+    s+=pdfLine(margin,724,right,724);
+
+    s+=pdfText(margin,707,8.5,`Quote ID: ${q.id}`,false,'0.31 0.42 0.49');
+    s+=pdfText(margin,693,8.5,`Commercial model: ${q.model||'-'}`,false,'0.31 0.42 0.49');
+    s+=pdfText(margin,679,8.5,`Quote type: ${quoteType}`,false,'0.31 0.42 0.49');
+    s+=pdfText(430,707,8.5,`Prepared: ${prepared}`,false,'0.31 0.42 0.49');
+
+    // Table
+    const x0=margin, x1=112, x2=442, x3=right;
+    let y=645;
+    const rowH=24;
+    s+=pdfRect(x0,y,x3-x0,rowH,'0.03 0.24 0.41');
+    s+=pdfText(x0+8,y+8,9,'Code',true,'1 1 1');
+    s+=pdfText(x1+8,y+8,9,'Service',true,'1 1 1');
+    s+=pdfText(x2+8,y+8,9,'Rate',true,'1 1 1');
+    y-=rowH;
+
+    chunk.forEach((r,idx)=>{
+      if(idx%2===1)s+=pdfRect(x0,y,x3-x0,rowH,'0.96 0.98 0.99');
+      s+=pdfLine(x0,y,x3,y,'0.84 0.89 0.92',0.5);
+      s+=pdfText(x0+8,y+8,8.5,pdfAscii(r.code||'-').slice(0,14));
+      s+=pdfText(x1+8,y+8,8.5,pdfAscii(r.desc||'-').slice(0,55));
+      s+=pdfText(x2+8,y+8,8.5,rateDisplay(r.rate),true);
+      y-=rowH;
+    });
+    s+=pdfLine(x0,y+rowH,x0,645+rowH);
+    s+=pdfLine(x1,y+rowH,x1,645+rowH);
+    s+=pdfLine(x2,y+rowH,x2,645+rowH);
+    s+=pdfLine(x3,y+rowH,x3,645+rowH);
+
+    s+=pdfText(margin,45,7.5,'Rates are subject to agreed commercial terms and applicable Austco Polar Cold Storage Terms & Conditions.',false,'0.37 0.44 0.49');
+    s+=pdfText(505,28,7,`Page ${pageIndex+1} of ${chunks.length}`,false,'0.45 0.52 0.57');
+    return s;
+  });
+
+  // Objects: 1 Catalog, 2 Pages, 3 Helvetica, 4 Helvetica-Bold, then page/content pairs.
+  const objects=[];
+  const pageRefs=[];
+  streams.forEach((_,i)=>pageRefs.push(`${5+i*2} 0 R`));
+  objects[1]='<< /Type /Catalog /Pages 2 0 R >>';
+  objects[2]=`<< /Type /Pages /Kids [${pageRefs.join(' ')}] /Count ${streams.length} >>`;
+  objects[3]='<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>';
+  objects[4]='<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>';
+
+  streams.forEach((stream,i)=>{
+    const pageObj=5+i*2, contentObj=6+i*2;
+    objects[pageObj]=`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${W} ${H}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ${contentObj} 0 R >>`;
+    objects[contentObj]=`<< /Length ${stream.length} >>\nstream\n${stream}endstream`;
+  });
+
+  let pdf='%PDF-1.4\n';
+  const offsets=[0];
+  for(let i=1;i<objects.length;i++){
+    offsets[i]=pdf.length;
+    pdf+=`${i} 0 obj\n${objects[i]}\nendobj\n`;
+  }
+  const xref=pdf.length;
+  pdf+=`xref\n0 ${objects.length}\n`;
+  pdf+='0000000000 65535 f \n';
+  for(let i=1;i<objects.length;i++){
+    pdf+=String(offsets[i]).padStart(10,'0')+' 00000 n \n';
+  }
+  pdf+=`trailer\n<< /Size ${objects.length} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
+  return new Blob([pdf],{type:'application/pdf'});
+}
 function exportQuoteRateCardPDF(id){
   let q=quoteStore().find(x=>x.id===id);
   if(!q)return alert('Quote not found.');
+
   let rows=getQuoteRateCardRows(q);
   if(!rows.length){
-    if(confirm('This is a legacy quote and its quote-specific Rate Card snapshot is not stored in this record.\n\nYour master Rate Cards are still saved. Click OK to edit this quote and re-select the Rate Card once; after Submit, PDF export will work permanently for this quote.')){
+    if(confirm(`No quote-specific Rate Card snapshot is stored for ${q.name} yet.\n\nClick OK to edit this quote and re-select the Rate Card once. After Submit, PDF export will work permanently.`)){
       editSubmittedQuote(id);
     }
     return;
   }
 
-  if(!window.jspdf?.jsPDF)return alert('PDF library has not loaded yet. Please refresh the page and try again.');
-  const {jsPDF}=window.jspdf;
-  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const filename=`${q.name}'s Rate Card.pdf`;
+  if(!confirm(`Export ${q.name}'s Rate Card as PDF?`))return;
 
-  // Letterhead artwork
-  try{doc.addImage(RATECARD_TOP_BAND,'JPEG',112,0,98,48);}catch(e){}
-  try{doc.addImage(RATECARD_LOGO,'JPEG',15,10,24,41);}catch(e){}
+  try{
+    const blob=buildStandaloneRateCardPdf(q,rows);
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;
+    a.download=filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),1500);
 
-  const quoteType=q.quoteType||q.snapshot?.v?.quoteType||'New Quote';
-  const title=quoteType==='Contract Renewal'
-    ? `${q.name} – Contract Renewal Rate Card`
-    : `${q.name} – Rate Card`;
-
-  doc.setTextColor(7,61,105);
-  doc.setFont('helvetica','bold');
-  doc.setFontSize(20);
-  doc.text(title,48,24);
-  doc.setFontSize(10);
-  doc.setFont('helvetica','normal');
-  doc.setTextColor(80,105,123);
-  doc.text('Commercial Rate Schedule',48,31);
-
-  doc.setDrawColor(214,228,236);
-  doc.line(15,57,195,57);
-
-  doc.setFontSize(9);
-  doc.setTextColor(80,105,123);
-  doc.text(`Quote ID: ${q.id}`,15,64);
-  doc.text(`Commercial model: ${q.model||'—'}`,15,69);
-  doc.text(`Quote type: ${quoteType}`,15,74);
-  doc.text(`Prepared: ${new Date().toLocaleDateString('en-AU')}`,132,64);
-
-  const body=rows.map(r=>[
-    r.code||'—',
-    r.desc||'—',
-    rateDisplay(r.rate)
-  ]);
-
-  doc.autoTable({
-    startY:82,
-    head:[['Code','Service','Rate']],
-    body,
-    theme:'grid',
-    styles:{font:'helvetica',fontSize:9,cellPadding:3.2,textColor:[23,50,70],lineColor:[214,228,236],lineWidth:.25},
-    headStyles:{fillColor:[7,61,105],textColor:[255,255,255],fontStyle:'bold'},
-    columnStyles:{0:{cellWidth:28},1:{cellWidth:112},2:{cellWidth:35,halign:'right'}},
-    margin:{left:15,right:15},
-    didDrawPage:function(){
-      try{doc.addImage(RATECARD_BOTTOM_BAND,'JPEG',0,272,112,25);}catch(e){}
-      doc.setFontSize(7.5);
-      doc.setTextColor(95,112,125);
-      doc.text('Rates are subject to agreed commercial terms and applicable Austco Polar Cold Storage Terms & Conditions.',15,267);
+    // record export for audit/history
+    let all=quoteStore(),i=all.findIndex(x=>x.id===id);
+    if(i>=0){
+      all[i].lastRateCardExportedAt=nowISO();
+      addHistory(all[i],'Rate Card Exported',filename);
+      putQuotes(all);
     }
-  });
 
-  const filename=`${safeFileName(q.name)}_${quoteType==='Contract Renewal'?'Contract_Renewal_':''}Rate_Card_${new Date().toISOString().slice(0,10)}.pdf`;
-  doc.save(filename);
+    setTimeout(()=>alert(`Export complete.\n\nFile saved as: ${filename}`),120);
+  }catch(err){
+    console.error(err);
+    alert('The Rate Card could not be exported. Please try again.');
+  }
 }
 
 function esc(v){return String(v??'').replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
