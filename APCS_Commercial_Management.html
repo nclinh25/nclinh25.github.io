@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>APCS Commercial Management</title>
-<!-- BUILD: Quote Type + Standalone PDF v4 | edit restored | 2026-09-30 --><style>
+<!-- BUILD: Quote Type + Standalone PDF v5 | centred export modal | 2026-09-30 --><style>
 :root{--navy:#073d69;--blue:#0b6ea8;--purple:#7057c8;--teal:#16847a;--bg:#eef5f9;--line:#d6e4ec;--text:#173246;--muted:#6d8494}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,"Segoe UI",Arial;background:linear-gradient(#f8fbfd,#edf4f8);color:var(--text)}
 header{height:72px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 24px;position:sticky;top:0;z-index:30}.brand b{font-size:18px;color:#0b416c}.brand small{display:block;color:var(--muted);font-size:11px}.nav{margin-left:auto;height:100%;display:flex}.nav button{border:0;background:transparent;padding:0 20px;font-weight:650;color:#50697b;cursor:pointer;border-bottom:3px solid transparent}.nav button:hover{color:#075f98;background:#f6fbfe}.nav button:active{background:#e2f1f9}.nav button.on{color:#075f98;border-bottom-color:#0b78b8;background:#eef7fc}.navGroup{position:relative;height:100%;display:flex;align-items:stretch}.navGroup>.navMain{height:100%}.navDrop{display:none;position:absolute;top:68px;right:0;min-width:205px;background:#fff;border:1px solid var(--line);border-radius:0 0 10px 10px;box-shadow:0 10px 25px #12384d24;padding:7px;z-index:60}.navGroup:hover .navDrop,.navGroup:focus-within .navDrop{display:block}.navDrop button{display:block;width:100%;height:42px;padding:0 13px!important;text-align:left;border:0!important;border-radius:7px;background:#fff!important;color:#416278!important}.navDrop button:hover{background:#eef7fc!important;color:#075f98!important}.navDrop button.subon{background:#e5f3fb!important;color:#075f98!important;font-weight:750}.navMain .chev{font-size:10px;margin-left:6px}
@@ -105,6 +105,21 @@ input, textarea, select, [contenteditable="true"] { user-select: text; -webkit-u
 .editQuoteBtn:hover{background:#edf7fc;border-color:#9fc4d8}
 .editQuoteBtn svg{width:18px;height:18px}.workflowActions{display:flex;align-items:center;gap:7px;flex-wrap:nowrap}.workflowActions .iconbtn{width:38px;height:38px;display:inline-flex;align-items:center;justify-content:center;font-size:17px}
 .rateInclude{width:17px;height:17px;accent-color:#0b6ea8}
+
+
+.appModal{position:fixed;inset:0;background:rgba(10,32,48,.42);display:none;align-items:center;justify-content:center;z-index:9999;padding:20px}
+.appModal.on{display:flex}
+.appModalCard{width:min(460px,96vw);background:#fff;border:1px solid #d6e4ec;border-radius:18px;box-shadow:0 24px 70px rgba(12,52,76,.26);overflow:hidden;animation:modalPop .16s ease-out}
+@keyframes modalPop{from{transform:translateY(8px) scale(.985);opacity:.5}to{transform:none;opacity:1}}
+.appModalHead{display:flex;align-items:center;gap:12px;padding:20px 22px 12px}
+.appModalIcon{width:42px;height:42px;border-radius:12px;background:#eef7fc;color:#075f98;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.appModalIcon.success{background:#eaf8ef;color:#08783d}
+.appModalIcon svg{width:22px;height:22px}
+.appModalTitle{font-size:18px;font-weight:800;color:#173246}
+.appModalBody{padding:0 22px 20px;color:#536b7b;font-size:13px;line-height:1.55}
+.appModalFile{margin-top:12px;padding:10px 12px;border:1px solid #d6e4ec;border-radius:10px;background:#f8fbfd;color:#173246;font-weight:700;word-break:break-word}
+.appModalActions{display:flex;justify-content:flex-end;gap:10px;padding:14px 22px 20px;background:#fbfdfe;border-top:1px solid #e5eef3}
+.appModalActions .btn{min-width:96px}
 
 </style>
 
@@ -670,20 +685,60 @@ function buildStandaloneRateCardPdf(q,rows){
   pdf+=`trailer\n<< /Size ${objects.length} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
   return new Blob([pdf],{type:'application/pdf'});
 }
+
+let pendingRateCardExportId=null;
+
+function closeRateCardExportModal(){
+  pendingRateCardExportId=null;
+  const m=$('rateCardExportModal');
+  if(m){m.classList.remove('on');m.setAttribute('aria-hidden','true')}
+}
+function closeRateCardSuccessModal(){
+  const m=$('rateCardSuccessModal');
+  if(m){m.classList.remove('on');m.setAttribute('aria-hidden','true')}
+}
+function showRateCardSuccess(filename){
+  $('rateCardSuccessFile').textContent=filename;
+  const m=$('rateCardSuccessModal');
+  m.classList.add('on');m.setAttribute('aria-hidden','false');
+}
 function exportQuoteRateCardPDF(id){
   let q=quoteStore().find(x=>x.id===id);
-  if(!q)return alert('Quote not found.');
+  if(!q)return;
 
   let rows=getQuoteRateCardRows(q);
   if(!rows.length){
-    if(confirm(`No quote-specific Rate Card snapshot is stored for ${q.name} yet.\n\nClick OK to edit this quote and re-select the Rate Card once. After Submit, PDF export will work permanently.`)){
-      editSubmittedQuote(id);
-    }
+    // Legacy quote: use the existing edit workflow instead of a browser alert.
+    pendingRateCardExportId=id;
+    $('rateCardExportTitle').textContent='Rate Card details required';
+    $('rateCardExportMessage').innerHTML=`This older quote does not contain a quote-specific Rate Card snapshot yet.<br><br>Please edit <b>${esc(q.name)}</b>, select the services/rates to include and submit the quote once. After that, PDF export will work permanently.`;
+    $('rateCardExportFile').textContent='No saved Rate Card snapshot';
+    const modal=$('rateCardExportModal');
+    const actions=modal.querySelector('.appModalActions');
+    actions.innerHTML=`<button class="btn" onclick="closeRateCardExportModal()">Cancel</button><button class="btn primary" onclick="closeRateCardExportModal();editSubmittedQuote('${q.id}')">Edit Quote</button>`;
+    modal.classList.add('on');modal.setAttribute('aria-hidden','false');
     return;
   }
 
+  pendingRateCardExportId=id;
   const filename=`${q.name}'s Rate Card.pdf`;
-  if(!confirm(`Export ${q.name}'s Rate Card as PDF?`))return;
+  $('rateCardExportTitle').textContent='Export Rate Card';
+  $('rateCardExportMessage').innerHTML=`Export the selected Rate Card for <b>${esc(q.name)}</b> as a PDF?`;
+  $('rateCardExportFile').textContent=filename;
+  const modal=$('rateCardExportModal');
+  const actions=modal.querySelector('.appModalActions');
+  actions.innerHTML=`<button class="btn" onclick="closeRateCardExportModal()">Cancel</button><button class="btn primary" onclick="confirmRateCardExport()">Export PDF</button>`;
+  modal.classList.add('on');modal.setAttribute('aria-hidden','false');
+}
+function confirmRateCardExport(){
+  const id=pendingRateCardExportId;
+  if(!id)return;
+  const q=quoteStore().find(x=>x.id===id);
+  if(!q){closeRateCardExportModal();return}
+  const rows=getQuoteRateCardRows(q);
+  if(!rows.length){closeRateCardExportModal();return}
+
+  const filename=`${q.name}'s Rate Card.pdf`;
 
   try{
     const blob=buildStandaloneRateCardPdf(q,rows);
@@ -691,12 +746,12 @@ function exportQuoteRateCardPDF(id){
     const a=document.createElement('a');
     a.href=url;
     a.download=filename;
+    a.style.display='none';
     document.body.appendChild(a);
     a.click();
     a.remove();
-    setTimeout(()=>URL.revokeObjectURL(url),1500);
+    setTimeout(()=>URL.revokeObjectURL(url),2500);
 
-    // record export for audit/history
     let all=quoteStore(),i=all.findIndex(x=>x.id===id);
     if(i>=0){
       all[i].lastRateCardExportedAt=nowISO();
@@ -704,10 +759,19 @@ function exportQuoteRateCardPDF(id){
       putQuotes(all);
     }
 
-    setTimeout(()=>alert(`Export complete.\n\nFile saved as: ${filename}`),120);
+    closeRateCardExportModal();
+    setTimeout(()=>showRateCardSuccess(filename),120);
   }catch(err){
     console.error(err);
-    alert('The Rate Card could not be exported. Please try again.');
+    closeRateCardExportModal();
+    // Reuse centred modal for errors as well.
+    $('rateCardExportTitle').textContent='Export failed';
+    $('rateCardExportMessage').textContent='The PDF could not be created. Please refresh the page and try again.';
+    $('rateCardExportFile').textContent='';
+    const modal=$('rateCardExportModal');
+    const actions=modal.querySelector('.appModalActions');
+    actions.innerHTML=`<button class="btn primary" onclick="closeRateCardExportModal()">Close</button>`;
+    modal.classList.add('on');modal.setAttribute('aria-hidden','false');
   }
 }
 
@@ -802,4 +866,53 @@ function markStarted(qid){let a=quoteStore(),q=a.find(x=>x.id===qid);if(!q)retur
 ['Portmark','Label','Shrinkwrap','Handstack','Mix product','Single product','Temp logger'].forEach(x=>$('extras').insertAdjacentHTML('beforeend',`<label><input type=checkbox><span>${x}</span></label>`));
 migrateWorkflow();migrateQuoteTypeAndRateCardV2();if(!restore()){addRec();addRoom()}renderQuotes();renderOnboarding();prodUI();loadUI();calc();requestAnimationFrame(()=>{renderList();renderRatePage()});document.addEventListener('input',e=>{if(e.target.closest('#quote'))calc()});document.addEventListener('change',e=>{if(e.target.closest('#quote'))calc()});
 // v7.1 clean workflow: Draft -> Pending -> Won/Lost; Won derives onboarding directly from quote record
-</script></body></html>
+</script>
+<div id="rateCardExportModal" class="appModal" aria-hidden="true">
+  <div class="appModalCard" role="dialog" aria-modal="true" aria-labelledby="rateCardExportTitle">
+    <div class="appModalHead">
+      <div class="appModalIcon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/>
+          <path d="M12 11v6"/><path d="m9.5 14.5 2.5 2.5 2.5-2.5"/>
+        </svg>
+      </div>
+      <div>
+        <div id="rateCardExportTitle" class="appModalTitle">Export Rate Card</div>
+        <div class="hint">Confirm PDF export</div>
+      </div>
+    </div>
+    <div class="appModalBody">
+      <div id="rateCardExportMessage"></div>
+      <div id="rateCardExportFile" class="appModalFile"></div>
+    </div>
+    <div class="appModalActions">
+      <button class="btn" onclick="closeRateCardExportModal()">Cancel</button>
+      <button class="btn primary" onclick="confirmRateCardExport()">Export PDF</button>
+    </div>
+  </div>
+</div>
+
+<div id="rateCardSuccessModal" class="appModal" aria-hidden="true">
+  <div class="appModalCard" role="dialog" aria-modal="true">
+    <div class="appModalHead">
+      <div class="appModalIcon success">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M20 6 9 17l-5-5"/>
+        </svg>
+      </div>
+      <div>
+        <div class="appModalTitle">Rate Card exported</div>
+        <div class="hint">PDF created successfully</div>
+      </div>
+    </div>
+    <div class="appModalBody">
+      <div>The Rate Card has been exported successfully.</div>
+      <div id="rateCardSuccessFile" class="appModalFile"></div>
+    </div>
+    <div class="appModalActions">
+      <button class="btn primary" onclick="closeRateCardSuccessModal()">Done</button>
+    </div>
+  </div>
+</div>
+
+</body></html>
