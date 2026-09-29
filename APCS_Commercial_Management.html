@@ -1,5 +1,6 @@
 <!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>APCS_Commercial_Managment</title><style>
+<title>APCS Commercial Management</title>
+<!-- BUILD: Quote Type + Rate Card PDF v2 | 2026-09-29 --><style>
 :root{--navy:#073d69;--blue:#0b6ea8;--purple:#7057c8;--teal:#16847a;--bg:#eef5f9;--line:#d6e4ec;--text:#173246;--muted:#6d8494}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,"Segoe UI",Arial;background:linear-gradient(#f8fbfd,#edf4f8);color:var(--text)}
 header{height:72px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 24px;position:sticky;top:0;z-index:30}.brand b{font-size:18px;color:#0b416c}.brand small{display:block;color:var(--muted);font-size:11px}.nav{margin-left:auto;height:100%;display:flex}.nav button{border:0;background:transparent;padding:0 20px;font-weight:650;color:#50697b;cursor:pointer;border-bottom:3px solid transparent}.nav button:hover{color:#075f98;background:#f6fbfe}.nav button:active{background:#e2f1f9}.nav button.on{color:#075f98;border-bottom-color:#0b78b8;background:#eef7fc}.navGroup{position:relative;height:100%;display:flex;align-items:stretch}.navGroup>.navMain{height:100%}.navDrop{display:none;position:absolute;top:68px;right:0;min-width:205px;background:#fff;border:1px solid var(--line);border-radius:0 0 10px 10px;box-shadow:0 10px 25px #12384d24;padding:7px;z-index:60}.navGroup:hover .navDrop,.navGroup:focus-within .navDrop{display:block}.navDrop button{display:block;width:100%;height:42px;padding:0 13px!important;text-align:left;border:0!important;border-radius:7px;background:#fff!important;color:#416278!important}.navDrop button:hover{background:#eef7fc!important;color:#075f98!important}.navDrop button.subon{background:#e5f3fb!important;color:#075f98!important;font-weight:750}.navMain .chev{font-size:10px;margin-left:6px}
@@ -99,7 +100,7 @@ input, textarea, select, [contenteditable="true"] { user-select: text; -webkit-u
 .pdfBtn{width:34px;height:34px;padding:0;display:inline-flex;align-items:center;justify-content:center;border:1px solid #cfe0ea;border-radius:9px;background:#fff;color:#b42318;cursor:pointer}
 .pdfBtn:hover{background:#fff4f3;border-color:#efb5b0}
 .pdfBtn:disabled{opacity:.35;cursor:not-allowed}
-.pdfBtn svg{width:17px;height:17px}
+.pdfBtn svg{width:17px;height:17px}.workflowActions{display:flex;align-items:center;gap:7px;flex-wrap:nowrap}
 .rateInclude{width:17px;height:17px;accent-color:#0b6ea8}
 
 </style>
@@ -460,8 +461,7 @@ function shortDate(v){if(!v)return '—';let d=new Date(v);return isNaN(d)?v:d.t
 function shortDateTime(v){if(!v)return '—';let d=new Date(v);return isNaN(d)?v:d.toLocaleString('en-AU',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}
 function priorLost(q){return (q.history||[]).some(h=>h.event==='Lost')}
 function pdfIconButton(q){
-  let disabled=!(Array.isArray(q.selectedRateCard)&&q.selectedRateCard.length);
-  return `<button class=pdfBtn title="${disabled?'No selected Rate Card saved yet':'Export Rate Card PDF'}" ${disabled?'disabled':''} onclick="${disabled?'return false':`exportQuoteRateCardPDF('${q.id}')`}">
+  return `<button class=pdfBtn title="Export Rate Card PDF" onclick="exportQuoteRateCardPDF('${q.id}')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 15h2.2a1.7 1.7 0 0 0 0-3.4H8V18M14 18v-6.4h1.8c1.8 0 3 1.2 3 3.2s-1.2 3.2-3 3.2H14"/></svg>
   </button>`;
 }
@@ -503,11 +503,29 @@ function rateDisplay(v){
   let n=Number(v);
   return isFinite(n)?'$'+n.toLocaleString('en-AU',{minimumFractionDigits:2,maximumFractionDigits:4}):String(v);
 }
+function getQuoteRateCardRows(q){
+  let selected=Array.isArray(q.selectedRateCard)?q.selectedRateCard.filter(x=>x.rate!==''&&x.rate!=null):[];
+  if(selected.length)return selected;
+
+  let sr=q.suggestedRates||{};
+  let ids=Object.keys(sr).filter(id=>sr[id]!==''&&sr[id]!=null);
+  if(ids.length){
+    let all=(q.model==='Tenant')
+      ?[{id:'RENT',code:'RENT',desc:'Rent',type:'Tenant',section:'Tenant Rate Card'},
+        {id:'OUT',code:'OUT',desc:'Outgoings',type:'Tenant',section:'Tenant Rate Card'}]
+      :(typeof SERVICES!=='undefined'?SERVICES:[]);
+    return ids.map(id=>{
+      let s=all.find(x=>x.id===id)||{id,code:id,desc:id,type:'',section:''};
+      return {id,code:s.code||id,desc:s.desc||id,type:s.type||'',section:s.section||'',rate:sr[id]};
+    });
+  }
+  return [];
+}
 function exportQuoteRateCardPDF(id){
   let q=quoteStore().find(x=>x.id===id);
   if(!q)return alert('Quote not found.');
-  let rows=Array.isArray(q.selectedRateCard)?q.selectedRateCard.filter(x=>x.rate!==''&&x.rate!=null):[];
-  if(!rows.length)return alert('No selected Rate Card services are saved for this quote.');
+  let rows=getQuoteRateCardRows(q);
+  if(!rows.length)return alert('This existing quote does not yet have a saved Rate Card. Open/recreate the quote once, select the services to include, and submit it to save the Rate Card snapshot.');
 
   if(!window.jspdf?.jsPDF)return alert('PDF library has not loaded yet. Please refresh the page and try again.');
   const {jsPDF}=window.jspdf;
@@ -629,6 +647,25 @@ function migrateWorkflow(){
     localStorage.setItem('apcs_cm_clean_bootstrap_v1',new Date().toISOString());
   }
 }
+
+function migrateQuoteTypeAndRateCardV2(){
+  let a=quoteStore(),changed=false;
+  a.forEach(q=>{
+    if(!q.quoteType){
+      q.quoteType=q.snapshot?.v?.quoteType||'New Quote';
+      changed=true;
+    }
+    // Keep the form snapshot aligned so legacy records also reopen consistently.
+    q.snapshot=q.snapshot||{};
+    q.snapshot.v=q.snapshot.v||{};
+    if(!q.snapshot.v.quoteType){
+      q.snapshot.v.quoteType=q.quoteType;
+      changed=true;
+    }
+  });
+  if(changed)putQuotes(a);
+}
+
 function onboardingState(o){let total=o.tasks.length,done=o.tasks.filter(t=>t.done).length,pct=total?Math.round(done/total*100):100,label=pct===100?'Ready to Start':'In Progress';return{total,done,pct,label}}
 function onboardingRows(){let a=quoteStore(),changed=false,rows=[];a.forEach(q=>{let qt=q.quoteType||q.snapshot?.v?.quoteType||'New Quote';if(q.status==='Won'&&qt!=='Contract Renewal'){if(!q.onboarding){q.onboarding=defaultOnboarding(q);changed=true}let o=q.onboarding;if(!o.completedAt)rows.push({q,o})}});if(changed)putQuotes(a);return rows.sort((a,b)=>(a.q.expectedStartDate||'9999').localeCompare(b.q.expectedStartDate||'9999'))}
 function renderOnboarding(){if(!$('onboardingTable'))return;let rows=onboardingRows();$('onboardingTable').innerHTML=rows.length?`<table class=workflowTable><thead><tr><th>Customer</th><th>Type</th><th>Expected Start</th><th>Won Date</th><th>Progress</th><th>Status</th><th></th></tr></thead><tbody>${rows.map(({q,o})=>{let s=onboardingState(o);return `<tr><td><button class=custName onclick="openOnboarding('${q.id}')">${esc(q.name)}</button></td><td>${q.model}</td><td>${shortDate(q.expectedStartDate)}</td><td>${shortDateTime(q.wonDate)}</td><td><b>${s.done}/${s.total}</b> · ${s.pct}%</td><td><span class="statusBadge ${s.pct===100?'ready':''}">${s.label}</span></td><td><button class=btn onclick="openOnboarding('${q.id}')">Open</button></td></tr>`}).join('')}</tbody></table>`:'<div class=mutedEmpty>No customers are currently onboarding.</div>'}
@@ -638,6 +675,6 @@ function addTask(qid){let a=quoteStore(),q=a.find(x=>x.id===qid);if(!q)return;en
 function deleteTask(qid,tid){let a=quoteStore(),q=a.find(x=>x.id===qid);if(!q||!confirm('Delete this onboarding task?'))return;q.onboarding.tasks=q.onboarding.tasks.filter(x=>x.id!==tid);q.updatedAt=nowISO();putQuotes(a);renderOnboarding();openOnboarding(qid)}
 function markStarted(qid){let a=quoteStore(),q=a.find(x=>x.id===qid);if(!q)return;let o=ensureOnboarding(q),s=onboardingState(o);if(s.pct!==100){alert('All onboarding tasks must be completed first.');return}if(!confirm(`Mark ${q.name} as Started and move the customer to Active Customers?`))return;let t=nowISO(),today=t.slice(0,10);o.completedAt=t;o.status='Completed';q.actualStartDate=t;q.updatedAt=t;addHistory(q,'Onboarding Completed','Moved to Active Customers');putQuotes(a);let c=customCustomers(),exists=(c[q.model]||[]).some(x=>x.customer===q.name);if(!exists){c[q.model].push({customer:q.name,account:q.name});localStorage.setItem('apcs_customers_v4',JSON.stringify(c))}let st=profiles(),key=q.model+'|'+q.name+'|'+q.name;if(!st[key])st[key]={commence:today,status:'Active',notes:'Created from completed onboarding.',rates:{}};localStorage.setItem('apcs_profiles_v4',JSON.stringify(st));renderOnboarding();$('onboardingDetail').innerHTML='';renderList();renderRatePage();alert(`${q.name} onboarding is complete. View the customer in Our Customers → Active Customers.`);go('profile')}
 ['Portmark','Label','Shrinkwrap','Handstack','Mix product','Single product','Temp logger'].forEach(x=>$('extras').insertAdjacentHTML('beforeend',`<label><input type=checkbox><span>${x}</span></label>`));
-migrateWorkflow();if(!restore()){addRec();addRoom()}renderQuotes();renderOnboarding();prodUI();loadUI();calc();requestAnimationFrame(()=>{renderList();renderRatePage()});document.addEventListener('input',e=>{if(e.target.closest('#quote'))calc()});document.addEventListener('change',e=>{if(e.target.closest('#quote'))calc()});
+migrateWorkflow();migrateQuoteTypeAndRateCardV2();if(!restore()){addRec();addRoom()}renderQuotes();renderOnboarding();prodUI();loadUI();calc();requestAnimationFrame(()=>{renderList();renderRatePage()});document.addEventListener('input',e=>{if(e.target.closest('#quote'))calc()});document.addEventListener('change',e=>{if(e.target.closest('#quote'))calc()});
 // v7.1 clean workflow: Draft -> Pending -> Won/Lost; Won derives onboarding directly from quote record
 </script></body></html>
