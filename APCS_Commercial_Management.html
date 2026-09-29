@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>APCS Commercial Management</title>
-<!-- BUILD: Quote Type + Rate Card PDF v2 | 2026-09-29 --><style>
+<!-- BUILD: Quote Type + Rate Card PDF v3 | legacy recovery + pending edit | 2026-09-29 --><style>
 :root{--navy:#073d69;--blue:#0b6ea8;--purple:#7057c8;--teal:#16847a;--bg:#eef5f9;--line:#d6e4ec;--text:#173246;--muted:#6d8494}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,"Segoe UI",Arial;background:linear-gradient(#f8fbfd,#edf4f8);color:var(--text)}
 header{height:72px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 24px;position:sticky;top:0;z-index:30}.brand b{font-size:18px;color:#0b416c}.brand small{display:block;color:var(--muted);font-size:11px}.nav{margin-left:auto;height:100%;display:flex}.nav button{border:0;background:transparent;padding:0 20px;font-weight:650;color:#50697b;cursor:pointer;border-bottom:3px solid transparent}.nav button:hover{color:#075f98;background:#f6fbfe}.nav button:active{background:#e2f1f9}.nav button.on{color:#075f98;border-bottom-color:#0b78b8;background:#eef7fc}.navGroup{position:relative;height:100%;display:flex;align-items:stretch}.navGroup>.navMain{height:100%}.navDrop{display:none;position:absolute;top:68px;right:0;min-width:205px;background:#fff;border:1px solid var(--line);border-radius:0 0 10px 10px;box-shadow:0 10px 25px #12384d24;padding:7px;z-index:60}.navGroup:hover .navDrop,.navGroup:focus-within .navDrop{display:block}.navDrop button{display:block;width:100%;height:42px;padding:0 13px!important;text-align:left;border:0!important;border-radius:7px;background:#fff!important;color:#416278!important}.navDrop button:hover{background:#eef7fc!important;color:#075f98!important}.navDrop button.subon{background:#e5f3fb!important;color:#075f98!important;font-weight:750}.navMain .chev{font-size:10px;margin-left:6px}
@@ -100,7 +100,7 @@ input, textarea, select, [contenteditable="true"] { user-select: text; -webkit-u
 .pdfBtn{width:34px;height:34px;padding:0;display:inline-flex;align-items:center;justify-content:center;border:1px solid #cfe0ea;border-radius:9px;background:#fff;color:#b42318;cursor:pointer}
 .pdfBtn:hover{background:#fff4f3;border-color:#efb5b0}
 .pdfBtn:disabled{opacity:.35;cursor:not-allowed}
-.pdfBtn svg{width:17px;height:17px}.workflowActions{display:flex;align-items:center;gap:7px;flex-wrap:nowrap}
+.pdfBtn svg{width:17px;height:17px}.workflowActions{display:flex;align-items:center;gap:7px;flex-wrap:nowrap}.workflowActions .iconbtn{width:38px;height:38px;display:inline-flex;align-items:center;justify-content:center;font-size:17px}
 .rateInclude{width:17px;height:17px;accent-color:#0b6ea8}
 
 </style>
@@ -411,6 +411,7 @@ function acceptSuggestion(){
     q.quoteType=q.quoteType||q.snapshot?.v?.quoteType||'New Quote';
     q.suggestedRates={};
     q.selectedRateCard=[];
+    q.rateCardSource=chosenMatch?.x?{customer:chosenMatch.x.customer,account:chosenMatch.x.account}:q.rateCardSource||null;
     document.querySelectorAll('.sugrate').forEach(i=>{
       q.suggestedRates[i.dataset.id]=i.value;
       let cb=document.querySelector(`.rateInclude[data-id="${i.dataset.id}"]`);
@@ -455,6 +456,33 @@ function autoSave(){if(suppressAutosave)return;clearTimeout(timer);$('saveState'
 function clearQuoteForm(){suppressAutosave=true;clearTimeout(timer);document.querySelectorAll('#quote input,#quote textarea').forEach(e=>{if(e.type==='checkbox')e.checked=false;else e.value=''});document.querySelectorAll('#quote select').forEach(e=>e.selectedIndex=0);$('recRows').innerHTML='';$('roomRows').innerHTML='';addRec();addRoom();qmode('3PL');if($('quoteType'))$('quoteType').value='New Quote';$('draftName').textContent='Untitled draft · 3PL';$('saveState').textContent='Ready for a new quote';prodUI();loadUI();calc();suppressAutosave=false}
 function newQuote(){currentQuoteId=null;localStorage.removeItem('apcs_cm_current_quote_v1');clearQuoteForm();go('quote')}
 function loadQuote(id){let q=quoteStore().find(x=>x.id===id);if(!q){alert('This quote could not be found.');return}if(q.stage!=='Draft'){alert('Submitted quotes are records. Use the status actions in Quote List.');go('quotes');return}go('quote');currentQuoteId=id;localStorage.setItem('apcs_cm_current_quote_v1',id);let s=q.snapshot||{};qmode(s.qm||q.model||'3PL');$('recRows').innerHTML=s.rec||'';$('roomRows').innerHTML=s.rooms||'';Object.entries(s.v||{}).forEach(([k,v])=>{let e=$(k);if(e){if(e.type==='checkbox')e.checked=!!v;else e.value=v??''}});if(!$('recRows').children.length)addRec();if(!$('roomRows').children.length)addRoom();$('draftName').textContent=(q.name||'Untitled quote')+' · '+(q.model||'3PL');$('saveState').textContent='Draft loaded — continue editing';prodUI();loadUI();calc();window.scrollTo({top:0,behavior:'smooth'})}
+
+function editSubmittedQuote(id){
+  let q=quoteStore().find(x=>x.id===id);
+  if(!q){alert('This quote could not be found.');return}
+  if(q.stage!=='Submitted'||q.status!=='Pending'){openRecordMenu(id);return}
+  go('quote');
+  currentQuoteId=id;
+  localStorage.setItem('apcs_cm_current_quote_v1',id);
+  let s=q.snapshot||{};
+  suppressAutosave=true;
+  qmode(s.qm||q.model||'3PL');
+  $('recRows').innerHTML=s.rec||'';
+  $('roomRows').innerHTML=s.rooms||'';
+  Object.entries(s.v||{}).forEach(([k,v])=>{
+    let e=$(k);
+    if(e){if(e.type==='checkbox')e.checked=!!v;else e.value=v??''}
+  });
+  if($('quoteType'))$('quoteType').value=q.quoteType||s.v?.quoteType||'New Quote';
+  if(!$('recRows').children.length)addRec();
+  if(!$('roomRows').children.length)addRoom();
+  $('draftName').textContent=(q.name||'Untitled quote')+' · '+(q.model||'3PL');
+  $('saveState').textContent='Editing submitted quote — Submit again to save changes';
+  suppressAutosave=false;
+  prodUI();loadUI();calc();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
 function restore(){let q=currentQuoteId&&quoteStore().find(x=>x.id===currentQuoteId&&x.stage==='Draft');if(q){loadQuote(q.id);return true}currentQuoteId=null;localStorage.removeItem('apcs_cm_current_quote_v1');return false}
 function setQuoteFilter(btn,f){quoteFilter=f;document.querySelectorAll('.qfilter').forEach(x=>x.classList.toggle('on',x===btn));renderQuotes()}
 function shortDate(v){if(!v)return '—';let d=new Date(v);return isNaN(d)?v:d.toLocaleDateString('en-AU')}
@@ -479,7 +507,7 @@ function renderQuotes(){
           actions=q.stage==='Draft'
             ?`<button class=btn onclick="loadQuote('${q.id}')">Continue</button>${pdf}<button class="btn dangerBtn" onclick="deleteQuote('${q.id}')">Delete</button>`
             :q.status==='Pending'
-              ?`${pdf}<button class="btn wonBtn decisionBtn" onclick="changeQuoteStatus('${q.id}','Won',this)">Won</button><button class="btn dangerBtn decisionBtn" onclick="changeQuoteStatus('${q.id}','Lost',this)">Lost</button>`
+              ?`<button class="iconbtn" title="Edit quote" onclick="editSubmittedQuote('${q.id}')">✎</button>${pdf}<button class="btn wonBtn decisionBtn" onclick="changeQuoteStatus('${q.id}','Won',this)">Won</button><button class="btn dangerBtn decisionBtn" onclick="changeQuoteStatus('${q.id}','Lost',this)">Lost</button>`
               :`${pdf}<button class="iconbtn" title="Manage record" onclick="openRecordMenu('${q.id}')">✎</button>`;
       return `<tr data-quote-id="${q.id}">
         <td><b>${esc(q.name||'Untitled quote')}</b><div class=hint>${q.id}</div>${hist}</td>
@@ -507,17 +535,30 @@ function getQuoteRateCardRows(q){
   let selected=Array.isArray(q.selectedRateCard)?q.selectedRateCard.filter(x=>x.rate!==''&&x.rate!=null):[];
   if(selected.length)return selected;
 
-  let sr=q.suggestedRates||{};
-  let ids=Object.keys(sr).filter(id=>sr[id]!==''&&sr[id]!=null);
-  if(ids.length){
-    let all=(q.model==='Tenant')
-      ?[{id:'RENT',code:'RENT',desc:'Rent',type:'Tenant',section:'Tenant Rate Card'},
-        {id:'OUT',code:'OUT',desc:'Outgoings',type:'Tenant',section:'Tenant Rate Card'}]
-      :(typeof SERVICES!=='undefined'?SERVICES:[]);
-    return ids.map(id=>{
-      let s=all.find(x=>x.id===id)||{id,code:id,desc:id,type:'',section:''};
-      return {id,code:s.code||id,desc:s.desc||id,type:s.type||'',section:s.section||'',rate:sr[id]};
-    });
+  let all=(q.model==='Tenant')
+    ?[{id:'RENT',code:'RENT',desc:'Rent',type:'Tenant',section:'Tenant Rate Card'},
+      {id:'OUT',code:'OUT',desc:'Outgoings',type:'Tenant',section:'Tenant Rate Card'}]
+    :(typeof SERVICES!=='undefined'?SERVICES:[]);
+
+  // Legacy quote versions saved the edited suggested rates here.
+  let candidates=[
+    q.suggestedRates,
+    q.rateCard,
+    q.rates,
+    q.snapshot?.suggestedRates,
+    q.snapshot?.rates,
+    q.snapshot?.v?.suggestedRates,
+    q.snapshot?.v?.rates
+  ].filter(x=>x&&typeof x==='object'&&!Array.isArray(x));
+
+  for(let sr of candidates){
+    let ids=Object.keys(sr).filter(id=>sr[id]!==''&&sr[id]!=null&&!Number.isNaN(Number(sr[id])));
+    if(ids.length){
+      return ids.map(id=>{
+        let s=all.find(x=>x.id===id)||{id,code:id,desc:id,type:'',section:''};
+        return {id,code:s.code||id,desc:s.desc||id,type:s.type||'',section:s.section||'',rate:sr[id]};
+      });
+    }
   }
   return [];
 }
@@ -525,7 +566,12 @@ function exportQuoteRateCardPDF(id){
   let q=quoteStore().find(x=>x.id===id);
   if(!q)return alert('Quote not found.');
   let rows=getQuoteRateCardRows(q);
-  if(!rows.length)return alert('This existing quote does not yet have a saved Rate Card. Open/recreate the quote once, select the services to include, and submit it to save the Rate Card snapshot.');
+  if(!rows.length){
+    if(confirm('This is a legacy quote and its quote-specific Rate Card snapshot is not stored in this record.\n\nYour master Rate Cards are still saved. Click OK to edit this quote and re-select the Rate Card once; after Submit, PDF export will work permanently for this quote.')){
+      editSubmittedQuote(id);
+    }
+    return;
+  }
 
   if(!window.jspdf?.jsPDF)return alert('PDF library has not loaded yet. Please refresh the page and try again.');
   const {jsPDF}=window.jspdf;
