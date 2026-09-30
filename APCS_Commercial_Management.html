@@ -5,7 +5,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>APCS Commercial Management</title>
-<!-- BUILD: 25 | active billing basis header + quote/profile notes + keyword matching | final CHEP logic | Supabase REST --><style>
+<!-- BUILD: 26 | sidebar billing basis + section 5 notes/comments + max 3 compressed photos | Supabase REST --><style>
 :root{--navy:#073d69;--blue:#0b6ea8;--purple:#7057c8;--teal:#16847a;--bg:#eef5f9;--line:#d6e4ec;--text:#173246;--muted:#6d8494}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,"Segoe UI",Arial;background:linear-gradient(#f8fbfd,#edf4f8);color:var(--text)}
 header{height:72px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 24px;position:sticky;top:0;z-index:30}.brand b{font-size:18px;color:#0b416c}.brand small{display:block;color:var(--muted);font-size:11px}.nav{margin-left:auto;height:100%;display:flex}.nav button{border:0;background:transparent;padding:0 20px;font-weight:650;color:#50697b;cursor:pointer;border-bottom:3px solid transparent}.nav button:hover{color:#075f98;background:#f6fbfe}.nav button:active{background:#e2f1f9}.nav button.on{color:#075f98;border-bottom-color:#0b78b8;background:#eef7fc}.navGroup{position:relative;height:100%;display:flex;align-items:stretch}.navGroup>.navMain{height:100%}.navDrop{display:none;position:absolute;top:68px;right:0;min-width:205px;background:#fff;border:1px solid var(--line);border-radius:0 0 10px 10px;box-shadow:0 10px 25px #12384d24;padding:7px;z-index:60}.navGroup:hover .navDrop,.navGroup:focus-within .navDrop{display:block}.navDrop button{display:block;width:100%;height:42px;padding:0 13px!important;text-align:left;border:0!important;border-radius:7px;background:#fff!important;color:#416278!important}.navDrop button:hover{background:#eef7fc!important;color:#075f98!important}.navDrop button.subon{background:#e5f3fb!important;color:#075f98!important;font-weight:750}.navMain .chev{font-size:10px;margin-left:6px}
@@ -211,6 +211,21 @@ input, textarea, select, [contenteditable="true"] { user-select: text; -webkit-u
 </style>
 
 
+
+<style>
+.custTopLine{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.custTopLine .custName{min-width:0;text-align:left}
+.basisMini{width:112px;min-width:112px;padding:5px 7px!important;font-size:10px!important;border-radius:8px!important;height:30px!important}
+.quoteAttachGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:10px}
+.quoteAttachCard{position:relative;border:1px solid #cbdde8;border-radius:10px;overflow:hidden;background:#f8fbfd;min-height:110px}
+.quoteAttachCard img{display:block;width:100%;height:120px;object-fit:cover}
+.quoteAttachMeta{padding:7px 9px;font-size:10px;color:#5d7687;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.quoteAttachRemove{position:absolute;right:6px;top:6px;width:25px;height:25px;border:none;border-radius:50%;background:rgba(255,255,255,.94);color:#b42318;font-weight:800;cursor:pointer;box-shadow:0 1px 5px rgba(0,0,0,.16)}
+.quoteUploadBox{border:1px dashed #b7cfdd;border-radius:10px;padding:12px;background:#f8fbfd}
+.quoteUploadBox input[type=file]{font-size:11px}
+@media(max-width:900px){.quoteAttachGrid{grid-template-columns:1fr}.basisMini{width:104px;min-width:104px}}
+</style>
+
 </head><body>
 <header><div class=brand><b>Austco Polar Cold Storage</b><small>Commercial Management</small></div><div class=nav><button id=nrate class=on onclick="go('rate')">Rate Card</button><div class=navGroup><button id=nquotesMain class=navMain onclick="go('quotes')">Quotes <span class=chev>▼</span></button><div class=navDrop><button id=subquote onclick="go('quote')">Create Quote</button><button id=subquotes onclick="go('quotes')">Quote List</button></div></div><div class=navGroup><button id=ncustomersMain class=navMain onclick="go('onboarding')">Our Customers <span class=chev>▼</span></button><div class=navDrop><button id=subonboarding onclick="go('onboarding')">Onboarding Customers</button><button id=subprofile onclick="go('profile')">Active Customers</button></div></div></div></header>
 
@@ -234,11 +249,6 @@ input, textarea, select, [contenteditable="true"] { user-select: text; -webkit-u
     <input id=qname placeholder="Customer name">
   </div>
 </div>
-<div style="margin-top:12px">
-  <label>QUOTE / MATCHING NOTES</label>
-  <textarea id=qNotes rows="3" placeholder="Add useful commercial or operational notes, e.g. seafood export to Israel, long-term ad hoc storage, daily dispatch, seasonal volume…"></textarea>
-  <div class=hint>These notes are saved with the quote, carried into the Active Customer profile, and used as keyword signals when finding similar customer profiles.</div>
-</div>
 </div>
 <div id=q3>
 <div class=card><h2>1. Receivable</h2><div class=info>Each receivable line is an <b>AND</b> condition. Add another line only when there is another receivable pattern.</div><div id=recRows></div><button class=btn style="margin-top:10px" onclick=addRec()>+ Add receivable condition</button><div id=recSummary class=summary></div>
@@ -251,6 +261,24 @@ input, textarea, select, [contenteditable="true"] { user-select: text; -webkit-u
 <div class=card><h2>2. Occupancy & contract</h2><div class=grid><div><label>Bills</label><select id=bills><option value="">Select…</option><option>Tenant pays</option><option>Included in rent</option></select></div><div><label>Parking?</label><select id=parking><option value="">Select…</option><option>No</option><option>Yes</option></select></div><div><label>Parking lots</label><input id=lots type=number></div><div><label>Contract length (years)</label><input id=years type=number></div></div></div>
 <div class=card><h2>3. Tenant pricing</h2><div class=grid><div><label>Base $/m²/year</label><input id=baseRent type=number placeholder="Editable assumption"></div><div><label>Outgoings $/m²/year</label><input id=outgoings type=number placeholder="Editable assumption"></div><div><label>Dedicated cold room premium %</label><input id=coldPrem type=number></div><div><label>Annual CPI clause %</label><input id=tenantCpi type=number></div></div></div>
 <div class=card><h2>4. Capacity check</h2><div class=g3><div><label>3PL onboarding in next 3–6 months?</label><select id=future3pl><option value="">Select…</option><option>No</option><option>Yes</option><option>Not sure</option></select></div><div><label>Expected pallets</label><input id=futurePal type=number></div><div><label>Utilisation</label><div class=info id=util>—</div></div></div><div id=draftWarn class="info warn hide" style="margin-top:10px">Draft only: future 3PL demand is uncertain. Recheck capacity before finalising.</div></div></div>
+
+<div class=card><h2>5. Notes, Comments & Attachments</h2>
+<div class=g2>
+  <div>
+    <label>Notes / comments</label>
+    <textarea id=qNotes rows="5" placeholder="Commercial context, customer requests, special conditions, operational notes, follow-up comments…"></textarea>
+    <div class=hint>Saved with the quote. Note keywords are also used as an additional customer-matching signal and, if Won, the note is carried into the customer profile for future matching.</div>
+  </div>
+  <div>
+    <label>Photo attachments</label>
+    <div class=quoteUploadBox>
+      <input id=qPhotoInput type=file accept="image/*" multiple onchange="handleQuotePhotos(this)">
+      <div class=hint style="margin-top:6px">Maximum 3 photos. Images are compressed before saving so they can stay with the quote record.</div>
+    </div>
+    <div id=qPhotoGrid class=quoteAttachGrid></div>
+  </div>
+</div>
+</div>
 
 <div class=card><h2>Quote summary</h2><div class=kpis><div class=kpi><small>Monthly revenue</small><b id=monthly>—</b></div><div class=kpi><small>Annual revenue</small><b id=annual>—</b></div><div class=kpi><small id=thirdLabel>Top revenue area</small><b id=thirdKpi>—</b></div><div class=kpi><small id=coverLabel>Pipeline budget coverage</small><b id=coverage>—</b></div></div><div class=insights><div class=insight><div class=insightHead><svg class=bulb viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 18h6M10 22h4M8.2 14.8C6.8 13.7 6 12 6 10a6 6 0 1 1 12 0c0 2-.8 3.7-2.2 4.8-.8.7-1.3 1.5-1.5 2.2H9.7c-.2-.7-.7-1.5-1.5-2.2Z"/></svg><span>Commercial insights</span></div><ul><li id=ins1>Complete the quote to assess ad-hoc vs ongoing.</li><li id=ins2>Complete the quote to identify the highest-revenue area.</li><li id=ins3>Complete the quote to identify extra revenue opportunities and operational complexity.</li></ul></div></div></div>
 <div class=bar><div><b id=draftName>Untitled draft</b><div class=hint>Autosaves in this browser.</div></div><div><button class="btn primary" onclick=submitQuote()>Submit</button> <button class=btn onclick=saveDraft()>Save Draft</button></div></div></div>
@@ -429,7 +457,52 @@ function profiles(){return JSON.parse(localStorage.getItem('apcs_profiles_v4')||
 function deletedCustomers(){return JSON.parse(localStorage.getItem('apcs_deleted_customers_v1')||'{"3PL":[],"Tenant":[]}')}
 function allCustomers(model){let deleted=deletedCustomers()[model]||[];return (model==='3PL'?C3:CT).concat(customCustomers()[model]||[]).filter(x=>!deleted.includes(pkey(x,model)))} function pkey(x,model=pm){return model+'|'+x.customer+'|'+x.account}
 function selectCustomerByKey(key){let x=allCustomers(pm).find(c=>pkey(c)===key);if(!x)return;selected=x;renderList();renderProfile()}
-function renderList(){let arr=allCustomers(pm),s=($('searchCust').value||'').toLowerCase();$('custList').innerHTML='';arr.filter(x=>(x.customer+' '+x.account).toLowerCase().includes(s)).forEach(x=>{let d=document.createElement('div');d.className='cust'+(selected&&pkey(selected)===pkey(x)?' on':'');let b=document.createElement('button');b.type='button';b.className='custName';b.textContent=x.customer;b.onclick=()=>selectCustomerByKey(pkey(x));let sm=document.createElement('small');sm.textContent=x.account+' · '+pm;d.appendChild(b);d.appendChild(sm);$('custList').appendChild(d)});if(selected&&!arr.some(x=>pkey(x)===pkey(selected)))selected=null;if(!selected&&arr.length){selected=arr[0];renderList();renderProfile()}else if(!arr.length){$('profileDetail').innerHTML='<div class=hint>No customers in this model.</div>'}}
+function renderList(){
+  let arr=allCustomers(pm),s=($('searchCust').value||'').toLowerCase(),st=profiles();
+  $('custList').innerHTML='';
+  arr.filter(x=>(x.customer+' '+x.account).toLowerCase().includes(s)).forEach(x=>{
+    let d=document.createElement('div');
+    d.className='cust'+(selected&&pkey(selected)===pkey(x)?' on':'');
+
+    let top=document.createElement('div');
+    top.className='custTopLine';
+
+    let b=document.createElement('button');
+    b.type='button';b.className='custName';b.textContent=x.customer;
+    b.onclick=()=>selectCustomerByKey(pkey(x));
+
+    top.appendChild(b);
+
+    if(pm==='3PL'){
+      let sel=document.createElement('select');
+      sel.className='basisMini';
+      sel.title='Billing basis';
+      sel.innerHTML='<option value="">Basis…</option><option value="Carton">Carton</option><option value="Pallet">Pallet</option>';
+      sel.value=st[pkey(x,pm)]?.billingBasis||'';
+      sel.onclick=e=>e.stopPropagation();
+      sel.onchange=e=>{e.stopPropagation();updateCustomerBillingBasis(x,e.target.value)};
+      top.appendChild(sel);
+    }
+
+    let sm=document.createElement('small');
+    sm.textContent=x.account+' · '+pm;
+
+    d.appendChild(top);d.appendChild(sm);$('custList').appendChild(d);
+  });
+
+  if(selected&&!arr.some(x=>pkey(x)===pkey(selected)))selected=null;
+  if(!selected&&arr.length){selected=arr[0];renderList();renderProfile()}
+  else if(!arr.length){$('profileDetail').innerHTML='<div class=hint>No customers in this model.</div>'}
+}
+function updateCustomerBillingBasis(customer,value){
+  if(pm!=='3PL')return;
+  let st=profiles(),k=pkey(customer,pm),p=st[k]||{};
+  p.billingBasis=value||'';
+  st[k]=p;
+  localStorage.setItem('apcs_profiles_v4',JSON.stringify(st));
+  if(selected&&pkey(selected)===k&&$('pBillingBasis'))$('pBillingBasis').value=value||'';
+  renderRatePage();
+}
 function addCustomer(){
   showInputModal({title:'Add Customer',label:'Customer name',confirmText:'Next',onConfirm:(n)=>{
     if(!n)return;
@@ -512,12 +585,8 @@ function addServiceCharge(){if(!$('newDesc').value)return;saveCurrentProfile(fal
 function removeCustom(id){saveCurrentProfile(false);let st=profiles(),p=st[pkey(selected)]||{};p.customServices=(p.customServices||[]).filter(x=>x.id!==id);if(p.rates)delete p.rates[id];st[pkey(selected)]=p;localStorage.setItem('apcs_profiles_v4',JSON.stringify(st));renderProfile()}
 function updateProfileBillingBasis(value){
   if(!selected||pm!=='3PL')return;
-  let st=profiles(),k=pkey(selected),p=st[k]||{};
-  p.billingBasis=value||'';
-  st[k]=p;
-  localStorage.setItem('apcs_profiles_v4',JSON.stringify(st));
-  renderRatePage();
-  appNotice(`Billing basis updated to ${value||'Not selected'} for ${selected.customer}.`,'Billing basis updated','success');
+  updateCustomerBillingBasis(selected,value);
+  renderList();
 }
 function saveCurrentProfile(show=true){if(!selected)return;let st=profiles(),old=st[pkey(selected)]||{},p={...old,commence:$('pComm').value,cpi:$('pCpi').value,effectiveDate:$('pEffective').value,status:$('pStatus').value,notes:$('pNotes').value,rates:{...(old.rates||{})},rateNotes:{...(old.rateNotes||{})}};document.querySelectorAll('.prate').forEach(x=>p.rates[x.dataset.id]=x.value);document.querySelectorAll('.pnote').forEach(x=>p.rateNotes[x.dataset.id]=x.value);if(pm==='3PL'){let extras=[...document.querySelectorAll('#pExtras input:checked')].map(x=>x.value);Object.assign(p,{billingBasis:$('pBillingBasis').value,recType:$('pRecType').value,recSize:$('pRecType').value==='Container'?$('pRecSize').value:'',recQty:$('pRecQty').value,recEvery:$('pRecEvery').value,recUnit:$('pRecUnit').value,product:$('pProd').value,scan:$('pProd').value==='Frozen'?$('pScan').value:'',scanPct:$('pProd').value==='Frozen'&&$('pScan').value==='Yes'?$('pScanPct').value:'',blastPct:$('pProd').value==='Blast'?$('pBlastPct').value:'',mix:$('pMix').value,holdN:$('pHoldN').value,holdU:$('pHoldU').value,loEvery:$('pLoEvery').value,loUnit:$('pLoUnit').value,domestic:$('pDomestic').value,exportMarket:$('pExport').value,exportSize:$('pExport').value==='Yes'?[...document.querySelectorAll('#pExportSizeBox input:checked')].map(x=>x.value):[],country:$('pExport').value==='Yes'?$('pCountry').value:'',extras,report:$('pReport').value});}else {let rooms=[...document.querySelectorAll('#pRooms input:checked')].map(x=>x.value);Object.assign(p,{rooms,location:$('pLoc').value,afterHours:$('pAfter').value,parking:$('pParking').value,parkingCount:$('pParking').value==='Yes'?$('pParkingCount').value:'',billsIncluded:$('pBillsIncluded').value,contract:$('pContract').value,area:$('pArea').value});p.rates.RENT=$('pRent').value;p.rates.OUT=$('pBillsIncluded').value==='Yes'?$('pOut').value:'';}st[pkey(selected)]=p;localStorage.setItem('apcs_profiles_v4',JSON.stringify(st));renderRatePage();if(show)appNotice('Profile saved. Rate Card updated.','Profile saved','success')}
 function renderRatePage(){renderRateTable()}
@@ -1317,6 +1386,48 @@ function restoreSnapshotValues(s){
   });
 }
 let currentQuoteId=localStorage.getItem('apcs_cm_current_quote_v1')||null,quoteFilter='All';
+let quotePhotos=[];
+function renderQuotePhotos(){
+  const host=$('qPhotoGrid');if(!host)return;
+  host.innerHTML=(quotePhotos||[]).map((p,i)=>`<div class=quoteAttachCard>
+    <button type=button class=quoteAttachRemove title="Remove photo" onclick="removeQuotePhoto(${i})">×</button>
+    <img src="${p.data}" alt="${esc(p.name||'Quote attachment')}">
+    <div class=quoteAttachMeta>${esc(p.name||`Photo ${i+1}`)}</div>
+  </div>`).join('');
+}
+function removeQuotePhoto(i){
+  quotePhotos.splice(i,1);renderQuotePhotos();autoSave();
+}
+function compressQuotePhoto(file){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onerror=reject;
+    reader.onload=()=>{
+      const img=new Image();
+      img.onerror=reject;
+      img.onload=()=>{
+        const max=1200,scale=Math.min(1,max/Math.max(img.width,img.height));
+        const w=Math.max(1,Math.round(img.width*scale)),h=Math.max(1,Math.round(img.height*scale));
+        const cv=document.createElement('canvas');cv.width=w;cv.height=h;
+        cv.getContext('2d').drawImage(img,0,0,w,h);
+        resolve({name:file.name||'photo.jpg',type:'image/jpeg',data:cv.toDataURL('image/jpeg',.72)});
+      };
+      img.src=reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+async function handleQuotePhotos(input){
+  const files=[...(input.files||[])].filter(f=>String(f.type||'').startsWith('image/'));
+  const remaining=Math.max(0,3-quotePhotos.length);
+  if(!remaining){appNotice('Maximum 3 photos are allowed per quote.','Attachment limit','warning');input.value='';return}
+  if(files.length>remaining)appNotice(`Only ${remaining} more photo${remaining===1?'':'s'} can be added. Maximum 3 per quote.`,'Attachment limit','warning');
+  for(const f of files.slice(0,remaining)){
+    try{quotePhotos.push(await compressQuotePhoto(f))}
+    catch(e){console.error(e);appNotice(`Could not add ${f.name}.`,'Photo upload failed','warning')}
+  }
+  input.value='';renderQuotePhotos();autoSave();
+}
 const WORKFLOW_VERSION='1.0-clean';
 function quoteStore(){try{return JSON.parse(localStorage.getItem('apcs_cm_quotes_v1')||'[]')}catch(e){return[]}}
 function putQuotes(a){localStorage.setItem('apcs_cm_quotes_v1',JSON.stringify(a))}
@@ -1325,19 +1436,20 @@ function quoteName(){return ($('qname').value||'').trim()||'Untitled quote'}
 function addHistory(q,event,detail=''){q.history=Array.isArray(q.history)?q.history:[];q.history.push({event,detail,at:nowISO()})}
 function defaultOnboarding(q){return{quoteId:q.id,status:'In Progress',createdAt:nowISO(),tasks:(DEFAULT_ONBOARDING[q.model]||[]).map((t,i)=>({...t,id:'T-'+Date.now()+'-'+i,done:false,dueDate:'',notes:''}))}}
 function ensureOnboarding(q){if(!q.onboarding)q.onboarding=defaultOnboarding(q);if(!Array.isArray(q.onboarding.tasks))q.onboarding.tasks=defaultOnboarding(q).tasks;return q.onboarding}
-function saveQuoteRecord(stage='Draft',status=''){let a=quoteStore(),now=nowISO(),snap=snapshot();if(!currentQuoteId)currentQuoteId='Q-'+Date.now();let i=a.findIndex(x=>x.id===currentQuoteId),old=i>=0?a[i]:{};let rec={...old,id:currentQuoteId,name:quoteName(),model:qm,quoteType:$('quoteType')?.value||old.quoteType||'New Quote',quoteNotes:($('qNotes')?.value||'').trim(),stage,status:status||(stage==='Draft'?'Draft':old.status||'Pending'),snapshot:snap,updatedAt:now,createdAt:old.createdAt||now,submittedAt:stage==='Submitted'?(old.submittedAt||now):old.submittedAt};if(!old.id)addHistory(rec,stage==='Draft'?'Draft Created':'Submitted');if(stage==='Submitted'&&old.stage!=='Submitted')addHistory(rec,'Submitted','Status set to Pending');if(rec.status!=='Won'){delete rec.expectedStartDate;delete rec.renewalEffectiveDate}if(i>=0)a[i]=rec;else a.push(rec);putQuotes(a);localStorage.setItem('apcs_cm_current_quote_v1',currentQuoteId);$('draftName').textContent=rec.name;$('saveState').textContent=stage==='Draft'?'Draft saved':'Submitted';return rec}
+function saveQuoteRecord(stage='Draft',status=''){let a=quoteStore(),now=nowISO(),snap=snapshot();if(!currentQuoteId)currentQuoteId='Q-'+Date.now();let i=a.findIndex(x=>x.id===currentQuoteId),old=i>=0?a[i]:{};let rec={...old,id:currentQuoteId,name:quoteName(),model:qm,quoteType:$('quoteType')?.value||old.quoteType||'New Quote',quoteNotes:($('qNotes')?.value||'').trim(),attachments:JSON.parse(JSON.stringify(quotePhotos||[])),stage,status:status||(stage==='Draft'?'Draft':old.status||'Pending'),snapshot:snap,updatedAt:now,createdAt:old.createdAt||now,submittedAt:stage==='Submitted'?(old.submittedAt||now):old.submittedAt};if(!old.id)addHistory(rec,stage==='Draft'?'Draft Created':'Submitted');if(stage==='Submitted'&&old.stage!=='Submitted')addHistory(rec,'Submitted','Status set to Pending');if(rec.status!=='Won'){delete rec.expectedStartDate;delete rec.renewalEffectiveDate}if(i>=0)a[i]=rec;else a.push(rec);putQuotes(a);localStorage.setItem('apcs_cm_current_quote_v1',currentQuoteId);$('draftName').textContent=rec.name;$('saveState').textContent=stage==='Draft'?'Draft saved':'Submitted';return rec}
 function saveDraft(){let rec=saveQuoteRecord('Draft','Draft');renderQuotes();let when=new Date(rec.updatedAt).toLocaleString('en-AU',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true});$('draftSavedMessage').innerHTML=`<b>${esc(rec.name||'Untitled draft')}</b> has been saved to Quotes on <b>${when}</b>.<br><span class=hint>You can continue this draft later from Quotes → Quote List → Drafts.</span>`;$('draftSavedModal').classList.add('on')}
 function finishDraftSave(){$('draftSavedModal').classList.remove('on');currentQuoteId=null;localStorage.removeItem('apcs_cm_current_quote_v1');clearQuoteForm()}
 function autoSave(){if(suppressAutosave)return;clearTimeout(timer);$('saveState').textContent='Autosaving…';timer=setTimeout(()=>{if(!currentQuoteId)return;let a=quoteStore(),existing=a.find(x=>x.id===currentQuoteId);if(existing&&existing.stage==='Draft')saveQuoteRecord('Draft','Draft')},250)}
-function clearQuoteForm(){suppressAutosave=true;clearTimeout(timer);document.querySelectorAll('#quote input,#quote textarea').forEach(e=>{if(e.type==='checkbox')e.checked=false;else e.value=''});document.querySelectorAll('#quote select').forEach(e=>e.selectedIndex=0);$('recRows').innerHTML='';$('roomRows').innerHTML='';addRec();addRoom();qmode('3PL');if($('quoteType'))$('quoteType').value='New Quote';$('draftName').textContent='Untitled draft · 3PL';$('saveState').textContent='Ready for a new quote';prodUI();loadUI();calc();suppressAutosave=false}
+function clearQuoteForm(){suppressAutosave=true;quotePhotos=[];clearTimeout(timer);document.querySelectorAll('#quote input,#quote textarea').forEach(e=>{if(e.type==='checkbox')e.checked=false;else e.value=''});document.querySelectorAll('#quote select').forEach(e=>e.selectedIndex=0);$('recRows').innerHTML='';$('roomRows').innerHTML='';addRec();addRoom();qmode('3PL');if($('quoteType'))$('quoteType').value='New Quote';$('draftName').textContent='Untitled draft · 3PL';$('saveState').textContent='Ready for a new quote';prodUI();loadUI();calc();renderQuotePhotos();suppressAutosave=false}
 function newQuote(){currentQuoteId=null;localStorage.removeItem('apcs_cm_current_quote_v1');clearQuoteForm();go('quote')}
-function loadQuote(id){let q=quoteStore().find(x=>x.id===id);if(!q){appNotice('This quote could not be found.','Quote not found','warning');return}if(q.stage!=='Draft'){appNotice('Submitted quotes are records. Use the status actions in Quote List.','Submitted quote','info');go('quotes');return}go('quote');currentQuoteId=id;localStorage.setItem('apcs_cm_current_quote_v1',id);let s=q.snapshot||{};qmode(s.qm||q.model||'3PL');$('recRows').innerHTML=s.rec||'';$('roomRows').innerHTML=s.rooms||'';if(!$('recRows').children.length)addRec();if(!$('roomRows').children.length)addRoom();restoreSnapshotValues(s);$('draftName').textContent=(q.name||'Untitled quote')+' · '+(q.model||'3PL');$('saveState').textContent='Draft loaded — continue editing';prodUI();loadUI();calc();window.scrollTo({top:0,behavior:'smooth'})}
+function loadQuote(id){let q=quoteStore().find(x=>x.id===id);if(!q){appNotice('This quote could not be found.','Quote not found','warning');return}if(q.stage!=='Draft'){appNotice('Submitted quotes are records. Use the status actions in Quote List.','Submitted quote','info');go('quotes');return}go('quote');currentQuoteId=id;quotePhotos=JSON.parse(JSON.stringify(q.attachments||[]));localStorage.setItem('apcs_cm_current_quote_v1',id);let s=q.snapshot||{};qmode(s.qm||q.model||'3PL');$('recRows').innerHTML=s.rec||'';$('roomRows').innerHTML=s.rooms||'';if(!$('recRows').children.length)addRec();if(!$('roomRows').children.length)addRoom();restoreSnapshotValues(s);$('draftName').textContent=(q.name||'Untitled quote')+' · '+(q.model||'3PL');$('saveState').textContent='Draft loaded — continue editing';prodUI();loadUI();calc();renderQuotePhotos();window.scrollTo({top:0,behavior:'smooth'})}
 
 function editSubmittedQuote(id){
   let q=quoteStore().find(x=>x.id===id);
   if(!q){appNotice('This quote could not be found.','Quote not found','warning');return}
   if(q.stage!=='Submitted'||q.status!=='Pending'){openRecordMenu(id);return}
   go('quote');
+  quotePhotos=JSON.parse(JSON.stringify(q.attachments||[]));
   currentQuoteId=id;
   localStorage.setItem('apcs_cm_current_quote_v1',id);
   let s=q.snapshot||{};
@@ -1352,7 +1464,7 @@ function editSubmittedQuote(id){
   $('draftName').textContent=(q.name||'Untitled quote')+' · '+(q.model||'3PL');
   $('saveState').textContent='Editing submitted quote — Submit again to save changes';
   suppressAutosave=false;
-  prodUI();loadUI();calc();
+  prodUI();loadUI();calc();renderQuotePhotos();
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
@@ -1383,7 +1495,7 @@ function renderQuotes(){
               ?`<button class="editQuoteBtn" title="Edit quote" aria-label="Edit quote" onclick="editSubmittedQuote('${q.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg></button>${pdf}<button class="btn wonBtn decisionBtn" onclick="changeQuoteStatus('${q.id}','Won',this)">Won</button><button class="btn dangerBtn decisionBtn" onclick="changeQuoteStatus('${q.id}','Lost',this)">Lost</button>`
               :`${pdf}<button class="editQuoteBtn" title="Manage record" aria-label="Manage record" onclick="openRecordMenu('${q.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg></button>`;
       return `<tr data-quote-id="${q.id}">
-        <td><b>${esc(q.name||'Untitled quote')}</b><div class=hint>${q.id}</div>${hist}</td>
+        <td><b>${esc(q.name||'Untitled quote')}</b><div class=hint>${q.id}${q.quoteNotes?' · note saved':''}${(q.attachments||[]).length?` · ${(q.attachments||[]).length} photo${(q.attachments||[]).length===1?'':'s'}`:''}</div>${hist}</td>
         <td>${q.model||'—'}</td>
         <td><span class="statusBadge ${display.toLowerCase()}">${display}</span></td>
         <td><span class="quoteTypeBadge ${qt==='Contract Renewal'?'renewal':''}">${esc(qt)}</span></td>
