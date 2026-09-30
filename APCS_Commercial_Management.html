@@ -1,11 +1,6 @@
 <!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 
 
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <script>
 (async function(){
   const BUILD='17';
@@ -27,8 +22,33 @@
 })();
 </script>
 
+
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<script>
+(async function(){
+  const BUILD='18';
+  try{
+    if('serviceWorker' in navigator){
+      const regs=await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r=>r.unregister()));
+    }
+    if('caches' in window){
+      const keys=await caches.keys();
+      await Promise.all(keys.map(k=>caches.delete(k)));
+    }
+  }catch(e){}
+  const u=new URL(location.href);
+  if(u.searchParams.get('build')!==BUILD){
+    u.searchParams.set('build',BUILD);
+    location.replace(u.toString());
+  }
+})();
+</script>
+
 <title>APCS Commercial Management</title>
-<!-- BUILD: 17 | Supabase + 90% match/no-match + new-customer scenario classification --><style>
+<!-- BUILD: 18 | Supabase synced | cache-busted | new-customer scenario logic --><style>
 :root{--navy:#073d69;--blue:#0b6ea8;--purple:#7057c8;--teal:#16847a;--bg:#eef5f9;--line:#d6e4ec;--text:#173246;--muted:#6d8494}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,"Segoe UI",Arial;background:linear-gradient(#f8fbfd,#edf4f8);color:var(--text)}
 header{height:72px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 24px;position:sticky;top:0;z-index:30}.brand b{font-size:18px;color:#0b416c}.brand small{display:block;color:var(--muted);font-size:11px}.nav{margin-left:auto;height:100%;display:flex}.nav button{border:0;background:transparent;padding:0 20px;font-weight:650;color:#50697b;cursor:pointer;border-bottom:3px solid transparent}.nav button:hover{color:#075f98;background:#f6fbfe}.nav button:active{background:#e2f1f9}.nav button.on{color:#075f98;border-bottom-color:#0b78b8;background:#eef7fc}.navGroup{position:relative;height:100%;display:flex;align-items:stretch}.navGroup>.navMain{height:100%}.navDrop{display:none;position:absolute;top:68px;right:0;min-width:205px;background:#fff;border:1px solid var(--line);border-radius:0 0 10px 10px;box-shadow:0 10px 25px #12384d24;padding:7px;z-index:60}.navGroup:hover .navDrop,.navGroup:focus-within .navDrop{display:block}.navDrop button{display:block;width:100%;height:42px;padding:0 13px!important;text-align:left;border:0!important;border-radius:7px;background:#fff!important;color:#416278!important}.navDrop button:hover{background:#eef7fc!important;color:#075f98!important}.navDrop button.subon{background:#e5f3fb!important;color:#075f98!important;font-weight:750}.navMain .chev{font-size:10px;margin-left:6px}
@@ -167,7 +187,7 @@ input, textarea, select, [contenteditable="true"] { user-select: text; -webkit-u
 .inputModalField{width:100%;border:1px solid #c9dce7;border-radius:10px;padding:11px 12px;font:inherit;color:#173246;background:#fff;outline:none}
 .inputModalField:focus{border-color:#0b78b8;box-shadow:0 0 0 3px rgba(11,120,184,.10)}
 .inputModalLabel{font-size:11px;font-weight:750;color:#587184;margin:0 0 6px;display:block;text-transform:uppercase;letter-spacing:.02em}
-.buildTag{position:fixed;right:12px;bottom:12px;z-index:50;font-size:9px;color:#7890a0;background:rgba(255,255,255,.92);border:1px solid #dbe7ee;border-radius:999px;padding:4px 8px;pointer-events:none}
+
 
 
 .globalModal{position:fixed;inset:0;background:rgba(8,29,44,.48);display:none;align-items:center;justify-content:center;z-index:99999;padding:20px}
@@ -180,7 +200,7 @@ input, textarea, select, [contenteditable="true"] { user-select: text; -webkit-u
 .globalModalBody{padding:0 22px 20px;color:#526b7c;font-size:13px;line-height:1.55;white-space:pre-line}
 .globalModalActions{display:flex;justify-content:flex-end;gap:10px;padding:14px 22px 20px;border-top:1px solid #e6eef3;background:#fbfdfe}
 .globalModalActions .btn{min-width:96px}
-.buildBanner{position:fixed;right:12px;bottom:12px;z-index:9999;background:#073d69;color:#fff;border-radius:999px;padding:5px 10px;font-size:10px;font-weight:700;box-shadow:0 4px 18px rgba(7,61,105,.25)}
+
 
 
 .dbStatus{
@@ -295,13 +315,13 @@ async function bootstrapDatabase(){
   if(!data||!data.length){
     let rows=[];for(let i=0;i<localStorage.length;i++){let k=localStorage.key(i);if(k&&k.startsWith('apcs_'))rows.push({state_key:k,raw_value:localStorage.getItem(k)||'',updated_at:new Date().toISOString()})}
     if(rows.length){let r=await APCS_DB.from('app_state').upsert(rows,{onConflict:'state_key'});if(r.error){console.error(r.error);dbBadge('Database migration error',false);return}}
-    dbBadge('Database connected');return
+    dbBadge('Database synced');return
   }
   apcsHydrating=true;let changed=false,remote=new Set(data.map(r=>r.state_key));
   data.forEach(r=>{if(localStorage.getItem(r.state_key)!==r.raw_value){APCS_NATIVE_SET.call(localStorage,r.state_key,r.raw_value);changed=true}});
   let localKeys=[];for(let i=0;i<localStorage.length;i++){let k=localStorage.key(i);if(k&&k.startsWith('apcs_'))localKeys.push(k)}
   localKeys.forEach(k=>{if(!remote.has(k)){APCS_NATIVE_REMOVE.call(localStorage,k);changed=true}});
-  apcsHydrating=false;dbBadge('Database connected');
+  apcsHydrating=false;dbBadge('Database synced');
   if(changed&&sessionStorage.getItem('apcs_db_reload')!=='1'){sessionStorage.setItem('apcs_db_reload','1');location.reload()}else sessionStorage.removeItem('apcs_db_reload')
 }
 window.addEventListener('load',bootstrapDatabase);
@@ -616,28 +636,38 @@ function currentQuoteBatchPallets(){
   return qty;
 }
 function classifyScenarioBenchmark(){
-  const p=quoteOperationalPattern();
+  // IMPORTANT:
+  // Match customer = rate-card reference only.
+  // Ongoing / non-ongoing classification comes ONLY from the NEW CUSTOMER quote.
+  let recRow=document.querySelector('#recRows .row');
+  let recEvery=Number(recRow?.querySelector('.rf')?.value)||0;
+  let recUnit=recRow?.querySelector('.ru')?.value||'';
+  let recDays=profileDays(recEvery,recUnit);
 
-  // Classification is based ONLY on the new customer's requested operating pattern.
-  // A long gap between receipts / dispatches is treated as ad hoc / non-ongoing.
-  const recDays=p.recDays||0;
-  const loadDays=p.loadDays||0;
+  let loEvery=Number($('loFreq')?.value)||0;
+  let loUnit=$('loUnit')?.value||'';
+  let loadDays=profileDays(loEvery,loUnit);
 
+  // If either movement cycle is very infrequent (>45 days), treat as non-ongoing/ad hoc.
+  // Example: every 4 months = ~120 days => Non-Ongoing.
   if((recDays&&recDays>45)||(loadDays&&loadDays>45)){
     return {
       type:'non-ongoing',
-      reason:`The new customer's requested movement pattern is low-frequency${recDays?` (receivable approximately every ${Math.round(recDays)} days)`:''}, which is closer to an ad hoc / non-ongoing profile. The matched customer is used only as a rate-card reference.`
+      reason:`The new customer's requested movement pattern is low-frequency${recDays?` (receivable approximately every ${Math.round(recDays)} days)`:''}, so the 3-month non-ongoing benchmark is the closer comparison. The matched customer is used only as a rate-card reference.`
     };
   }
+
+  // Regular movement at least every ~45 days is treated as ongoing.
   if((recDays&&recDays<=45)||(loadDays&&loadDays<=45)){
     return {
       type:'ongoing',
-      reason:`The new customer's requested movement pattern is recurring${recDays?` (receivable approximately every ${Math.round(recDays)} days)`:''}, which is closer to an ongoing profile. The matched customer is used only as a rate-card reference.`
+      reason:`The new customer's requested movement pattern is recurring${recDays?` (receivable approximately every ${Math.round(recDays)} days)`:''}, so the 1-month ongoing benchmark is the closer comparison. The matched customer is used only as a rate-card reference.`
     };
   }
+
   return {
     type:'non-ongoing',
-    reason:'The new customer does not show a regular recurring movement pattern, so the non-ongoing benchmark is the safer comparison. The matched customer is used only as a rate-card reference.'
+    reason:'The new customer does not show a regular recurring movement pattern, so the 3-month non-ongoing benchmark is used. The matched customer is used only as a rate-card reference.'
   };
 }
 function selectedRateValue(code){
@@ -1714,7 +1744,7 @@ migrateWorkflow();migratePendingStartDatesV13();migrateQuoteTypeAndRateCardV2();
     <div id="globalModalActions" class="globalModalActions"></div>
   </div>
 </div>
-<div class="buildBanner">BUILD 17 · NEW CUSTOMER LOGIC</div>
+
 
 <div id="apcsDbStatus" class="dbStatus">Database connecting…</div>
 
