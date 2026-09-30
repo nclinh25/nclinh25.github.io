@@ -5,7 +5,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>APCS Commercial Management</title>
-<!-- BUILD: 35 FINAL | visible PDF CPI | quote merge-safe Supabase sync | quote backups --><style>
+<!-- BUILD: 36 FINAL | stable named receivable snapshot | legacy-safe restore | quote backups --><style>
 :root{--navy:#073d69;--blue:#0b6ea8;--purple:#7057c8;--teal:#16847a;--bg:#eef5f9;--line:#d6e4ec;--text:#173246;--muted:#6d8494}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,"Segoe UI",Arial;background:linear-gradient(#f8fbfd,#edf4f8);color:var(--text)}
 header{height:72px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 24px;position:sticky;top:0;z-index:30}.brand b{font-size:18px;color:#0b416c}.brand small{display:block;color:var(--muted);font-size:11px}.nav{margin-left:auto;height:100%;display:flex}.nav button{border:0;background:transparent;padding:0 20px;font-weight:650;color:#50697b;cursor:pointer;border-bottom:3px solid transparent}.nav button:hover{color:#075f98;background:#f6fbfe}.nav button:active{background:#e2f1f9}.nav button.on{color:#075f98;border-bottom-color:#0b78b8;background:#eef7fc}.navGroup{position:relative;height:100%;display:flex;align-items:stretch}.navGroup>.navMain{height:100%}.navDrop{display:none;position:absolute;top:68px;right:0;min-width:205px;background:#fff;border:1px solid var(--line);border-radius:0 0 10px 10px;box-shadow:0 10px 25px #12384d24;padding:7px;z-index:60}.navGroup:hover .navDrop,.navGroup:focus-within .navDrop{display:block}.navDrop button{display:block;width:100%;height:42px;padding:0 13px!important;text-align:left;border:0!important;border-radius:7px;background:#fff!important;color:#416278!important}.navDrop button:hover{background:#eef7fc!important;color:#075f98!important}.navDrop button.subon{background:#e5f3fb!important;color:#075f98!important;font-weight:750}.navMain .chev{font-size:10px;margin-left:6px}
@@ -513,6 +513,7 @@ async function bootstrapDatabase(){
     // Re-apply data cleanup after remote hydration, then render without reloading.
     try{
       migrateNationwideTenantProfile();
+      migrateLegacyQuoteSnapshots();
       renderQuotes();renderOnboarding();renderList();renderRatePage();
     }catch(e){console.warn('Post-sync render warning',e)}
   }catch(error){
@@ -1956,28 +1957,83 @@ function acceptSuggestion(){
   setTimeout(()=>showGlobalModal('Quote submitted successfully. It is now Pending.',{title:'Quote submitted',type:'success',confirmText:'Done'}),80)
 }
 
+function collectReceivableRows(){
+  return [...document.querySelectorAll('#recRows .row')].map(r=>({
+    receiveType:r.querySelector('.rt')?.value||'',
+    quantity:r.querySelector('.rq')?.value||'',
+    containerSize:r.querySelector('.cs')?.value||'',
+    firstLoad:r.querySelector('.fd')?.value||'',
+    frequency:r.querySelector('.rf')?.value||'',
+    frequencyUnit:r.querySelector('.ru')?.value||''
+  }));
+}
+function collectTenantRoomRows(){
+  return [...document.querySelectorAll('#roomRows .row')].map(r=>({
+    room:r.querySelector('.room')?.value||'',
+    sqm:r.querySelector('.sqm')?.value||'',
+    occupancy:r.querySelector('.ded')?.value||''
+  }));
+}
 function snapshot(){
   let v={};
   document.querySelectorAll('#quote input,#quote select,#quote textarea').forEach((e,i)=>{
+    // Keep legacy anon fields for backwards compatibility, but new dynamic
+    // row data is also saved by stable field name below.
     v[e.id||'anon'+i]=e.type==='checkbox'?e.checked:e.value
   });
-  v.qNotes=fieldText('qNotes');return{qm,v,rec:$('recRows').innerHTML,rooms:$('roomRows').innerHTML}
+  v.qNotes=fieldText('qNotes');
+  return{
+    qm,
+    v,
+    rec:$('recRows').innerHTML,
+    rooms:$('roomRows').innerHTML,
+    receivableRows:collectReceivableRows(),
+    tenantRoomRows:collectTenantRoomRows(),
+    snapshotVersion:2
+  }
 }
-function restoreSnapshotValues(s){
-  const v=s?.v||{};
-  // Restore normal fields with IDs.
-  Object.entries(v).forEach(([k,val])=>{
-    if(k.startsWith('anon'))return;
-    let e=$(k);
-    if(e){
-      if(e.type==='checkbox')e.checked=!!val;
-      else e.value=val??'';
-    }
+function setReceivableRows(rows){
+  const host=$('recRows');
+  if(!host)return;
+  host.innerHTML='';
+  const data=Array.isArray(rows)&&rows.length?rows:[{}];
+  data.forEach(d=>{
+    addRec();
+    const r=host.lastElementChild;
+    if(!r)return;
+    if(r.querySelector('.rt'))r.querySelector('.rt').value=d.receiveType??'';
+    if(r.querySelector('.rq'))r.querySelector('.rq').value=d.quantity??'';
+    if(r.querySelector('.cs'))r.querySelector('.cs').value=d.containerSize??'';
+    if(r.querySelector('.fd'))r.querySelector('.fd').value=d.firstLoad??'';
+    if(r.querySelector('.rf'))r.querySelector('.rf').value=d.frequency??'';
+    if(r.querySelector('.ru'))r.querySelector('.ru').value=d.frequencyUnit??'';
+    const type=r.querySelector('.rt')?.value||'';
+    const cbox=r.querySelector('.csizeBox');
+    const conv=r.querySelector('.conv');
+    if(cbox)cbox.classList.toggle('hide',type!=='Container');
+    if(conv)conv.textContent=type==='Truck'
+      ?'1 truck = 22 pallets'
+      :type==='Container'
+        ?'20ft = 22 pallets · 40ft = 44 pallets'
+        :'';
   });
-
-  // Dynamic Receivable / Room controls do not have IDs.
-  // snapshot() saved them as anon + their original DOM position,
-  // so restore using the exact same query order.
+}
+function setTenantRoomRows(rows){
+  const host=$('roomRows');
+  if(!host)return;
+  host.innerHTML='';
+  const data=Array.isArray(rows)&&rows.length?rows:[{}];
+  data.forEach(d=>{
+    addRoom();
+    const r=host.lastElementChild;
+    if(!r)return;
+    if(r.querySelector('.room'))r.querySelector('.room').value=d.room??'';
+    if(r.querySelector('.sqm'))r.querySelector('.sqm').value=d.sqm??'';
+    if(r.querySelector('.ded'))r.querySelector('.ded').value=d.occupancy??'';
+  });
+}
+function restoreLegacyDynamicValues(v){
+  // Legacy fallback only: older records used anon indexes.
   document.querySelectorAll('#quote input,#quote select,#quote textarea').forEach((e,i)=>{
     if(e.id)return;
     const key='anon'+i;
@@ -1986,9 +2042,40 @@ function restoreSnapshotValues(s){
       else e.value=v[key]??'';
     }
   });
+}
+function restoreSnapshotValues(s){
+  const v=s?.v||{};
 
+  // Restore stable, ID-based fields.
+  Object.entries(v).forEach(([k,val])=>{
+    if(k.startsWith('anon'))return;
+    let e=$(k);
+    if(e){
+      if(e.type==='checkbox')e.checked=!!val;
+      else e.value=val??'';
+    }
+  });
   setFieldText('qNotes',v.qNotes||'');
-  // Rebuild conditional UI inside dynamic receivable rows.
+
+  // Version 2+ uses stable named data. HTML layout changes can no longer
+  // shift receivable values into the wrong field.
+  if(Array.isArray(s?.receivableRows)){
+    setReceivableRows(s.receivableRows);
+  }else{
+    if(s?.rec)$('recRows').innerHTML=s.rec;
+    if(!$('recRows').children.length)addRec();
+    restoreLegacyDynamicValues(v);
+  }
+
+  if(Array.isArray(s?.tenantRoomRows)){
+    setTenantRoomRows(s.tenantRoomRows);
+  }else{
+    if(s?.rooms)$('roomRows').innerHTML=s.rooms;
+    if(!$('roomRows').children.length)addRoom();
+    if(!Array.isArray(s?.receivableRows))restoreLegacyDynamicValues(v);
+  }
+
+  // Rebuild conditional UI inside restored receivable rows.
   document.querySelectorAll('#recRows .row').forEach(r=>{
     const type=r.querySelector('.rt')?.value||'';
     const cbox=r.querySelector('.csizeBox');
@@ -2066,9 +2153,20 @@ function saveQuoteRecord(stage='Draft',status=''){let a=quoteStore(),now=nowISO(
 function saveDraft(){let rec=saveQuoteRecord('Draft','Draft');renderQuotes();let when=new Date(rec.updatedAt).toLocaleString('en-AU',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true});$('draftSavedMessage').innerHTML=`<b>${esc(rec.name||'Untitled draft')}</b> has been saved to Quotes on <b>${when}</b>.<br><span class=hint>You can continue this draft later from Quotes → Quote List → Drafts.</span>`;$('draftSavedModal').classList.add('on')}
 function finishDraftSave(){$('draftSavedModal').classList.remove('on');currentQuoteId=null;localStorage.removeItem('apcs_cm_current_quote_v1');clearQuoteForm()}
 function autoSave(){if(suppressAutosave)return;clearTimeout(timer);$('saveState').textContent='Autosaving…';timer=setTimeout(()=>{if(!currentQuoteId)return;let a=quoteStore(),existing=a.find(x=>x.id===currentQuoteId);if(existing&&existing.stage==='Draft')saveQuoteRecord('Draft','Draft')},250)}
+function migrateLegacyQuoteSnapshots(){
+  let a=quoteStore(),changed=false;
+  a.forEach(q=>{
+    const s=q?.snapshot;
+    if(!s||Array.isArray(s.receivableRows))return;
+    // Do not guess values here. Legacy data remains intact and is restored via its
+    // legacy path; the next successful Save/Submit automatically writes v2 named rows.
+    s.snapshotVersion=s.snapshotVersion||1;
+  });
+  if(changed)putQuotes(a);
+}
 function clearQuoteForm(){suppressAutosave=true;quotePhotos=[];clearTimeout(timer);document.querySelectorAll('#quote input,#quote textarea').forEach(e=>{if(e.type==='checkbox')e.checked=false;else e.value=''});document.querySelectorAll('#quote select').forEach(e=>e.selectedIndex=0);setFieldText('qNotes','');$('recRows').innerHTML='';$('roomRows').innerHTML='';addRec();addRoom();qmode('3PL');if($('quoteType'))$('quoteType').value='New Quote';$('draftName').textContent='Untitled draft · 3PL';$('saveState').textContent='Ready for a new quote';prodUI();loadUI();calc();renderQuotePhotos();suppressAutosave=false}
 function newQuote(){currentQuoteId=null;localStorage.removeItem('apcs_cm_current_quote_v1');clearQuoteForm();go('quote')}
-function loadQuote(id){let q=quoteStore().find(x=>x.id===id);if(!q){appNotice('This quote could not be found.','Quote not found','warning');return}if(q.stage!=='Draft'){appNotice('Submitted quotes are records. Use the status actions in Quote List.','Submitted quote','info');go('quotes');return}go('quote');currentQuoteId=id;quotePhotos=JSON.parse(JSON.stringify(q.attachments||[]));localStorage.setItem('apcs_cm_current_quote_v1',id);let s=q.snapshot||{};qmode(s.qm||q.model||'3PL');$('recRows').innerHTML=s.rec||'';$('roomRows').innerHTML=s.rooms||'';if(!$('recRows').children.length)addRec();if(!$('roomRows').children.length)addRoom();restoreSnapshotValues(s);$('draftName').textContent=(q.name||'Untitled quote')+' · '+(q.model||'3PL');$('saveState').textContent='Draft loaded — continue editing';prodUI();loadUI();calc();renderQuotePhotos();window.scrollTo({top:0,behavior:'smooth'})}
+function loadQuote(id){let q=quoteStore().find(x=>x.id===id);if(!q){appNotice('This quote could not be found.','Quote not found','warning');return}if(q.stage!=='Draft'){appNotice('Submitted quotes are records. Use the status actions in Quote List.','Submitted quote','info');go('quotes');return}go('quote');currentQuoteId=id;quotePhotos=JSON.parse(JSON.stringify(q.attachments||[]));localStorage.setItem('apcs_cm_current_quote_v1',id);let s=q.snapshot||{};qmode(s.qm||q.model||'3PL');restoreSnapshotValues(s);$('draftName').textContent=(q.name||'Untitled quote')+' · '+(q.model||'3PL');$('saveState').textContent='Draft loaded — continue editing';prodUI();loadUI();calc();renderQuotePhotos();window.scrollTo({top:0,behavior:'smooth'})}
 
 function editSubmittedQuote(id){
   let q=quoteStore().find(x=>x.id===id);
@@ -2081,10 +2179,6 @@ function editSubmittedQuote(id){
   let s=q.snapshot||{};
   suppressAutosave=true;
   qmode(s.qm||q.model||'3PL');
-  $('recRows').innerHTML=s.rec||'';
-  $('roomRows').innerHTML=s.rooms||'';
-  if(!$('recRows').children.length)addRec();
-  if(!$('roomRows').children.length)addRoom();
   restoreSnapshotValues(s);
   if($('quoteType'))$('quoteType').value=q.quoteType||s.v?.quoteType||'New Quote';
   $('draftName').textContent=(q.name||'Untitled quote')+' · '+(q.model||'3PL');
