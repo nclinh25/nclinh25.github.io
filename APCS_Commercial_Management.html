@@ -5,7 +5,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>APCS Commercial Management</title>
-<!-- BUILD: 37 FINAL | Tenant matching by nearest chargeable area only --><style>
+<!-- BUILD: 39 FINAL | Tenant nearest-area matching + legacy profile-key fallback --><style>
 :root{--navy:#073d69;--blue:#0b6ea8;--purple:#7057c8;--teal:#16847a;--bg:#eef5f9;--line:#d6e4ec;--text:#173246;--muted:#6d8494}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,"Segoe UI",Arial;background:linear-gradient(#f8fbfd,#edf4f8);color:var(--text)}
 header{height:72px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 24px;position:sticky;top:0;z-index:30}.brand b{font-size:18px;color:#0b416c}.brand small{display:block;color:var(--muted);font-size:11px}.nav{margin-left:auto;height:100%;display:flex}.nav button{border:0;background:transparent;padding:0 20px;font-weight:650;color:#50697b;cursor:pointer;border-bottom:3px solid transparent}.nav button:hover{color:#075f98;background:#f6fbfe}.nav button:active{background:#e2f1f9}.nav button.on{color:#075f98;border-bottom-color:#0b78b8;background:#eef7fc}.navGroup{position:relative;height:100%;display:flex;align-items:stretch}.navGroup>.navMain{height:100%}.navDrop{display:none;position:absolute;top:68px;right:0;min-width:205px;background:#fff;border:1px solid var(--line);border-radius:0 0 10px 10px;box-shadow:0 10px 25px #12384d24;padding:7px;z-index:60}.navGroup:hover .navDrop,.navGroup:focus-within .navDrop{display:block}.navDrop button{display:block;width:100%;height:42px;padding:0 13px!important;text-align:left;border:0!important;border-radius:7px;background:#fff!important;color:#416278!important}.navDrop button:hover{background:#eef7fc!important;color:#075f98!important}.navDrop button.subon{background:#e5f3fb!important;color:#075f98!important;font-weight:750}.navMain .chev{font-size:10px;margin-left:6px}
@@ -317,6 +317,216 @@ textarea{
 .tenantScenarioActions{margin-top:11px;display:flex;justify-content:flex-end}
 .tenantScenarioExplain{margin-top:10px;padding:10px 12px;border-radius:9px;background:#eef7fb;color:#4c6879;font-size:11px;line-height:1.5}
 @media(max-width:900px){.tenantScenarioGrid{grid-template-columns:1fr}.tenantScenarioBench{grid-template-columns:1fr 1fr}}
+</style>
+
+
+<style id="apcs-mobile-responsive">
+@media (max-width: 760px){
+  html,body{max-width:100%;overflow-x:hidden}
+  body{font-size:14px}
+
+  /* Header / navigation */
+  header{
+    height:auto;
+    min-height:64px;
+    padding:10px 12px;
+    align-items:flex-start;
+    gap:8px;
+    flex-wrap:wrap;
+  }
+  .brand{
+    width:100%;
+    padding-right:0;
+  }
+  .brand b{font-size:16px;line-height:1.15}
+  .brand small{font-size:10px}
+  .nav{
+    width:100%;
+    margin-left:0;
+    height:auto;
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:4px;
+  }
+  .navGroup{height:auto;display:block}
+  .nav button,
+  .navGroup>.navMain{
+    width:100%;
+    height:46px;
+    padding:0 8px;
+    font-size:12px;
+    line-height:1.15;
+    border-bottom-width:2px;
+  }
+  .navDrop{
+    position:fixed;
+    top:116px;
+    left:12px;
+    right:12px;
+    min-width:0;
+    border-radius:10px;
+    box-shadow:0 12px 28px #12384d33;
+  }
+
+  /* Page / hero */
+  .page{
+    width:100%;
+    max-width:none;
+    padding:12px 10px 70px;
+  }
+  .hero{
+    padding:16px;
+    border-radius:14px;
+    gap:12px;
+    align-items:center;
+  }
+  .hero h1{font-size:24px}
+  .hero p{font-size:11px;line-height:1.45}
+  .hero .iconbtn{flex:0 0 auto}
+
+  /* Cards / forms */
+  .card{
+    padding:12px;
+    border-radius:12px;
+    margin-top:10px;
+  }
+  .grid,.g2,.g3,.budget{
+    grid-template-columns:1fr !important;
+  }
+  .row{padding:10px}
+  input,select,textarea{font-size:16px} /* prevents iOS zoom */
+
+  /* Rate Card toolbar */
+  .rateToolbar{
+    display:grid !important;
+    grid-template-columns:1fr !important;
+    gap:10px !important;
+    align-items:stretch !important;
+  }
+  .rateToolbar>div{
+    width:100% !important;
+  }
+  #rateSearchBox{width:100% !important}
+
+  /* Rate card matrix: keep customer columns readable with horizontal swipe */
+  .matrixWrap{
+    width:100%;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    border-radius:10px;
+  }
+  .matrix{
+    min-width:760px;
+    font-size:10px;
+  }
+  .matrix .svc{
+    min-width:220px;
+    max-width:220px;
+    left:0;
+  }
+  .matrix th,.matrix td{padding:8px}
+  .matrix .custHead{min-width:130px;max-width:150px}
+
+  /* Tenant rate table */
+  .tenantMatrix{
+    min-width:760px;
+  }
+  #rateTableWrap{
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+
+  /* Quote list */
+  .workflowTable{
+    min-width:860px;
+  }
+  #quotesTable{
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+  .workflowActions{gap:6px}
+  .workflowActions .btn{white-space:nowrap}
+
+  /* Customer profile */
+  .profileLayout{
+    grid-template-columns:1fr;
+  }
+  .list{max-height:280px}
+  .bar{
+    position:static;
+    flex-direction:column;
+    align-items:stretch;
+    gap:10px;
+  }
+  .bar>div:last-child{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+  }
+
+  /* Matching / pricing modals */
+  .modal{
+    align-items:flex-end;
+  }
+  .modalbox{
+    width:100%;
+    max-width:none;
+    max-height:92vh;
+    border-radius:18px 18px 0 0;
+    padding:16px 12px calc(16px + env(safe-area-inset-bottom));
+  }
+  .matches{
+    grid-template-columns:1fr;
+  }
+  .tenantScenarioBench{
+    grid-template-columns:1fr 1fr !important;
+  }
+  .tenantScenarioGrid{
+    grid-template-columns:1fr !important;
+  }
+  .tenantScenarioCard{
+    padding:12px;
+  }
+  .tenantScenarioPrice{font-size:20px}
+  .nextBar{
+    position:sticky;
+    bottom:0;
+    z-index:5;
+    background:#fff;
+    padding-top:10px;
+  }
+
+  /* Scenario analysis */
+  .scenarioGrid{
+    grid-template-columns:1fr !important;
+  }
+  .scenarioCompare{
+    min-width:720px;
+  }
+  .scenarioWrap{
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+
+  /* KPI summary */
+  .kpis{
+    grid-template-columns:1fr 1fr;
+  }
+  .kpi b{font-size:17px}
+
+  /* Buttons */
+  .btn{min-height:42px}
+  .iconbtn{width:42px;height:42px}
+}
+
+@media (max-width: 430px){
+  .hero h1{font-size:22px}
+  .kpis{grid-template-columns:1fr}
+  .tenantScenarioBench{grid-template-columns:1fr !important}
+  .mode{display:grid;grid-template-columns:1fr 1fr}
+  .mode button{padding:0 10px}
+  .nav button,.navGroup>.navMain{font-size:11px}
+}
 </style>
 
 </head><body>
@@ -874,6 +1084,23 @@ function noteKeywordMatchScore(quoteNote,profileNote){
   const hits=q.filter(w=>p.has(w)).length;
   return Math.min(1,hits/Math.min(4,q.length));
 }
+function resolvedCustomerProfile(x,model,st=profiles()){
+  const direct=st[pkey(x,model)];
+  if(direct && Object.keys(direct).length)return direct;
+
+  // Fallback by normalized customer name. This protects matching when an older
+  // profile key used a different account alias (e.g. historical Nationwide rows).
+  const target=String(x?.customer||'').trim().toLowerCase();
+  if(!target)return {};
+  const prefix=model+'|';
+  for(const [k,p] of Object.entries(st)){
+    if(!k.startsWith(prefix) || !p || !Object.keys(p).length)continue;
+    const parts=k.split('|');
+    const customer=String(parts[1]||'').trim().toLowerCase();
+    if(customer===target)return p;
+  }
+  return {};
+}
 function scoreProfile(p){
   let earned=0,possible=0;
 
@@ -954,7 +1181,7 @@ function proceedSubmitQuote(basis){
   }
 
   let st=profiles(),
-      all=allCustomers(qm).map(x=>({x,p:st[pkey(x,qm)]||{}}))
+      all=allCustomers(qm).map(x=>({x,p:resolvedCustomerProfile(x,qm,st)}))
         .filter(z=>Object.keys(z.p).length)
         .map(z=>({...z,score:scoreProfile(z.p),areaGap:qm==='Tenant'?tenantAreaGap(z.p):null}))
         .sort((a,b)=>qm==='Tenant'?(a.areaGap-b.areaGap):(b.score-a.score));
@@ -965,14 +1192,14 @@ function proceedSubmitQuote(basis){
 
   $('matchHint').textContent=qm==='3PL'
     ?'Only profiles with at least a 90% match are shown. A comparison customer is used only as a starting rate-card reference. Choose No Match to use APCS standard rates.'
-    :'Tenant comparison customers are selected by the closest chargeable area (m²). Room type, contract length, access, parking and notes are used for pricing context only and do not block the match.';
+    :'Tenant matching uses chargeable area only. The two Active Tenant profiles with the closest m² are shown automatically; room type, contract and other details affect pricing only.';
 
   let qMatchNote=fieldText('qNotes')||rec.quoteNotes||'';
   let cards=arr.map((z,i)=>{
     const qk=matchKeywords(qMatchNote),pk=new Set(matchKeywords(z.p.notes||''));
     const hits=qk.filter(w=>pk.has(w)).slice(0,4);
     const tenantMeta=qm==='Tenant'
-      ?` · ${Number(z.p.area||0).toLocaleString('en-AU')} m² · gap ${Number(z.areaGap||0).toLocaleString('en-AU')} m²`
+      ?` · ${Number(z.p.area||0).toLocaleString('en-AU')} m² · ${Number(z.areaGap||0)===0?'Exact area match':'gap '+Number(z.areaGap||0).toLocaleString('en-AU')+' m²'}`
       :` · ${z.score}% match${hits.length?` · note keywords: ${hits.map(esc).join(', ')}`:''}`;
     return `<div class=match onclick="chooseMatch(${i})">
       <b>${z.x.customer}</b>
