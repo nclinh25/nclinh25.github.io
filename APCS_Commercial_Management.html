@@ -5,7 +5,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>APCS Commercial Management</title>
-<!-- BUILD: 26.6 | no footer background overlay | text-only repaint --><style>
+<!-- BUILD: 26.7 | original PDF footer restored | rate card export icon-only --><style>
 :root{--navy:#073d69;--blue:#0b6ea8;--purple:#7057c8;--teal:#16847a;--bg:#eef5f9;--line:#d6e4ec;--text:#173246;--muted:#6d8494}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,"Segoe UI",Arial;background:linear-gradient(#f8fbfd,#edf4f8);color:var(--text)}
 header{height:72px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 24px;position:sticky;top:0;z-index:30}.brand b{font-size:18px;color:#0b416c}.brand small{display:block;color:var(--muted);font-size:11px}.nav{margin-left:auto;height:100%;display:flex}.nav button{border:0;background:transparent;padding:0 20px;font-weight:650;color:#50697b;cursor:pointer;border-bottom:3px solid transparent}.nav button:hover{color:#075f98;background:#f6fbfe}.nav button:active{background:#e2f1f9}.nav button.on{color:#075f98;border-bottom-color:#0b78b8;background:#eef7fc}.navGroup{position:relative;height:100%;display:flex;align-items:stretch}.navGroup>.navMain{height:100%}.navDrop{display:none;position:absolute;top:68px;right:0;min-width:205px;background:#fff;border:1px solid var(--line);border-radius:0 0 10px 10px;box-shadow:0 10px 25px #12384d24;padding:7px;z-index:60}.navGroup:hover .navDrop,.navGroup:focus-within .navDrop{display:block}.navDrop button{display:block;width:100%;height:42px;padding:0 13px!important;text-align:left;border:0!important;border-radius:7px;background:#fff!important;color:#416278!important}.navDrop button:hover{background:#eef7fc!important;color:#075f98!important}.navDrop button.subon{background:#e5f3fb!important;color:#075f98!important;font-weight:750}.navMain .chev{font-size:10px;margin-left:6px}
@@ -282,10 +282,34 @@ textarea{
 }
 </style>
 
+
+<style>
+.rateExportIcon{
+  width:40px!important;
+  min-width:40px!important;
+  height:40px!important;
+  padding:0!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  border-radius:9px!important;
+}
+.rateExportIcon svg{
+  width:19px;
+  height:19px;
+}
+</style>
+
 </head><body>
 <header><div class=brand><b>Austco Polar Cold Storage</b><small>Commercial Management</small></div><div class=nav><button id=nrate class=on onclick="go('rate')">Rate Card</button><div class=navGroup><button id=nquotesMain class=navMain onclick="go('quotes')">Quotes <span class=chev>▼</span></button><div class=navDrop><button id=subquote onclick="go('quote')">Create Quote</button><button id=subquotes onclick="go('quotes')">Quote List</button></div></div><div class=navGroup><button id=ncustomersMain class=navMain onclick="go('onboarding')">Our Customers <span class=chev>▼</span></button><div class=navDrop><button id=subonboarding onclick="go('onboarding')">Onboarding Customers</button><button id=subprofile onclick="go('profile')">Active Customers</button></div></div></div></header>
 
-<div id=rate class="page on"><div class=hero><div><h1>Rate Card</h1><p>Current customer rates with CPI and effective-date context.</p></div><button class="btn white" onclick=exportRateCard() title="Export current rate card as CSV">⇩ Export Rate Card</button></div><div class=card><div class=rateToolbar><div style="width:280px"><label>MODEL</label><select id=rateModel onchange=renderRatePage()><option>3PL</option><option>Tenant</option></select></div><div id=rateSearchBox style="flex:1"><label>SEARCH SERVICE</label><input id=rateSearch oninput=renderRateTable() placeholder="Code or service description"></div></div><div id=rateTableWrap style="margin-top:12px"></div></div></div>
+<div id=rate class="page on"><div class=hero><div><h1>Rate Card</h1><p>Current customer rates with CPI and effective-date context.</p></div><button class="iconbtn rateExportIcon" title="Export Rate Card" aria-label="Export Rate Card" onclick="exportRateCard()">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+  <path d="M12 3v12"/>
+  <path d="m7 10 5 5 5-5"/>
+  <path d="M5 21h14"/>
+</svg>
+</button></div><div class=card><div class=rateToolbar><div style="width:280px"><label>MODEL</label><select id=rateModel onchange=renderRatePage()><option>3PL</option><option>Tenant</option></select></div><div id=rateSearchBox style="flex:1"><label>SEARCH SERVICE</label><input id=rateSearch oninput=renderRateTable() placeholder="Code or service description"></div></div><div id=rateTableWrap style="margin-top:12px"></div></div></div>
 
 <div id=quote class=page><div class=hero><div><h1>Create Quote</h1><p>Build the opportunity, save unfinished work as a Draft, then Submit when the quote is ready for customer decision.</p></div><div style="display:flex;gap:8px;align-items:center"><span id=saveState style="font-size:11px">Autosave ready</span><button id=budgetBtn class=iconbtn title="View 3PL Pipeline Budget" onclick="openBudget()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V12M10 20V5M16 20V9M22 20H2"/></svg></button></div></div>
 <div class=card>
@@ -1700,16 +1724,6 @@ async function buildStandaloneRateCardPdf(q,rows){
   // Exact letterhead background: logo, geometric theme, watermark and contact footer.
   c.drawImage(letterhead,0,0,canvas.width,canvas.height);
 
-  // Footer artwork stays completely untouched.
-  // Repaint only the footer contact text itself in a lighter grey — no rectangle/background.
-  c.save();
-  c.textAlign='center';
-  c.textBaseline='alphabetic';
-  c.fillStyle='rgba(255,255,255,0.36)';
-  c.font='22px Arial, sans-serif';
-  c.fillText('Tel: 03 9314 7022 | E-Mail: customerservice@austcopolar.com.au', 805, 1620);
-  c.fillText('www.austcopolar.com.au | 5 - 7 Leslie Road Laverton North Victoria 3026', 805, 1654);
-  c.restore();
 
 
   const quoteType=q.quoteType||q.snapshot?.v?.quoteType||'New Quote';
