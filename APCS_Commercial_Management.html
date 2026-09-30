@@ -5,7 +5,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>APCS Commercial Management</title>
-<!-- BUILD: 20 | Supabase + no redirect loop + billing basis + long-stay logic --><style>
+<!-- BUILD: 21 | Supabase client restored | zero reload hydration | no flicker --><style>
 :root{--navy:#073d69;--blue:#0b6ea8;--purple:#7057c8;--teal:#16847a;--bg:#eef5f9;--line:#d6e4ec;--text:#173246;--muted:#6d8494}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,"Segoe UI",Arial;background:linear-gradient(#f8fbfd,#edf4f8);color:var(--text)}
 header{height:72px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 24px;position:sticky;top:0;z-index:30}.brand b{font-size:18px;color:#0b416c}.brand small{display:block;color:var(--muted);font-size:11px}.nav{margin-left:auto;height:100%;display:flex}.nav button{border:0;background:transparent;padding:0 20px;font-weight:650;color:#50697b;cursor:pointer;border-bottom:3px solid transparent}.nav button:hover{color:#075f98;background:#f6fbfe}.nav button:active{background:#e2f1f9}.nav button.on{color:#075f98;border-bottom-color:#0b78b8;background:#eef7fc}.navGroup{position:relative;height:100%;display:flex;align-items:stretch}.navGroup>.navMain{height:100%}.navDrop{display:none;position:absolute;top:68px;right:0;min-width:205px;background:#fff;border:1px solid var(--line);border-radius:0 0 10px 10px;box-shadow:0 10px 25px #12384d24;padding:7px;z-index:60}.navGroup:hover .navDrop,.navGroup:focus-within .navDrop{display:block}.navDrop button{display:block;width:100%;height:42px;padding:0 13px!important;text-align:left;border:0!important;border-radius:7px;background:#fff!important;color:#416278!important}.navDrop button:hover{background:#eef7fc!important;color:#075f98!important}.navDrop button.subon{background:#e5f3fb!important;color:#075f98!important;font-weight:750}.navMain .chev{font-size:10px;margin-left:6px}
@@ -210,6 +210,12 @@ input, textarea, select, [contenteditable="true"] { user-select: text; -webkit-u
 
 </style>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+try{sessionStorage.removeItem('apcs_db_reload')}catch(e){}
+</script>
+
 </head><body>
 <header><div class=brand><b>Austco Polar Cold Storage</b><small>Commercial Management</small></div><div class=nav><button id=nrate class=on onclick="go('rate')">Rate Card</button><div class=navGroup><button id=nquotesMain class=navMain onclick="go('quotes')">Quotes <span class=chev>▼</span></button><div class=navDrop><button id=subquote onclick="go('quote')">Create Quote</button><button id=subquotes onclick="go('quotes')">Quote List</button></div></div><div class=navGroup><button id=ncustomersMain class=navMain onclick="go('onboarding')">Our Customers <span class=chev>▼</span></button><div class=navDrop><button id=subonboarding onclick="go('onboarding')">Onboarding Customers</button><button id=subprofile onclick="go('profile')">Active Customers</button></div></div></div></header>
 
@@ -266,17 +272,29 @@ let qm='3PL',pm='3PL',selected=null,timer,chosenMatch=null;
 /* Supabase persistence bridge: app keeps its current localStorage API, Supabase is the shared source. */
 const APCS_SUPABASE_URL='https://facwyhjemlhmlbqcebqi.supabase.co';
 const APCS_SUPABASE_KEY='sb_publishable_kHFBSykS_QqFGlE3GFHgmA_mTKfXG2j';
-const APCS_DB=window.supabase?window.supabase.createClient(APCS_SUPABASE_URL,APCS_SUPABASE_KEY):null;
+let APCS_DB=null;
+function initSupabaseClient(){
+  if(APCS_DB)return APCS_DB;
+  if(window.supabase?.createClient){
+    APCS_DB=window.supabase.createClient(APCS_SUPABASE_URL,APCS_SUPABASE_KEY);
+  }
+  return APCS_DB;
+}
 const APCS_NATIVE_SET=Storage.prototype.setItem,APCS_NATIVE_REMOVE=Storage.prototype.removeItem;
 let apcsSyncTimers=new Map(),apcsHydrating=false;
 function dbBadge(msg,ok=true){let e=document.getElementById('apcsDbStatus');if(!e)return;e.textContent=msg;e.style.color=ok?'#14776e':'#a33b32';e.style.opacity=ok?'.65':'1'}
-async function dbPush(k,v){if(!APCS_DB||apcsHydrating||!String(k).startsWith('apcs_'))return;let {error}=await APCS_DB.from('app_state').upsert({state_key:String(k),raw_value:String(v),updated_at:new Date().toISOString()},{onConflict:'state_key'});dbBadge(error?'Database sync error':'Database synced',!error);if(error)console.error(error)}
-async function dbDelete(k){if(!APCS_DB||apcsHydrating||!String(k).startsWith('apcs_'))return;let {error}=await APCS_DB.from('app_state').delete().eq('state_key',String(k));dbBadge(error?'Database sync error':'Database synced',!error);if(error)console.error(error)}
+async function dbPush(k,v){initSupabaseClient();if(!APCS_DB||apcsHydrating||!String(k).startsWith('apcs_'))return;let {error}=await APCS_DB.from('app_state').upsert({state_key:String(k),raw_value:String(v),updated_at:new Date().toISOString()},{onConflict:'state_key'});dbBadge(error?'Database sync error':'Database synced',!error);if(error)console.error(error)}
+async function dbDelete(k){initSupabaseClient();if(!APCS_DB||apcsHydrating||!String(k).startsWith('apcs_'))return;let {error}=await APCS_DB.from('app_state').delete().eq('state_key',String(k));dbBadge(error?'Database sync error':'Database synced',!error);if(error)console.error(error)}
 Storage.prototype.setItem=function(k,v){APCS_NATIVE_SET.call(this,k,v);if(this===localStorage&&String(k).startsWith('apcs_')){clearTimeout(apcsSyncTimers.get(k));apcsSyncTimers.set(k,setTimeout(()=>dbPush(k,v),180))}};
 Storage.prototype.removeItem=function(k){APCS_NATIVE_REMOVE.call(this,k);if(this===localStorage&&String(k).startsWith('apcs_'))dbDelete(k)};
 async function bootstrapDatabase(){
-  if(!APCS_DB){dbBadge('Database unavailable',false);return}
   dbBadge('Database connecting…');
+  for(let i=0;i<20;i++){
+    if(initSupabaseClient())break;
+    await new Promise(r=>setTimeout(r,150));
+  }
+  if(!APCS_DB){dbBadge('Database unavailable',false);console.error('Supabase client library did not load');return}
+
   let {data,error}=await APCS_DB.from('app_state').select('state_key,raw_value');
   if(error){console.error(error);dbBadge('Database not connected',false);return}
   if(!data||!data.length){
@@ -289,7 +307,17 @@ async function bootstrapDatabase(){
   let localKeys=[];for(let i=0;i<localStorage.length;i++){let k=localStorage.key(i);if(k&&k.startsWith('apcs_'))localKeys.push(k)}
   localKeys.forEach(k=>{if(!remote.has(k)){APCS_NATIVE_REMOVE.call(localStorage,k);changed=true}});
   apcsHydrating=false;dbBadge('Database synced');
-  if(changed&&sessionStorage.getItem('apcs_db_reload')!=='1'){sessionStorage.setItem('apcs_db_reload','1');location.reload()}else sessionStorage.removeItem('apcs_db_reload')
+  // Do not reload after hydration. Re-render in place so the page never flickers or loops.
+  try{
+    renderQuotes();
+    renderOnboarding();
+    renderList();
+    renderRatePage();
+    if(currentQuoteId){
+      const q=quoteStore().find(x=>x.id===currentQuoteId);
+      if(q&&q.stage==='Draft'){}
+    }
+  }catch(e){console.warn('Post-sync render warning',e)}
 }
 window.addEventListener('load',bootstrapDatabase);
 
