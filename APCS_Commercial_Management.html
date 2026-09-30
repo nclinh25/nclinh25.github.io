@@ -8,7 +8,7 @@
 
 <script>
 (async function(){
-  const BUILD='15';
+  const BUILD='16';
   try{
     if('serviceWorker' in navigator){
       const regs=await navigator.serviceWorker.getRegistrations();
@@ -28,7 +28,7 @@
 </script>
 
 <title>APCS Commercial Management</title>
-<!-- BUILD: 15 | MASTER Supabase + quote fixes + PDF + modal + scan logic --><style>
+<!-- BUILD: 16 | Supabase + scenario pricing + removable/addable rate services --><style>
 :root{--navy:#073d69;--blue:#0b6ea8;--purple:#7057c8;--teal:#16847a;--bg:#eef5f9;--line:#d6e4ec;--text:#173246;--muted:#6d8494}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,"Segoe UI",Arial;background:linear-gradient(#f8fbfd,#edf4f8);color:var(--text)}
 header{height:72px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 24px;position:sticky;top:0;z-index:30}.brand b{font-size:18px;color:#0b416c}.brand small{display:block;color:var(--muted);font-size:11px}.nav{margin-left:auto;height:100%;display:flex}.nav button{border:0;background:transparent;padding:0 20px;font-weight:650;color:#50697b;cursor:pointer;border-bottom:3px solid transparent}.nav button:hover{color:#075f98;background:#f6fbfe}.nav button:active{background:#e2f1f9}.nav button.on{color:#075f98;border-bottom-color:#0b78b8;background:#eef7fc}.navGroup{position:relative;height:100%;display:flex;align-items:stretch}.navGroup>.navMain{height:100%}.navDrop{display:none;position:absolute;top:68px;right:0;min-width:205px;background:#fff;border:1px solid var(--line);border-radius:0 0 10px 10px;box-shadow:0 10px 25px #12384d24;padding:7px;z-index:60}.navGroup:hover .navDrop,.navGroup:focus-within .navDrop{display:block}.navDrop button{display:block;width:100%;height:42px;padding:0 13px!important;text-align:left;border:0!important;border-radius:7px;background:#fff!important;color:#416278!important}.navDrop button:hover{background:#eef7fc!important;color:#075f98!important}.navDrop button.subon{background:#e5f3fb!important;color:#075f98!important;font-weight:750}.navMain .chev{font-size:10px;margin-left:6px}
@@ -191,6 +191,36 @@ input, textarea, select, [contenteditable="true"] { user-select: text; -webkit-u
   transition:opacity .2s;
 }
 
+
+.quoteRateSection{margin:12px 0 5px;padding:8px 12px;border-radius:9px;background:#e9f4fb;color:#075985;font-weight:800;font-size:11px;letter-spacing:.02em}
+.quoteRateRow{display:grid;grid-template-columns:90px minmax(260px,1fr) 190px 42px;gap:10px;align-items:center;padding:9px 10px;border-bottom:1px solid #e3edf3;background:#fff}
+.quoteRateRow:hover{background:#fbfdfe}
+.quoteRateCode{font-size:11px;color:#526d80;font-weight:700}
+.quoteRateDesc{font-size:12px;color:#173246}
+.quoteRateInput{width:100%;border:1px solid #c9dce7;border-radius:9px;padding:9px 10px;font:inherit;color:#173246;background:#fff}
+.quoteRateRemove{width:34px;height:34px;border:1px solid #efc3c0;border-radius:9px;background:#fff;color:#b42318;font-size:19px;line-height:1;cursor:pointer}
+.quoteRateRemove:hover{background:#fff2f1}
+.quoteRateToolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:12px 0}
+.addServiceBtn{display:inline-flex;align-items:center;gap:6px}
+.servicePickerList{max-height:390px;overflow:auto;border:1px solid #d7e5ed;border-radius:12px}
+.servicePickerSection{padding:8px 12px;background:#edf6fb;color:#075985;font-weight:800;font-size:11px;position:sticky;top:0}
+.servicePickerRow{display:grid;grid-template-columns:85px 1fr 90px;gap:10px;align-items:center;padding:10px 12px;border-bottom:1px solid #e6eef3;cursor:pointer}
+.servicePickerRow:hover{background:#f5fafc}
+.scenarioWrap{margin-top:14px;border:1px solid #cfe0ea;border-radius:14px;background:#fafdff;padding:14px}
+.scenarioTitle{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}
+.scenarioTitle h3{margin:0;color:#075985}
+.scenarioGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:12px}
+.scenarioCard{border:1px solid #d6e4ec;border-radius:12px;background:#fff;padding:12px}
+.scenarioCard.recommended{border:2px solid #1782b8;box-shadow:0 0 0 3px rgba(23,130,184,.08)}
+.scenarioCard small{display:block;color:#6c8291;font-weight:700;text-transform:uppercase;font-size:9px;letter-spacing:.05em}
+.scenarioCard b.big{display:block;font-size:18px;color:#075985;margin:5px 0}
+.recommendPill{display:inline-block;background:#dff2fb;color:#075985;border-radius:999px;padding:4px 8px;font-size:9px;font-weight:800}
+.scenarioCompare{margin-top:12px;border-collapse:collapse;width:100%;font-size:11px}
+.scenarioCompare th,.scenarioCompare td{padding:8px 9px;border-bottom:1px solid #e0eaf0;text-align:right}
+.scenarioCompare th:first-child,.scenarioCompare td:first-child{text-align:left}
+.scenarioExplanation{margin-top:12px;padding:11px 12px;border-radius:10px;background:#eef7fc;color:#39596c;font-size:11px;line-height:1.55}
+@media(max-width:800px){.quoteRateRow{grid-template-columns:70px 1fr 120px 38px}.scenarioGrid{grid-template-columns:1fr}}
+
 </style>
 
 </head><body>
@@ -220,7 +250,7 @@ input, textarea, select, [contenteditable="true"] { user-select: text; -webkit-u
 <div id=q3>
 <div class=card><h2>1. Receivable</h2><div class=info>Each receivable line is an <b>AND</b> condition. Add another line only when there is another receivable pattern.</div><div id=recRows></div><button class=btn style="margin-top:10px" onclick=addRec()>+ Add receivable condition</button><div id=recSummary class=summary></div>
 <h3>Product handling</h3><div class=grid><div><label>Product type</label><select id=prod onchange=prodUI()><option value="">Select…</option><option>Frozen</option><option>Blast</option><option>Chilled</option></select></div><div id=blastBox class=hide><label>Blast % of total receive</label><input id=blastPct type=number min=0 max=100 placeholder="%"></div><div id=scanBox class=hide><label>Scan?</label><select id=scan onchange=prodUI()><option value="">Select…</option><option>Yes</option><option>No</option></select></div><div id=scanPctBox class=hide><label id=scanPctLabel>Scan % of total receive</label><input id=scanPct type=number min=0 max=100 placeholder="%"></div><div><label>Product</label><select id=mix><option value="">Select…</option><option>Single product</option><option>Mixed products</option></select></div></div></div>
-<div class=card><h2>2. Storage</h2><div class=g3><div><label>Expected holding</label><input id=holdN type=number placeholder="e.g. 21"></div><div><label>Unit</label><select id=holdU><option value="">Select…</option><option>days</option><option>weeks</option><option>months</option></select><div id=holdConv class=hint></div></div><div><label>Rate basis</label><select id=storBasis><option value="">Select…</option><option>Carton</option><option>Pallet</option></select></div></div><div id=holdMsg class="info warn hide" style="margin-top:10px"></div></div>
+<div class=card><h2>2. Storage</h2><div class=g3><div><label>Expected holding</label><input id=holdN type=number placeholder="e.g. 21"></div><div><label>Unit</label><select id=holdU><option value="">Select…</option><option>days</option><option>weeks</option><option>months</option></select><div id=holdConv class=hint></div></div><div><label>Rate basis</label><select id=storBasis><option value="">Select…</option><option>Carton</option><option>Pallet</option></select></div></div></div>
 <div class=card><h2>3. Load Out</h2><div class=g3><div><label>Every</label><input id=loFreq type=number placeholder="e.g. 1"></div><div><label>Frequency unit</label><select id=loUnit><option value="">Select…</option><option>days</option><option>weeks</option><option>months</option></select></div><div><label>Market</label><div class=checks><label><input id=dom type=checkbox onchange=loadUI()><span>Domestic</span></label><label><input id=exp type=checkbox onchange=loadUI()><span>Export</span></label></div></div></div><div id=domBox class=hide style="margin-top:10px"><label>Domestic pallets per batch</label><input id=domPal type=number placeholder="Pallets"></div><div id=expBox class=hide style="margin-top:10px"><div class=g3><div><label>Export container</label><div class=checks><label><input id=exp20 type=checkbox onchange=calc()><span>20ft</span></label><label><input id=exp40 type=checkbox onchange=calc()><span>40ft</span></label></div></div><div><label>Containers per batch</label><input id=expQty type=number></div><div><label>Export country</label><input id=country></div></div><div class=hint>20ft = 22 pallets · 40ft = 44 pallets · select one or both</div></div><h3>Extra Services</h3><div class=checks id=extras></div></div>
 <div class=card><h2>4. Reporting</h2><div class=g2><div><label>Report frequency</label><select id=reportFreq><option value="">Select…</option><option>Daily</option><option>Weekly</option><option>Monthly</option></select></div><div><label>Report includes</label><textarea id=reportNotes placeholder="Manual notes…"></textarea></div></div></div></div>
 
@@ -244,7 +274,7 @@ input, textarea, select, [contenteditable="true"] { user-select: text; -webkit-u
 <div class=modal id=historyModal><div class="modalbox historyModalBox"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div class=historyTitle><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></svg><h2 style="margin:0;color:#075985">Rate History</h2></div><p class=hint id=historySubtitle></p></div><button class=x onclick="historyModal.classList.remove('on')">×</button></div><div id=historyContent></div></div></div>
 
 <script>
-const C3=[{"customer": "Australian Beef Trading Centre", "account": "ABTC"}, {"customer": "Antap", "account": "ANTAP"}, {"customer": "Asmarina", "account": "ASM"}, {"customer": "Audlay", "account": "KAR-PX"}, {"customer": "Aurum Poultry", "account": "AP"}, {"customer": "Thomas Food INT", "account": "TFI"}, {"customer": "Australian Lamb Colac", "account": "ALC"}, {"customer": "Colt Transport", "account": "CT"}, {"customer": "Effective Logistics", "account": "EF"}, {"customer": "G&K O'Connors", "account": "OCONN"}, {"customer": "G&K O'Connors", "account": "OCC"}, {"customer": "G&K O'Connors", "account": "GKOA"}, {"customer": "G&V Transport", "account": "GV"}, {"customer": "Harmony Fine Foods", "account": "HAR"}, {"customer": "Harmony Mixed", "account": "HARM"}, {"customer": "John Dee", "account": "JD"}, {"customer": "Australian Beef Company Pty Ltd", "account": "JOC"}, {"customer": "MCG International", "account": "MCG"}, {"customer": "Mort & Co", "account": "MCM"}, {"customer": "Paradigm Foods", "account": "PF"}, {"customer": "Paradigm Foods", "account": "PFC"}, {"customer": "Ravensworth", "account": "RAV"}, {"customer": "RPC Foods", "account": "RPCF"}, {"customer": "Security Foods", "account": "SEC"}, {"customer": "Smiths TMP", "account": "STMP"}, {"customer": "Stone Axe", "account": "SAX"}, {"customer": "Stone Axe", "account": "SAXC"}], CT=[{"customer": "A&D", "account": "A&D"}, {"customer": "A&A", "account": "A&A"}, {"customer": "Farmers Mate 4 Pets", "account": "Farmers Mate 4 Pets"}, {"customer": "French Par Bake", "account": "French Par Bake"}, {"customer": "Melrina", "account": "Melrina"}, {"customer": "Nationwide", "account": "Nationwide"}, {"customer": "Nationwide", "account": "Polar Meatwork"}, {"customer": "Nationwide", "account": "CleosPasta"}], SERVICES=[{"id": "svc000", "section": "Service - Frozen", "type": "Handling", "code": "108", "desc": "Port marking per carton", "standard": null}, {"id": "svc001", "section": "Service - Frozen", "type": "Handling", "code": "108A", "desc": "Port marking per carton (2+ port marks per container USA)", "standard": null}, {"id": "svc002", "section": "Service - Frozen", "type": "Handling", "code": "109", "desc": "Shrink wrapping per pallet", "standard": null}, {"id": "svc003", "section": "Service - Frozen", "type": "Handling", "code": "116", "desc": "Order Picking per carton", "standard": null}, {"id": "svc004", "section": "Service - Frozen", "type": "Handling", "code": "119", "desc": "Temp Logger", "standard": null}, {"id": "svc005", "section": "Service - Frozen", "type": "Handling", "code": "130", "desc": "Print Supplied Labels", "standard": null}, {"id": "svc006", "section": "Service - Frozen", "type": "Handling", "code": "131", "desc": "Carton / Pallet labels per label", "standard": null}, {"id": "svc007", "section": "Service - Frozen", "type": "Handling", "code": "132", "desc": "SSCC Labeling", "standard": null}, {"id": "svc008", "section": "Service - Frozen", "type": "Handling", "code": "320P", "desc": "Pallet Movements", "standard": null}, {"id": "svc009", "section": "Service - Frozen", "type": "Handling", "code": "523", "desc": "Loading 20ft container", "standard": null}, {"id": "svc010", "section": "Service - Frozen", "type": "Handling", "code": "523EU", "desc": "Loading 20ft container (Europe)", "standard": null}, {"id": "svc011", "section": "Service - Frozen", "type": "Handling", "code": "523A", "desc": "Loading/Unloading 20ft container (Primal)", "standard": null}, {"id": "svc012", "section": "Service - Frozen", "type": "Handling", "code": "523D", "desc": "Loading 20ft container (751+ Cartons)", "standard": null}, {"id": "svc013", "section": "Service - Frozen", "type": "Handling", "code": "524", "desc": "Unloading 20ft container", "standard": null}, {"id": "svc014", "section": "Service - Frozen", "type": "Handling", "code": "525", "desc": "Loading 40ft container", "standard": null}, {"id": "svc015", "section": "Service - Frozen", "type": "Handling", "code": "525A", "desc": "Loading/Unloading 40ft container (Primal)", "standard": null}, {"id": "svc016", "section": "Service - Frozen", "type": "Handling", "code": "525EU", "desc": "Loading 40ft container (Europe)", "standard": null}, {"id": "svc017", "section": "Service - Frozen", "type": "Handling", "code": "525D", "desc": "Loading 40ft container (1501+ Cartons)", "standard": null}, {"id": "svc018", "section": "Service - Frozen", "type": "Handling", "code": "526", "desc": "Unloading 40ft container", "standard": null}, {"id": "svc019", "section": "Service - Frozen", "type": "Handling", "code": "526B", "desc": "Unloading 40ft container (1501+ Cartons)", "standard": null}, {"id": "svc020", "section": "Service - Frozen", "type": "Blast", "code": "BREC", "desc": "Blast freezing per carton", "standard": 3.45}, {"id": "svc021", "section": "Service - Frozen", "type": "Blast", "code": "FRPA", "desc": "Adhoc Blast Freezing", "standard": null}, {"id": "svc022", "section": "Service - Frozen", "type": "Storage", "code": "", "desc": "Holding-over rate per month or part thereof per carton", "standard": 0.04}, {"id": "svc023", "section": "Service - Frozen", "type": "Handling", "code": "LLOP", "desc": "Order picking carton order", "standard": null}, {"id": "svc024", "section": "Service - Frozen", "type": "Handling", "code": "PICK", "desc": "Handling out of store per carton", "standard": 0.4}, {"id": "svc026", "section": "Service - Frozen", "type": "Handling", "code": "REC", "desc": "Handling into store per carton", "standard": 0.4}, {"id": "svc028", "section": "Service - Frozen", "type": "Handling", "code": "SCAN", "desc": "Catchweight Scanning per carton", "standard": 0.4}, {"id": "svc030", "section": "Service - Frozen", "type": "Storage", "code": "STOR", "desc": "Storage per week or part thereof per carton", "standard": 0.4}, {"id": "svc031", "section": "Service - Chilled", "type": "Handling", "code": "PICKP", "desc": "Handling out of store per pallet", "standard": 12}, {"id": "svc032", "section": "Service - Chilled", "type": "Handling", "code": "RECP", "desc": "Handling into store per pallet", "standard": 12}, {"id": "svc033", "section": "Service - Chilled", "type": "Storage", "code": "STOPP / STOP", "desc": "Storage per week or part thereof per pallet", "standard": 12}, {"id": "svc034", "section": "Administration Charges", "type": "Handling", "code": "105", "desc": "Export permit", "standard": null}, {"id": "svc035", "section": "Administration Charges", "type": "Handling", "code": "106", "desc": "PRA only", "standard": null}, {"id": "svc036", "section": "Administration Charges", "type": "Handling", "code": "107", "desc": "RFP Additional lines charged per line", "standard": null}, {"id": "svc037", "section": "Administration Charges", "type": "Handling", "code": "110", "desc": "RFP only", "standard": null}, {"id": "svc038", "section": "Administration Charges", "type": "Handling", "code": "111", "desc": "Halal Interim Certificate", "standard": null}, {"id": "svc039", "section": "Administration Charges", "type": "Handling", "code": "120", "desc": "Admin Charge Per Container / Order", "standard": null}, {"id": "svc040", "section": "Administration Charges", "type": "Handling", "code": "121", "desc": "Container Logistics per container", "standard": null}, {"id": "svc041", "section": "Administration Charges", "type": "Handling", "code": "600", "desc": "Meat transfer certificate", "standard": null}, {"id": "svc042", "section": "Administration Charges", "type": "Handling", "code": "621", "desc": "Late Order Advice", "standard": null}, {"id": "svc043", "section": "Administration Charges", "type": "Handling", "code": "625", "desc": "20ft Container Transport per container", "standard": null}, {"id": "svc044", "section": "Administration Charges", "type": "Handling", "code": "626", "desc": "40ft Container Transport per container", "standard": null}, {"id": "svc045", "section": "Overtime – Weekday", "type": "Handling", "code": "", "desc": "Supervisor per hour/person", "standard": null}, {"id": "svc046", "section": "Overtime – Weekday", "type": "Handling", "code": "", "desc": "Labour per hour/person", "standard": null}, {"id": "svc047", "section": "Overtime – Weekday", "type": "Handling", "code": "", "desc": "Forklift operator per hour/person", "standard": null}, {"id": "svc048", "section": "Saturday – Minimum 4 hours Charge", "type": "Handling", "code": "", "desc": "Supervisor per hour/person", "standard": null}, {"id": "svc049", "section": "Saturday – Minimum 4 hours Charge", "type": "Handling", "code": "", "desc": "Labour per hour/person", "standard": null}, {"id": "svc050", "section": "Saturday – Minimum 4 hours Charge", "type": "Handling", "code": "", "desc": "Forklift operator per hour/person", "standard": null}, {"id": "svc051", "section": "Sunday / Public Holiday – Minimum 4 hours Charge", "type": "Handling", "code": "", "desc": "Supervisor per hour/person", "standard": null}, {"id": "svc052", "section": "Sunday / Public Holiday – Minimum 4 hours Charge", "type": "Handling", "code": "", "desc": "Labour per hour/person", "standard": null}, {"id": "svc053", "section": "Sunday / Public Holiday – Minimum 4 hours Charge", "type": "Handling", "code": "", "desc": "Forklift operator per hour/person", "standard": null}], DEFAULT_B=[0, 4000, 8000, 60000, 120000, 143000, 112000, 90000, 100000, 110000, 115000, 120000];
+const C3=[{"customer": "Australian Beef Trading Centre", "account": "ABTC"}, {"customer": "Antap", "account": "ANTAP"}, {"customer": "Asmarina", "account": "ASM"}, {"customer": "Audlay", "account": "KAR-PX"}, {"customer": "Aurum Poultry", "account": "AP"}, {"customer": "Thomas Food INT", "account": "TFI"}, {"customer": "Australian Lamb Colac", "account": "ALC"}, {"customer": "Colt Transport", "account": "CT"}, {"customer": "Effective Logistics", "account": "EF"}, {"customer": "G&K O'Connors", "account": "OCONN"}, {"customer": "G&K O'Connors", "account": "OCC"}, {"customer": "G&K O'Connors", "account": "GKOA"}, {"customer": "G&V Transport", "account": "GV"}, {"customer": "Harmony Fine Foods", "account": "HAR"}, {"customer": "Harmony Mixed", "account": "HARM"}, {"customer": "John Dee", "account": "JD"}, {"customer": "Australian Beef Company Pty Ltd", "account": "JOC"}, {"customer": "MCG International", "account": "MCG"}, {"customer": "Mort & Co", "account": "MCM"}, {"customer": "Paradigm Foods", "account": "PF"}, {"customer": "Paradigm Foods", "account": "PFC"}, {"customer": "Ravensworth", "account": "RAV"}, {"customer": "RPC Foods", "account": "RPCF"}, {"customer": "Security Foods", "account": "SEC"}, {"customer": "Smiths TMP", "account": "STMP"}, {"customer": "Stone Axe", "account": "SAX"}, {"customer": "Stone Axe", "account": "SAXC"}], CT=[{"customer": "A&D", "account": "A&D"}, {"customer": "A&A", "account": "A&A"}, {"customer": "Farmers Mate 4 Pets", "account": "Farmers Mate 4 Pets"}, {"customer": "French Par Bake", "account": "French Par Bake"}, {"customer": "Melrina", "account": "Melrina"}, {"customer": "Nationwide", "account": "Nationwide"}, {"customer": "Nationwide", "account": "Polar Meatwork"}, {"customer": "Nationwide", "account": "CleosPasta"}], SERVICES=[{"id": "svc000", "section": "Service - Frozen", "type": "Handling", "code": "108", "desc": "Port marking per carton", "standard": null}, {"id": "svc001", "section": "Service - Frozen", "type": "Handling", "code": "108A", "desc": "Port marking per carton (2+ port marks per container USA)", "standard": null}, {"id": "svc002", "section": "Service - Frozen", "type": "Handling", "code": "109", "desc": "Shrink wrapping per pallet", "standard": null}, {"id": "svc003", "section": "Service - Frozen", "type": "Handling", "code": "116", "desc": "Order Picking per carton", "standard": null}, {"id": "svc004", "section": "Service - Frozen", "type": "Handling", "code": "119", "desc": "Temp Logger", "standard": null}, {"id": "svc005", "section": "Service - Frozen", "type": "Handling", "code": "130", "desc": "Print Supplied Labels", "standard": null}, {"id": "svc006", "section": "Service - Frozen", "type": "Handling", "code": "131", "desc": "Carton / Pallet labels per label", "standard": null}, {"id": "svc007", "section": "Service - Frozen", "type": "Handling", "code": "132", "desc": "SSCC Labeling", "standard": null}, {"id": "svc008", "section": "Service - Frozen", "type": "Handling", "code": "320P", "desc": "Pallet Movements", "standard": null}, {"id": "svc009", "section": "Service - Frozen", "type": "Handling", "code": "523", "desc": "Loading 20ft container", "standard": null}, {"id": "svc010", "section": "Service - Frozen", "type": "Handling", "code": "523EU", "desc": "Loading 20ft container (Europe)", "standard": null}, {"id": "svc011", "section": "Service - Frozen", "type": "Handling", "code": "523A", "desc": "Loading/Unloading 20ft container (Primal)", "standard": null}, {"id": "svc012", "section": "Service - Frozen", "type": "Handling", "code": "523D", "desc": "Loading 20ft container (751+ Cartons)", "standard": null}, {"id": "svc013", "section": "Service - Frozen", "type": "Handling", "code": "524", "desc": "Unloading 20ft container", "standard": null}, {"id": "svc014", "section": "Service - Frozen", "type": "Handling", "code": "525", "desc": "Loading 40ft container", "standard": null}, {"id": "svc015", "section": "Service - Frozen", "type": "Handling", "code": "525A", "desc": "Loading/Unloading 40ft container (Primal)", "standard": null}, {"id": "svc016", "section": "Service - Frozen", "type": "Handling", "code": "525EU", "desc": "Loading 40ft container (Europe)", "standard": null}, {"id": "svc017", "section": "Service - Frozen", "type": "Handling", "code": "525D", "desc": "Loading 40ft container (1501+ Cartons)", "standard": null}, {"id": "svc018", "section": "Service - Frozen", "type": "Handling", "code": "526", "desc": "Unloading 40ft container", "standard": null}, {"id": "svc019", "section": "Service - Frozen", "type": "Handling", "code": "526B", "desc": "Unloading 40ft container (1501+ Cartons)", "standard": null}, {"id": "svc020", "section": "Service - Frozen", "type": "Blast", "code": "BREC", "desc": "Blast freezing per carton", "standard": 3.45}, {"id": "svc021", "section": "Service - Frozen", "type": "Blast", "code": "FRPA", "desc": "Adhoc Blast Freezing", "standard": null}, {"id": "svc023", "section": "Service - Frozen", "type": "Handling", "code": "LLOP", "desc": "Order picking carton order", "standard": null}, {"id": "svc024", "section": "Service - Frozen", "type": "Handling", "code": "PICK", "desc": "Handling out of store per carton", "standard": 0.4}, {"id": "svc026", "section": "Service - Frozen", "type": "Handling", "code": "REC", "desc": "Handling into store per carton", "standard": 0.4}, {"id": "svc028", "section": "Service - Frozen", "type": "Handling", "code": "SCAN", "desc": "Catchweight Scanning per carton", "standard": 0.4}, {"id": "svc030", "section": "Service - Frozen", "type": "Storage", "code": "STOR", "desc": "Storage per week or part thereof per carton", "standard": 0.44}, {"id": "svc031", "section": "Service - Chilled", "type": "Handling", "code": "PICKP", "desc": "Handling out of store per pallet", "standard": 12}, {"id": "svc032", "section": "Service - Chilled", "type": "Handling", "code": "RECP", "desc": "Handling into store per pallet", "standard": 12}, {"id": "svc033", "section": "Service - Chilled", "type": "Storage", "code": "STOPP / STOP", "desc": "Storage per week or part thereof per pallet", "standard": 13.44}, {"id": "svc034", "section": "Administration Charges", "type": "Handling", "code": "105", "desc": "Export permit", "standard": null}, {"id": "svc035", "section": "Administration Charges", "type": "Handling", "code": "106", "desc": "PRA only", "standard": null}, {"id": "svc036", "section": "Administration Charges", "type": "Handling", "code": "107", "desc": "RFP Additional lines charged per line", "standard": null}, {"id": "svc037", "section": "Administration Charges", "type": "Handling", "code": "110", "desc": "RFP only", "standard": null}, {"id": "svc038", "section": "Administration Charges", "type": "Handling", "code": "111", "desc": "Halal Interim Certificate", "standard": null}, {"id": "svc039", "section": "Administration Charges", "type": "Handling", "code": "120", "desc": "Admin Charge Per Container / Order", "standard": null}, {"id": "svc040", "section": "Administration Charges", "type": "Handling", "code": "121", "desc": "Container Logistics per container", "standard": null}, {"id": "svc041", "section": "Administration Charges", "type": "Handling", "code": "600", "desc": "Meat transfer certificate", "standard": null}, {"id": "svc042", "section": "Administration Charges", "type": "Handling", "code": "621", "desc": "Late Order Advice", "standard": null}, {"id": "svc043", "section": "Administration Charges", "type": "Handling", "code": "625", "desc": "20ft Container Transport per container", "standard": null}, {"id": "svc044", "section": "Administration Charges", "type": "Handling", "code": "626", "desc": "40ft Container Transport per container", "standard": null}, {"id": "svc045", "section": "Overtime – Weekday", "type": "Handling", "code": "", "desc": "Supervisor per hour/person", "standard": null}, {"id": "svc046", "section": "Overtime – Weekday", "type": "Handling", "code": "", "desc": "Labour per hour/person", "standard": null}, {"id": "svc047", "section": "Overtime – Weekday", "type": "Handling", "code": "", "desc": "Forklift operator per hour/person", "standard": null}, {"id": "svc048", "section": "Saturday – Minimum 4 hours Charge", "type": "Handling", "code": "", "desc": "Supervisor per hour/person", "standard": null}, {"id": "svc049", "section": "Saturday – Minimum 4 hours Charge", "type": "Handling", "code": "", "desc": "Labour per hour/person", "standard": null}, {"id": "svc050", "section": "Saturday – Minimum 4 hours Charge", "type": "Handling", "code": "", "desc": "Forklift operator per hour/person", "standard": null}, {"id": "svc051", "section": "Sunday / Public Holiday – Minimum 4 hours Charge", "type": "Handling", "code": "", "desc": "Supervisor per hour/person", "standard": null}, {"id": "svc052", "section": "Sunday / Public Holiday – Minimum 4 hours Charge", "type": "Handling", "code": "", "desc": "Labour per hour/person", "standard": null}, {"id": "svc053", "section": "Sunday / Public Holiday – Minimum 4 hours Charge", "type": "Handling", "code": "", "desc": "Forklift operator per hour/person", "standard": null}], DEFAULT_B=[0, 4000, 8000, 60000, 120000, 143000, 112000, 90000, 100000, 110000, 115000, 120000];
 let qm='3PL',pm='3PL',selected=null,timer,chosenMatch=null;
 /* Supabase persistence bridge: app keeps its current localStorage API, Supabase is the shared source. */
 const APCS_SUPABASE_URL='https://facwyhjemlhmlbqcebqi.supabase.co';
@@ -325,7 +355,7 @@ function prodUI(){
 function loadUI(){$('domBox').classList.toggle('hide',!$('dom').checked);$('expBox').classList.toggle('hide',!$('exp').checked);calc()}
 function addRoom(){let e=document.createElement('div');e.className='row';e.innerHTML=`<button class=x onclick="this.parentElement.remove();calc()">×</button><div class=g3><div><label>Room</label><select class=room><option value="">Select…</option><option>Blast room</option><option>Chill room</option><option>Frozen room</option><option>Dry storage</option><option>Office</option></select></div><div><label>Square metres</label><input class=sqm type=number></div><div><label>Occupancy</label><select class=ded><option value="">Select…</option><option>Dedicated</option><option>Shared</option></select></div></div>`;$('roomRows').appendChild(e);calc()}
 function getBudget(){return JSON.parse(localStorage.getItem('apcs_budget_v4')||'null')||DEFAULT_B} function openBudget(){budgetModal.classList.add('on');let m=['Jul-26','Aug-26','Sep-26','Oct-26','Nov-26','Dec-26','Jan-27','Feb-27','Mar-27','Apr-27','May-27','Jun-27'],b=getBudget();$('budgetGrid').innerHTML=m.map((x,i)=>`<div><label>${x}</label><input class=bg type=number value="${b[i]}" onchange=saveBudget()></div>`).join('')} function saveBudget(){localStorage.setItem('apcs_budget_v4',JSON.stringify([...document.querySelectorAll('.bg')].map(x=>+x.value||0)));calc()}
-function calc(){if(qm==='3PL'){let loads=0,pals=0,parts=[];document.querySelectorAll('#recRows .row').forEach(r=>{let n=recLoads(r),p=recPals(r);loads+=n;pals+=n*p;r.querySelector('.loadnote').textContent=n?`${n} load(s) to 31/12/2026`:'';if(n&&p)parts.push(`${n} × ${p} pallets = ${n*p}`)});$('recSummary').innerHTML=loads?`<b>Receivable summary:</b> ${loads} total receipts · ${pals.toLocaleString()} pallet-equivalents · ${(pals*36).toLocaleString()} carton-equivalents${parts.length?`<br><span class=hint>${parts.join(' + ')}</span>`:''}`:'<span class=hint>Receivable summary will appear after conditions are entered.</span>';let hd=days($('holdN').value,$('holdU').value);$('holdConv').textContent=hd&&$('holdU').value!=='days'?`(${hd} days)`:'';$('holdMsg').classList.toggle('hide',!hd);if(hd)$('holdMsg').innerHTML=`Holding-over rate of <b>$0.04/carton</b> will be applied from <b>day ${hd+1}</b> onwards.`;let cartons=pals*36,scan=($('prod').value==='Blast'||($('prod').value==='Frozen'&&$('scan').value==='Yes'))?(+$('scanPct').value||0)/100:0,blast=$('prod').value==='Blast'?(+$('blastPct').value||0)/100:0,revRec=cartons*.4+cartons*scan*.4+cartons*blast*3.45,revStor=hd?($('storBasis').value==='Pallet'?pals*(hd/7)*12:$('storBasis').value==='Carton'?cartons*(hd/7)*.4:0):0,ld=days($('loFreq').value,$('loUnit').value),events=ld?365/ld:0,lop=($('dom').checked?(+$('domPal').value||0):0)+($('exp').checked?(+$('expQty').value||0)*(($('exp20')?.checked?22:0)+($('exp40')?.checked?44:0)):0),revLO=lop*events*12,areas=[['Receivable',revRec],['Storage',revStor],['Load Out',revLO],['Blast',cartons*blast*3.45]],top=areas.sort((a,b)=>b[1]-a[1])[0],annual=(revRec+revStor)*4+revLO,monthly=annual/12,budget=getBudget().reduce((a,b)=>a+b,0),cov=budget?annual/budget*100:0,ongoing=loads>=3||events>=12;$('monthly').textContent=annual?money(monthly):'—';$('annual').textContent=annual?money(annual):'—';$('thirdLabel').textContent='Top revenue area';$('thirdKpi').textContent=top[1]>0?top[0]:'—';$('coverLabel').textContent='Pipeline budget coverage';$('coverage').textContent=annual?cov.toFixed(1)+'%':'—';$('ins1').innerHTML=annual?(ongoing?'<b>Ongoing</b> — recurring activity is expected.':'<b>Ad-hoc / low-frequency</b> — limited recurring activity.'):'Complete the quote to assess ad-hoc vs ongoing.';$('ins2').innerHTML=top[1]>0?`<b>${top[0]}</b> is the highest estimated revenue area (${money(top[1])} in the model).`:'Complete the quote to identify the highest-revenue area.';let extras=[...document.querySelectorAll('#extras input:checked')].map(x=>x.nextElementSibling.textContent),opps=[];if(blast>0)opps.push(`Blast handling adds incremental revenue on ${Math.round(blast*100)}% of receivable volume.`);if(extras.length)opps.push(`Extra services selected (${extras.join(', ')}) create additional charge opportunities.`);if($('mix').value==='Mixed products')opps.push('<b>Mixed product customer</b> — allow for additional labour and handling time when setting the final rate.');if(hd)opps.push(`Holding-over can generate additional revenue from day ${hd+1} at $0.04/carton; consider whether to charge separately or build the economics into storage.`);$('ins3').innerHTML=opps.length?opps.join(' '):'No additional revenue opportunity identified yet — select blast, extra services, mixed product or storage dwell to generate a note.'}
+function calc(){if(qm==='3PL'){let loads=0,pals=0,parts=[];document.querySelectorAll('#recRows .row').forEach(r=>{let n=recLoads(r),p=recPals(r);loads+=n;pals+=n*p;r.querySelector('.loadnote').textContent=n?`${n} load(s) to 31/12/2026`:'';if(n&&p)parts.push(`${n} × ${p} pallets = ${n*p}`)});$('recSummary').innerHTML=loads?`<b>Receivable summary:</b> ${loads} total receipts · ${pals.toLocaleString()} pallet-equivalents · ${(pals*36).toLocaleString()} carton-equivalents${parts.length?`<br><span class=hint>${parts.join(' + ')}</span>`:''}`:'<span class=hint>Receivable summary will appear after conditions are entered.</span>';let hd=days($('holdN').value,$('holdU').value);$('holdConv').textContent=hd&&$('holdU').value!=='days'?`(${hd} days)`:'';let cartons=pals*36,scan=($('prod').value==='Blast'||($('prod').value==='Frozen'&&$('scan').value==='Yes'))?(+$('scanPct').value||0)/100:0,blast=$('prod').value==='Blast'?(+$('blastPct').value||0)/100:0,revRec=cartons*.4+cartons*scan*.4+cartons*blast*3.45,revStor=hd?($('storBasis').value==='Pallet'?pals*(hd/7)*12:$('storBasis').value==='Carton'?cartons*(hd/7)*.4:0):0,ld=days($('loFreq').value,$('loUnit').value),events=ld?365/ld:0,lop=($('dom').checked?(+$('domPal').value||0):0)+($('exp').checked?(+$('expQty').value||0)*(($('exp20')?.checked?22:0)+($('exp40')?.checked?44:0)):0),revLO=lop*events*12,areas=[['Receivable',revRec],['Storage',revStor],['Load Out',revLO],['Blast',cartons*blast*3.45]],top=areas.sort((a,b)=>b[1]-a[1])[0],annual=(revRec+revStor)*4+revLO,monthly=annual/12,budget=getBudget().reduce((a,b)=>a+b,0),cov=budget?annual/budget*100:0,ongoing=loads>=3||events>=12;$('monthly').textContent=annual?money(monthly):'—';$('annual').textContent=annual?money(annual):'—';$('thirdLabel').textContent='Top revenue area';$('thirdKpi').textContent=top[1]>0?top[0]:'—';$('coverLabel').textContent='Pipeline budget coverage';$('coverage').textContent=annual?cov.toFixed(1)+'%':'—';$('ins1').innerHTML=annual?(ongoing?'<b>Ongoing</b> — recurring activity is expected.':'<b>Ad-hoc / low-frequency</b> — limited recurring activity.'):'Complete the quote to assess ad-hoc vs ongoing.';$('ins2').innerHTML=top[1]>0?`<b>${top[0]}</b> is the highest estimated revenue area (${money(top[1])} in the model).`:'Complete the quote to identify the highest-revenue area.';let extras=[...document.querySelectorAll('#extras input:checked')].map(x=>x.nextElementSibling.textContent),opps=[];if(blast>0)opps.push(`Blast handling adds incremental revenue on ${Math.round(blast*100)}% of receivable volume.`);if(extras.length)opps.push(`Extra services selected (${extras.join(', ')}) create additional charge opportunities.`);if($('mix').value==='Mixed products')opps.push('<b>Mixed product customer</b> — allow for additional labour and handling time when setting the final rate.');if(hd)opps.push(`Holding-over can generate additional revenue from day ${hd+1} at $0.04/carton; consider whether to charge separately or build the economics into storage.`);$('ins3').innerHTML=opps.length?opps.join(' '):'No additional revenue opportunity identified yet — select blast, extra services, mixed product or storage dwell to generate a note.'}
 else{let area=0,annual=0,base=+$('baseRent').value||0,out=+$('outgoings').value||0,prem=(+$('coldPrem').value||0)/100;document.querySelectorAll('#roomRows .row').forEach(r=>{let s=+r.querySelector('.sqm').value||0,t=r.querySelector('.room').value,rate=base;if(['Blast room','Chill room','Frozen room'].includes(t)&&r.querySelector('.ded').value==='Dedicated')rate*=1+prem;annual+=s*(rate+out);area+=s});let u=(+$('futurePal').value||0)/5000*100;$('util').textContent=$('future3pl').value==='Yes'?u.toFixed(2)+'% of 5,000 pallets'+(u<2?' — low impact':''):'—';$('draftWarn').classList.toggle('hide',$('future3pl').value!=='Not sure');$('monthly').textContent=annual?money(annual/12):'—';$('annual').textContent=annual?money(annual):'—';$('thirdLabel').textContent='Blended rent + outgoings';$('thirdKpi').textContent=area&&annual?money(annual/area)+'/m²/yr':'—';let contractYears=Math.max(0,Math.floor(+$('years').value||0)),cpi=(+$('tenantCpi').value||0)/100,totalContractRevenue=0;if(annual&&contractYears){for(let y=0;y<contractYears;y++)totalContractRevenue+=annual*Math.pow(1+cpi,y)}$('coverLabel').textContent='Total revenue over contract';$('coverage').textContent=totalContractRevenue?money(totalContractRevenue):'—';$('ins1').innerHTML=contractYears>=3?`<b>Ongoing / longer-term tenant</b> — ${contractYears}-year contract. CPI of ${(cpi*100).toFixed(1)}% is compounded annually in the contract revenue.`:contractYears?`<b>Tenant contract:</b> ${contractYears} year${contractYears===1?'':'s'}. CPI of ${(cpi*100).toFixed(1)}% is applied from year 2 onward.`:'Complete contract length to assess the tenant pattern.';$('ins2').innerHTML=area?`<b>Occupied area</b> is the main revenue driver at ${area.toLocaleString()} m².`:'Add rooms and square metres to calculate the main revenue driver.';$('ins3').innerHTML='Extra revenue can come from dedicated cold-room premiums, included outgoings, after-hours access and parking where applicable.'}
 $('draftName').textContent=($('qname').value||'Untitled')+' · '+qm;autoSave()}
 function profiles(){return JSON.parse(localStorage.getItem('apcs_profiles_v4')||'{}')} function customCustomers(){return JSON.parse(localStorage.getItem('apcs_customers_v4')||'{"3PL":[],"Tenant":[]}')}
@@ -502,13 +532,153 @@ function suggestedPatternEconomics(){
     total,budget,coverage,monthlyEq,annualEq
   };
 }
+
+function currentQuoteRecord(){
+  return quoteStore().find(x=>x.id===currentQuoteId)||null;
+}
+function quoteDwellDays(){
+  const q=currentQuoteRecord(),v=q?.snapshot?.v||{};
+  return profileDays(v.holdN||$('holdN')?.value,v.holdU||$('holdU')?.value)||0;
+}
+function currentQuoteBatchPallets(){
+  let total=0;
+  document.querySelectorAll('#recRows .row').forEach(r=>{total+=recPals(r)});
+  if(total>0)return total;
+  // fallback to matched pattern if dynamic fields are not currently in the DOM
+  const p=chosenMatch?.p||{};
+  let qty=Number(p.recQty)||0;
+  if(p.recType==='Truck')return qty*22;
+  if(p.recType==='Container')return qty*(p.recSize==='20ft'?22:p.recSize==='40ft'?44:0);
+  return qty;
+}
+function classifyScenarioBenchmark(){
+  const p=chosenMatch?.p||{};
+  const recDays=profileDays(p.recEvery,p.recUnit);
+  const loDays=profileDays(p.loEvery,p.loUnit);
+  const recurring=(recDays&&recDays<=14)||(loDays&&loDays<=14);
+  if(recurring){
+    return {type:'ongoing',reason:'The matched profile shows regular receivable and/or load-out activity, so the 1-month ongoing benchmark is the closer operating pattern.'};
+  }
+  return {type:'non-ongoing',reason:'The matched profile has lower-frequency or ad hoc stock movement, so the 3-month non-ongoing benchmark is the closer operating pattern.'};
+}
+function selectedRateValue(code){
+  let candidates=[...document.querySelectorAll('.sugrate')].filter(x=>(x.dataset.code||'')===code || (code==='STOP'&&(x.dataset.code||'').includes('STOP')));
+  let el=candidates[0];
+  if(el&&el.value!=='')return Number(el.value)||0;
+  let svc=SERVICES.find(s=>s.code===code || (code==='STOP'&&String(s.code).includes('STOP')));
+  return Number(svc?.standard)||0;
+}
+function scenarioForDwell(dwellDays){
+  const batchPallets=currentQuoteBatchPallets();
+  const cartons=batchPallets*36;
+  const weeks=Math.max(dwellDays/7,0);
+  const recRateCarton=selectedRateValue('REC'),recRatePallet=selectedRateValue('RECP');
+  const pickRateCarton=selectedRateValue('PICK'),pickRatePallet=selectedRateValue('PICKP');
+  const storRateCarton=selectedRateValue('STOR'),storRatePallet=selectedRateValue('STOP');
+  const blastRate=selectedRateValue('BREC'),scanRate=selectedRateValue('SCAN');
+  const q=currentQuoteRecord(),v=q?.snapshot?.v||{};
+  const product=v.prod||$('prod')?.value||'';
+  const blastPct=product==='Blast'?(Number(v.blastPct??$('blastPct')?.value)||0)/100:0;
+  let scanPct=0;
+  if(product==='Blast')scanPct=(Number(v.scanPct??$('scanPct')?.value)||0)/100;
+  else if(product==='Frozen'&&((v.scan??$('scan')?.value)==='Yes'))scanPct=(Number(v.scanPct??$('scanPct')?.value)||0)/100;
+
+  const receive=recRateCarton?cartons*recRateCarton:batchPallets*recRatePallet;
+  const load=pickRateCarton?cartons*pickRateCarton:batchPallets*pickRatePallet;
+  const storage=storRateCarton?cartons*storRateCarton*weeks:batchPallets*storRatePallet*weeks;
+  const blast=cartons*blastPct*blastRate;
+  const scan=cartons*scanPct*scanRate;
+  return {batchPallets,cartons,weeks,receive,load,storage,blast,scan,total:receive+load+storage+blast+scan,storRateCarton,storRatePallet};
+}
+function buildCommercialScenarios(){
+  const requestedDays=quoteDwellDays();
+  if(!requestedDays)return null;
+
+  const proposal=scenarioForDwell(requestedDays);
+  const nonDays=90;   // non-ongoing benchmark: 3 months
+  const ongoingDays=30; // ongoing benchmark: 1 month
+  const horizonDays=requestedDays;
+
+  function benchmark(days,label){
+    const one=scenarioForDwell(days);
+    const cycles=Math.max(horizonDays/days,1);
+    const total=one.total*cycles;
+    const opportunity=Math.max(0,total-proposal.total);
+    const recoveryWeeks=days/7;
+    const units=one.storRateCarton?proposal.cartons:proposal.batchPallets;
+    const baseRate=one.storRateCarton||one.storRatePallet||0;
+    const recommended=units&&recoveryWeeks?baseRate+(opportunity/(units*recoveryWeeks)):baseRate;
+    return {label,days,cycles,total,opportunity,recommended,baseRate,basis:one.storRateCarton?'carton':'pallet'};
+  }
+
+  const non=benchmark(nonDays,'Non-Ongoing');
+  const ongoing=benchmark(ongoingDays,'Ongoing');
+  const cls=classifyScenarioBenchmark();
+  return {
+    requestedDays,
+    graceDays:14,
+    thresholdDays:requestedDays+14,
+    proposal,
+    non,
+    ongoing,
+    recommendedType:cls.type,
+    reason:cls.reason
+  };
+}
+function renderScenarioAnalysis(){
+  const s=buildCommercialScenarios();
+  if(!s)return '<div class=scenarioWrap><b>Scenario analysis</b><div class=hint style="margin-top:6px">Enter an expected holding period to calculate long-stay scenarios.</div></div>';
+  const reqMonths=(s.requestedDays/30).toFixed(s.requestedDays%30?1:0);
+  const rec=s.recommendedType==='ongoing'?s.ongoing:s.non;
+  return `<div class=scenarioWrap>
+    <div class=scenarioTitle>
+      <h3>Long-Stay Commercial Scenario Analysis</h3>
+      <span class=recommendPill>Recommended: ${rec.label} benchmark</span>
+    </div>
+    <div class=hint>Comparison uses the same customer volume and selected rate card. Long-stay pricing would commence after the requested dwell period + 2 weeks.</div>
+
+    <div class=scenarioGrid>
+      <div class="scenarioCard ${s.recommendedType==='non-ongoing'?'recommended':''}">
+        <small>Scenario 1 · Non-Ongoing</small>
+        <b class=big>3-month turnover</b>
+        <div>Potential revenue: <b>${money(s.non.total)}</b></div>
+        <div>Opportunity lost vs proposal: <b>${money(s.non.opportunity)}</b></div>
+        <div style="margin-top:7px">Suggested long-stay rate: <b>${money(s.non.recommended)}/${s.non.basis}/week</b></div>
+        ${s.recommendedType==='non-ongoing'?'<div class=recommendPill style="margin-top:8px">Closest profile match</div>':''}
+      </div>
+      <div class="scenarioCard ${s.recommendedType==='ongoing'?'recommended':''}">
+        <small>Scenario 2 · Ongoing</small>
+        <b class=big>1-month turnover</b>
+        <div>Potential revenue: <b>${money(s.ongoing.total)}</b></div>
+        <div>Opportunity lost vs proposal: <b>${money(s.ongoing.opportunity)}</b></div>
+        <div style="margin-top:7px">Suggested long-stay rate: <b>${money(s.ongoing.recommended)}/${s.ongoing.basis}/week</b></div>
+        ${s.recommendedType==='ongoing'?'<div class=recommendPill style="margin-top:8px">Closest profile match</div>':''}
+      </div>
+      <div class=scenarioCard>
+        <small>Customer Proposal</small>
+        <b class=big>${reqMonths} month${Number(reqMonths)===1?'':'s'} dwell</b>
+        <div>Estimated proposal revenue: <b>${money(s.proposal.total)}</b></div>
+        <div>Volume: <b>${Math.round(s.proposal.batchPallets).toLocaleString()} pallets / ${Math.round(s.proposal.cartons).toLocaleString()} cartons</b></div>
+        <div style="margin-top:7px">Long-stay rate starts after: <b>${Math.round(s.thresholdDays)} days</b></div>
+      </div>
+    </div>
+
+    <table class=scenarioCompare>
+      <thead><tr><th>Scenario</th><th>Turnover</th><th>Cycles in proposal horizon</th><th>Revenue</th><th>Opportunity lost</th><th>Long-stay rate</th></tr></thead>
+      <tbody>
+        <tr><td>${s.non.label}${s.recommendedType==='non-ongoing'?' ★':''}</td><td>3 months</td><td>${s.non.cycles.toFixed(2)}</td><td>${money(s.non.total)}</td><td>${money(s.non.opportunity)}</td><td>${money(s.non.recommended)}/${s.non.basis}/wk</td></tr>
+        <tr><td>${s.ongoing.label}${s.recommendedType==='ongoing'?' ★':''}</td><td>1 month</td><td>${s.ongoing.cycles.toFixed(2)}</td><td>${money(s.ongoing.total)}</td><td>${money(s.ongoing.opportunity)}</td><td>${money(s.ongoing.recommended)}/${s.ongoing.basis}/wk</td></tr>
+        <tr><td>Customer Proposal</td><td>${reqMonths} months</td><td>1.00</td><td>${money(s.proposal.total)}</td><td>—</td><td>Current selected storage rate</td></tr>
+      </tbody>
+    </table>
+
+    <div class=scenarioExplanation><b>Why this benchmark is highlighted:</b> ${esc(s.reason)} Both benchmark scenarios are still shown so Commercial can compare the impact before finalising the quote.</div>
+  </div>`;
+}
 function updateSuggestedEconomics(){
   let host=$('rateEconomics');
   if(!host)return;
-  if(qm!=='3PL'||!chosenMatch){
-    host.innerHTML='';
-    return;
-  }
+  if(qm!=='3PL'||!chosenMatch){host.innerHTML='';return}
   let e=suggestedPatternEconomics();
   if(!e)return;
 
@@ -529,14 +699,12 @@ function updateSuggestedEconomics(){
       ${e.receiptsPerWeek?` · ≈ ${e.receiptsPerWeek.toFixed(2)} receipt(s)/week`:''}
       ${e.weeklyPallets?` · ≈ ${Math.round(e.weeklyPallets).toLocaleString()} pallets / ${Math.round(e.weeklyCartons).toLocaleString()} cartons per week`:''}
     </div>
-
     <div class=econGrid>
       <div class=econKpi><small>Estimated weekly revenue</small><b>${money(e.total)}</b></div>
       <div class=econKpi><small>Monthly equivalent</small><b>${money(e.monthlyEq)}</b></div>
       <div class=econKpi><small>${e.budget.label} weekly budget</small><b>${money(e.budget.weekly)}</b></div>
       <div class=econKpi><small>Budget coverage</small><b>${e.budget.weekly?e.coverage.toFixed(1)+'%':'—'}</b></div>
     </div>
-
     <div class=econBreakdown>
       <div class=econBox>
         <b>Weekly revenue breakdown</b>
@@ -557,43 +725,129 @@ function updateSuggestedEconomics(){
         ${targetMultiplier>0?`Rate/revenue level needed for 100% of this weekly budget: <b>${targetMultiplier.toFixed(2)}×</b> current estimate.`:''}
       </div>
     </div>
-
-    <div class=econWarn>
-      Estimate uses the matched customer's saved operational pattern. Where the profile has no dispatch quantity, Load Out assumes steady-state outbound volume approximately equals inbound volume. Storage uses average stock ≈ weekly inbound × dwell weeks. This is a commercial scenario estimate, not actual invoiced revenue.
-    </div>
+    ${renderScenarioAnalysis()}
   </div>`;
 }
 
+let quoteRateServices=[];
+let quoteRemovedServices=[];
+
+function sectionRank(s){
+  const order=['Service - Frozen','Service - Chilled','Administration Charges','Overtime – Weekday','Saturday – Minimum 4 hours Charge','Sunday / Public Holiday – Minimum 4 hours Charge','Custom Service Charges'];
+  let i=order.indexOf(s);return i<0?999:i;
+}
+function renderQuoteRateRows(){
+  const host=$('quoteRateRows');if(!host)return;
+  let rows=[...quoteRateServices].sort((a,b)=>sectionRank(a.section)-sectionRank(b.section)||(a.section||'').localeCompare(b.section||'')||(a.code||'').localeCompare(b.code||''));
+  let last='';
+  host.innerHTML=rows.map(s=>{
+    let sec='';
+    if(s.section!==last){last=s.section;sec=`<div class=quoteRateSection>${esc(s.section||'Other Services')}</div>`}
+    return `${sec}<div class=quoteRateRow data-rate-id="${s.id}">
+      <div class=quoteRateCode>${esc(s.code||'—')}</div>
+      <div class=quoteRateDesc>${esc(s.desc)}</div>
+      <div><input class="sugrate quoteRateInput" data-id="${s.id}" data-code="${esc(s.code||'')}" data-desc="${esc(s.desc||'')}" data-type="${esc(s.type||'')}" data-section="${esc(s.section||'')}" type=number step=.01 value="${s._rate??''}" oninput="syncQuoteRateValue(this);updateSuggestedEconomics()"></div>
+      <button class=quoteRateRemove title="Remove service" onclick="removeQuoteRateService('${s.id}')">×</button>
+    </div>`
+  }).join('');
+}
+function syncQuoteRateValue(el){
+  let s=quoteRateServices.find(x=>x.id===el.dataset.id);if(s)s._rate=el.value;
+}
+function removeQuoteRateService(id){
+  let i=quoteRateServices.findIndex(x=>x.id===id);if(i<0)return;
+  quoteRemovedServices.push(quoteRateServices[i]);
+  quoteRateServices.splice(i,1);
+  renderQuoteRateRows();updateSuggestedEconomics();
+}
+function openQuoteServiceModal(){
+  $('quoteServiceSearch').value='';
+  renderQuoteServicePicker();
+  $('quoteServiceModal').classList.add('on');
+}
+function closeQuoteServiceModal(){$('quoteServiceModal').classList.remove('on')}
+function renderQuoteServicePicker(){
+  const q=($('quoteServiceSearch')?.value||'').toLowerCase();
+  const active=new Set(quoteRateServices.map(x=>x.id));
+  const z=chosenMatch;
+  let custom=(z?.p?.customServices||[]);
+  let all=[...SERVICES,...custom,...quoteRemovedServices]
+    .filter((x,i,a)=>a.findIndex(y=>y.id===x.id)===i)
+    .filter(x=>!active.has(x.id))
+    .filter(x=>`${x.code||''} ${x.desc||''} ${x.section||''}`.toLowerCase().includes(q))
+    .sort((a,b)=>sectionRank(a.section)-sectionRank(b.section)||(a.section||'').localeCompare(b.section||'')||(a.code||'').localeCompare(b.code||''));
+  let last='';
+  $('quoteServicePicker').innerHTML=all.length?all.map(s=>{
+    let sec='';
+    if(s.section!==last){last=s.section;sec=`<div class=servicePickerSection>${esc(s.section||'Other Services')}</div>`}
+    let rv=z?.p?.rates?.[s.id]??s.standard??'';
+    return `${sec}<div class=servicePickerRow onclick="addExistingQuoteService('${s.id}')"><b>${esc(s.code||'—')}</b><span>${esc(s.desc)}</span><span>${rv!==''?money(rv):'Add'}</span></div>`
+  }).join(''):'<div class=mutedEmpty>No available services match this search.</div>';
+}
+function addExistingQuoteService(id){
+  let z=chosenMatch,all=[...SERVICES,...(z?.p?.customServices||[]),...quoteRemovedServices];
+  let s=all.find(x=>x.id===id);if(!s)return;
+  let copy={...s,_rate:z?.p?.rates?.[s.id]??s._rate??s.standard??''};
+  quoteRateServices.push(copy);
+  quoteRemovedServices=quoteRemovedServices.filter(x=>x.id!==id);
+  renderQuoteRateRows();renderQuoteServicePicker();updateSuggestedEconomics();
+}
+function addCustomQuoteService(){
+  let desc=($('quoteNewSvcDesc').value||'').trim();if(!desc){appNotice('Enter a service description first.','Service required','warning');return}
+  let s={
+    id:'quote_custom_'+Date.now(),
+    code:($('quoteNewSvcCode').value||'').trim(),
+    desc,
+    section:($('quoteNewSvcSection').value||'Custom Service Charges').trim(),
+    type:($('quoteNewSvcType').value||'Handling').trim(),
+    custom:true,
+    _rate:$('quoteNewSvcRate').value||''
+  };
+  quoteRateServices.push(s);
+  ['quoteNewSvcCode','quoteNewSvcDesc','quoteNewSvcRate'].forEach(id=>$(id).value='');
+  renderQuoteRateRows();closeQuoteServiceModal();updateSuggestedEconomics();
+}
 function chooseMatch(i){
   let arr=JSON.parse(matchModal.dataset.matches||'[]'),z=arr[i];
   if(!z)return;
   chosenMatch=z;
   document.querySelectorAll('.match').forEach((x,j)=>x.classList.toggle('on',j===i));
-  let lines=qm==='3PL'
+
+  let all=qm==='3PL'
     ? SERVICES.concat(z.p.customServices||[])
     : [{id:'RENT',code:'RENT',desc:'Rent',type:'Tenant',section:'Tenant',standard:null},{id:'OUT',code:'OUT',desc:'Outgoings',type:'Tenant',section:'Tenant',standard:null}];
 
+  // Only show services that actually have a matched/customer or standard rate.
+  // Holding-over has been removed; base storage already includes the former $0.04/carton.
+  quoteRateServices=all
+    .filter(s=>s.id!=='svc022')
+    .map(s=>{
+      let rv=z.p.rates?.[s.id]??s.standard??'';
+      if(s.code==='STOR'&&rv!==''&&Number(rv)<0.44)rv=Number(rv)+0.04;
+      if(String(s.code).includes('STOP')&&rv!==''&&Number(rv)<13.44)rv=Number(rv)+1.44;
+      return {...s,_rate:rv}
+    })
+    .filter(s=>s._rate!==''&&s._rate!=null);
+  quoteRemovedServices=[];
+
   $('matchRates').innerHTML=
     `<h3>Suggested rate card — editable</h3>
-     <div class=info style="margin-bottom:10px"><b>Select the services to include in the customer Rate Card PDF.</b> Only checked rows will be saved with this quote and exported.</div>
      <div class=rateWrap>
-       <table class=rateTable>
-         <thead><tr><th style="width:70px">Include</th><th>Code</th><th>Service</th><th>Suggested rate</th></tr></thead>
-         <tbody>${lines.map(s=>{let rv=z.p.rates?.[s.id]??s.standard??'';return `<tr>
-           <td><input class=rateInclude type=checkbox data-id="${s.id}" ${rv!==''&&rv!=null?'checked':''}></td>
-           <td>${s.code||'—'}</td>
-           <td>${s.desc}</td>
-           <td><input class=sugrate data-id="${s.id}" data-code="${esc(s.code||'')}" data-desc="${esc(s.desc||'')}" data-type="${esc(s.type||'')}" data-section="${esc(s.section||'')}" type=number step=.01 value="${rv}" oninput="updateSuggestedEconomics()"></td>
-         </tr>`}).join('')}</tbody>
-       </table>
+       <div id=quoteRateRows></div>
+     </div>
+     <div class=quoteRateToolbar>
+       <button class="btn addServiceBtn" onclick=openQuoteServiceModal()>+ Add Service</button>
+       <span class=hint>Remove any service that is not required. You can add it back at any time.</span>
      </div>
      <div id=rateEconomics></div>
      <div class=nextBar>
-       <span class=hint>Review the rates, tick only the services to appear on the Rate Card, then continue.</span>
+       <span class=hint>Review the rate card and scenario analysis, then continue.</span>
        <button class="btn primary" onclick=acceptSuggestion()>Next →</button>
      </div>`;
+  renderQuoteRateRows();
   updateSuggestedEconomics();
 }
+
 function acceptSuggestion(){
   let a=quoteStore(),q=a.find(x=>x.id===currentQuoteId);
   if(q){
@@ -602,22 +856,27 @@ function acceptSuggestion(){
     q.suggestedRates={};
     q.selectedRateCard=[];
     q.rateCardSource=chosenMatch?.x?{customer:chosenMatch.x.customer,account:chosenMatch.x.account}:q.rateCardSource||null;
-    document.querySelectorAll('.sugrate').forEach(i=>{
-      q.suggestedRates[i.dataset.id]=i.value;
-      let cb=document.querySelector(`.rateInclude[data-id="${i.dataset.id}"]`);
-      if(cb?.checked){
-        q.selectedRateCard.push({
-          id:i.dataset.id,
-          code:i.dataset.code||'',
-          desc:i.dataset.desc||'',
-          type:i.dataset.type||'',
-          section:i.dataset.section||'',
-          rate:i.value
-        });
-      }
+
+    quoteRateServices.forEach(s=>{
+      q.suggestedRates[s.id]=s._rate??'';
+      q.selectedRateCard.push({
+        id:s.id,
+        code:s.code||'',
+        desc:s.desc||'',
+        type:s.type||'',
+        section:s.section||'',
+        rate:s._rate??''
+      });
     });
+
+    // Persist the scenario analysis with the quote; Supabase bridge syncs apcs_cm_quotes_v1 automatically.
+    q.commercialScenarios=buildCommercialScenarios();
     if(!(q.history||[]).some(h=>h.event==='Submitted'))addHistory(q,'Submitted','Status set to Pending');
     addHistory(q,'Rate Card Saved',`${q.selectedRateCard.length} selected service(s)`);
+    if(q.commercialScenarios){
+      let r=q.commercialScenarios.recommendedType==='ongoing'?'Ongoing 1-month':'Non-Ongoing 3-month';
+      addHistory(q,'Scenario Analysis',`Recommended benchmark: ${r}`);
+    }
     putQuotes(a);
   }
   matchModal.classList.remove('on');
@@ -1343,7 +1602,37 @@ migrateWorkflow();migratePendingStartDatesV13();migrateQuoteTypeAndRateCardV2();
     <div id="globalModalActions" class="globalModalActions"></div>
   </div>
 </div>
-<div class="buildBanner">BUILD 15 · SUPABASE MASTER</div>
+<div class="buildBanner">BUILD 16 · SUPABASE SCENARIO</div>
 
 <div id="apcsDbStatus" class="dbStatus">Database connecting…</div>
+
+<div class="modal" id="quoteServiceModal">
+  <div class="modalbox" style="width:min(760px,94vw)">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+      <div>
+        <h2 style="margin:0;color:#075985">Add Service</h2>
+        <p class="hint" style="margin:5px 0 0">Add a service from the APCS rate list, restore a removed service, or create a custom service for this quote.</p>
+      </div>
+      <button class=x onclick="closeQuoteServiceModal()">×</button>
+    </div>
+    <div style="margin-top:14px">
+      <input id=quoteServiceSearch placeholder="Search code or service..." oninput="renderQuoteServicePicker()">
+    </div>
+    <div id=quoteServicePicker class=servicePickerList style="margin-top:10px"></div>
+    <div style="border-top:1px solid #e2ebf0;margin-top:14px;padding-top:14px">
+      <h3 style="margin:0 0 9px;color:#075985">Add New Service</h3>
+      <div class=g3>
+        <div><label>Code</label><input id=quoteNewSvcCode></div>
+        <div><label>Description</label><input id=quoteNewSvcDesc></div>
+        <div><label>Rate</label><input id=quoteNewSvcRate type=number step=.01></div>
+      </div>
+      <div class=g2 style="margin-top:9px">
+        <div><label>Section</label><input id=quoteNewSvcSection value="Custom Service Charges"></div>
+        <div><label>Type</label><input id=quoteNewSvcType value="Handling"></div>
+      </div>
+      <div style="text-align:right;margin-top:12px"><button class="btn primary" onclick=addCustomQuoteService()>+ Add New Service</button></div>
+    </div>
+  </div>
+</div>
+
 </body></html>
