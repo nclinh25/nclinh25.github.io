@@ -1,11 +1,22 @@
 <!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 
+
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <script>
-(function(){
-  const BUILD='11';
+(async function(){
+  const BUILD='13';
+  try{
+    if('serviceWorker' in navigator){
+      const regs=await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r=>r.unregister()));
+    }
+    if('caches' in window){
+      const keys=await caches.keys();
+      await Promise.all(keys.map(k=>caches.delete(k)));
+    }
+  }catch(e){}
   const u=new URL(location.href);
   if(u.searchParams.get('build')!==BUILD){
     u.searchParams.set('build',BUILD);
@@ -15,7 +26,7 @@
 </script>
 
 <title>APCS Commercial Management</title>
-<!-- BUILD: 11 | cache-busted + current-quote scan economics + professional modal --><style>
+<!-- BUILD: 13 | pending has no expected start/effective date; date requested only on Won --><style>
 :root{--navy:#073d69;--blue:#0b6ea8;--purple:#7057c8;--teal:#16847a;--bg:#eef5f9;--line:#d6e4ec;--text:#173246;--muted:#6d8494}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,"Segoe UI",Arial;background:linear-gradient(#f8fbfd,#edf4f8);color:var(--text)}
 header{height:72px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 24px;position:sticky;top:0;z-index:30}.brand b{font-size:18px;color:#0b416c}.brand small{display:block;color:var(--muted);font-size:11px}.nav{margin-left:auto;height:100%;display:flex}.nav button{border:0;background:transparent;padding:0 20px;font-weight:650;color:#50697b;cursor:pointer;border-bottom:3px solid transparent}.nav button:hover{color:#075f98;background:#f6fbfe}.nav button:active{background:#e2f1f9}.nav button.on{color:#075f98;border-bottom-color:#0b78b8;background:#eef7fc}.navGroup{position:relative;height:100%;display:flex;align-items:stretch}.navGroup>.navMain{height:100%}.navDrop{display:none;position:absolute;top:68px;right:0;min-width:205px;background:#fff;border:1px solid var(--line);border-radius:0 0 10px 10px;box-shadow:0 10px 25px #12384d24;padding:7px;z-index:60}.navGroup:hover .navDrop,.navGroup:focus-within .navDrop{display:block}.navDrop button{display:block;width:100%;height:42px;padding:0 13px!important;text-align:left;border:0!important;border-radius:7px;background:#fff!important;color:#416278!important}.navDrop button:hover{background:#eef7fc!important;color:#075f98!important}.navDrop button.subon{background:#e5f3fb!important;color:#075f98!important;font-weight:750}.navMain .chev{font-size:10px;margin-left:6px}
@@ -412,22 +423,27 @@ function suggestedPatternEconomics(){
   let avgCartons=avgPallets*36;
   let storageRevenue=storCarton?avgCartons*storCarton:avgPallets*storPallet;
 
-  // Product handling must come from the CURRENT quote being prepared.
-  // The matched customer profile is only the starting operational/rate pattern.
-  let currentProduct=$('prod')?.value||p.product||'';
-  let currentBlastPct=currentProduct==='Blast'?(Number($('blastPct')?.value)||0)/100:0;
+  // Product handling comes from THIS quote's saved snapshot.
+  // This is more reliable than the transient form DOM after Submit.
+  const currentQuote=quoteStore().find(x=>x.id===currentQuoteId);
+  const qv=currentQuote?.snapshot?.v||{};
+  const currentProduct=qv.prod||$('prod')?.value||'';
+  const currentBlastPct=currentProduct==='Blast'?(Number(qv.blastPct ?? $('blastPct')?.value)||0)/100:0;
+
   let currentScanPct=0;
   if(currentProduct==='Blast'){
-    currentScanPct=(Number($('scanPct')?.value)||0)/100;
-  }else if(currentProduct==='Frozen'&&$('scan')?.value==='Yes'){
-    currentScanPct=(Number($('scanPct')?.value)||0)/100;
+    currentScanPct=(Number(qv.scanPct ?? $('scanPct')?.value)||0)/100;
+  }else if(currentProduct==='Frozen'&&((qv.scan ?? $('scan')?.value)==='Yes')){
+    currentScanPct=(Number(qv.scanPct ?? $('scanPct')?.value)||0)/100;
   }
 
-  let blastPct=currentBlastPct;
-  let blastRevenue=weeklyCartons*blastPct*blastRate;
-
-  let scanPct=currentScanPct;
-  let scanRevenue=weeklyCartons*scanPct*scanRate;
+  // SCAN is always charged per carton.
+  // All receivable patterns are first converted to pallets, then 36 cartons/pallet.
+  const blastPct=currentBlastPct;
+  const blastRevenue=weeklyCartons*blastPct*blastRate;
+  const scanPct=currentScanPct;
+  const scanCartons=weeklyCartons*scanPct;
+  const scanRevenue=scanCartons*scanRate;
 
   // Profile currently stores load-out frequency, but not pallets/cartons per dispatch.
   // For a steady-state weekly estimate we therefore assume outbound volume ~= inbound volume.
@@ -441,7 +457,7 @@ function suggestedPatternEconomics(){
 
   return {
     p,perBatch,receiptsPerWeek,weeklyPallets,weeklyCartons,dwellDays,avgPallets,
-    receiveRevenue,storageRevenue,blastRevenue,scanRevenue,loadRevenue,scanPct,blastPct,
+    receiveRevenue,storageRevenue,blastRevenue,scanRevenue,loadRevenue,scanPct,blastPct,scanCartons,scanRate,
     total,budget,coverage,monthlyEq,annualEq
   };
 }
@@ -488,7 +504,7 @@ function updateSuggestedEconomics(){
           <tr><td>Storage</td><td>${money(e.storageRevenue)}</td></tr>
           <tr><td>Load Out</td><td>${money(e.loadRevenue)}</td></tr>
           <tr><td>Blast Freezing</td><td>${money(e.blastRevenue)}</td></tr>
-          <tr><td>Scanning${e.scanPct!=null?` <span class=hint>(${(e.scanPct*100).toFixed(0)}%)</span>`:''}</td><td>${money(e.scanRevenue)}</td></tr>
+          <tr><td>Scanning <span class=hint>(${(e.scanPct*100).toFixed(0)}% · ${Math.round(e.scanCartons).toLocaleString()} cartons × ${money(e.scanRate)})</span></td><td>${money(e.scanRevenue)}</td></tr>
           <tr><td><b>Total</b></td><td><b>${money(e.total)}</b></td></tr>
         </table>
       </div>
@@ -570,7 +586,7 @@ function acceptSuggestion(){
   quoteFilter='Pending';
   document.querySelectorAll('.qfilter').forEach(b=>b.classList.toggle('on',b.dataset.filter==='Pending'));
   renderQuotes();go('quotes');
-  setTimeout(()=>showGlobalModal('Quote submitted successfully. It is now Pending.\n\nThe selected Rate Card has been saved with the quote.',{title:'Quote submitted',type:'success',confirmText:'Done'}),80)
+  setTimeout(()=>showGlobalModal('Quote submitted successfully. It is now Pending.',{title:'Quote submitted',type:'success',confirmText:'Done'}),80)
 }
 function snapshot(){
   let v={};
@@ -625,7 +641,7 @@ function quoteName(){return ($('qname').value||'').trim()||'Untitled quote'}
 function addHistory(q,event,detail=''){q.history=Array.isArray(q.history)?q.history:[];q.history.push({event,detail,at:nowISO()})}
 function defaultOnboarding(q){return{quoteId:q.id,status:'In Progress',createdAt:nowISO(),tasks:(DEFAULT_ONBOARDING[q.model]||[]).map((t,i)=>({...t,id:'T-'+Date.now()+'-'+i,done:false,dueDate:'',notes:''}))}}
 function ensureOnboarding(q){if(!q.onboarding)q.onboarding=defaultOnboarding(q);if(!Array.isArray(q.onboarding.tasks))q.onboarding.tasks=defaultOnboarding(q).tasks;return q.onboarding}
-function saveQuoteRecord(stage='Draft',status=''){let a=quoteStore(),now=nowISO(),snap=snapshot();if(!currentQuoteId)currentQuoteId='Q-'+Date.now();let i=a.findIndex(x=>x.id===currentQuoteId),old=i>=0?a[i]:{};let rec={...old,id:currentQuoteId,name:quoteName(),model:qm,quoteType:$('quoteType')?.value||old.quoteType||'New Quote',stage,status:status||(stage==='Draft'?'Draft':old.status||'Pending'),snapshot:snap,updatedAt:now,createdAt:old.createdAt||now,submittedAt:stage==='Submitted'?(old.submittedAt||now):old.submittedAt};if(!old.id)addHistory(rec,stage==='Draft'?'Draft Created':'Submitted');if(stage==='Submitted'&&old.stage!=='Submitted')addHistory(rec,'Submitted','Status set to Pending');if(i>=0)a[i]=rec;else a.push(rec);putQuotes(a);localStorage.setItem('apcs_cm_current_quote_v1',currentQuoteId);$('draftName').textContent=rec.name;$('saveState').textContent=stage==='Draft'?'Draft saved':'Submitted';return rec}
+function saveQuoteRecord(stage='Draft',status=''){let a=quoteStore(),now=nowISO(),snap=snapshot();if(!currentQuoteId)currentQuoteId='Q-'+Date.now();let i=a.findIndex(x=>x.id===currentQuoteId),old=i>=0?a[i]:{};let rec={...old,id:currentQuoteId,name:quoteName(),model:qm,quoteType:$('quoteType')?.value||old.quoteType||'New Quote',stage,status:status||(stage==='Draft'?'Draft':old.status||'Pending'),snapshot:snap,updatedAt:now,createdAt:old.createdAt||now,submittedAt:stage==='Submitted'?(old.submittedAt||now):old.submittedAt};if(!old.id)addHistory(rec,stage==='Draft'?'Draft Created':'Submitted');if(stage==='Submitted'&&old.stage!=='Submitted')addHistory(rec,'Submitted','Status set to Pending');if(rec.status!=='Won'){delete rec.expectedStartDate;delete rec.renewalEffectiveDate}if(i>=0)a[i]=rec;else a.push(rec);putQuotes(a);localStorage.setItem('apcs_cm_current_quote_v1',currentQuoteId);$('draftName').textContent=rec.name;$('saveState').textContent=stage==='Draft'?'Draft saved':'Submitted';return rec}
 function saveDraft(){let rec=saveQuoteRecord('Draft','Draft');renderQuotes();let when=new Date(rec.updatedAt).toLocaleString('en-AU',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true});$('draftSavedMessage').innerHTML=`<b>${esc(rec.name||'Untitled draft')}</b> has been saved to Quotes on <b>${when}</b>.<br><span class=hint>You can continue this draft later from Quotes → Quote List → Drafts.</span>`;$('draftSavedModal').classList.add('on')}
 function finishDraftSave(){$('draftSavedModal').classList.remove('on');currentQuoteId=null;localStorage.removeItem('apcs_cm_current_quote_v1');clearQuoteForm()}
 function autoSave(){if(suppressAutosave)return;clearTimeout(timer);$('saveState').textContent='Autosaving…';timer=setTimeout(()=>{if(!currentQuoteId)return;let a=quoteStore(),existing=a.find(x=>x.id===currentQuoteId);if(existing&&existing.stage==='Draft')saveQuoteRecord('Draft','Draft')},250)}
@@ -671,7 +687,7 @@ function renderQuotes(){
   let a=quoteStore().slice().sort((x,y)=>new Date(y.updatedAt)-new Date(x.updatedAt));
   if(quoteFilter!=='All')a=a.filter(q=>quoteFilter==='Draft'?q.stage==='Draft':q.stage==='Submitted'&&q.status===quoteFilter);
   $('quotesTable').innerHTML=a.length?`<table class=workflowTable>
-    <thead><tr><th>Customer / Opportunity</th><th>Type</th><th>Status</th><th>Quote Type</th><th>Last Updated</th><th>Start / Effective</th><th>Action</th></tr></thead>
+    <thead><tr><th>Customer / Opportunity</th><th>Type</th><th>Status</th><th>Quote Type</th><th>Last Updated</th><th>Expected Start</th><th>Action</th></tr></thead>
     <tbody>${a.map(q=>{
       let display=q.stage==='Draft'?'Draft':(q.status||'Pending'),
           qt=q.quoteType||q.snapshot?.v?.quoteType||'New Quote',
@@ -688,7 +704,7 @@ function renderQuotes(){
         <td><span class="statusBadge ${display.toLowerCase()}">${display}</span></td>
         <td><span class="quoteTypeBadge ${qt==='Contract Renewal'?'renewal':''}">${esc(qt)}</span></td>
         <td>${shortDateTime(q.updatedAt)}</td>
-        <td>${shortDate(q.expectedStartDate)}</td>
+        <td>${q.status==='Won'?shortDate(q.expectedStartDate):'—'}</td>
         <td><div class=workflowActions>${actions}</div></td>
       </tr>`
     }).join('')}</tbody></table>`:'<div class=mutedEmpty>No quotes in this view.</div>'
@@ -1143,6 +1159,19 @@ function migrateWorkflow(){
   }
 }
 
+
+function migratePendingStartDatesV13(){
+  let a=quoteStore(),changed=false;
+  a.forEach(q=>{
+    if(q.status!=='Won' && q.expectedStartDate){
+      delete q.expectedStartDate;
+      delete q.renewalEffectiveDate;
+      changed=true;
+    }
+  });
+  if(changed)putQuotes(a);
+}
+
 function migrateQuoteTypeAndRateCardV2(){
   let a=quoteStore(),changed=false;
   a.forEach(q=>{
@@ -1170,7 +1199,7 @@ function addTask(qid){let a=quoteStore(),q=a.find(x=>x.id===qid);if(!q)return;en
 function deleteTask(qid,tid){let a=quoteStore(),q=a.find(x=>x.id===qid);if(!q)return;appConfirm('Delete this onboarding task?',()=>{q.onboarding.tasks=q.onboarding.tasks.filter(x=>x.id!==tid);q.updatedAt=nowISO();putQuotes(a);renderOnboarding();openOnboarding(qid)},{title:'Delete task',confirmText:'Delete',type:'danger'})}
 function markStarted(qid){let a=quoteStore(),q=a.find(x=>x.id===qid);if(!q)return;let o=ensureOnboarding(q),s=onboardingState(o);if(s.pct!==100){appNotice('All onboarding tasks must be completed first.','Onboarding incomplete','warning');return}appConfirm(`Mark ${q.name} as Started and move the customer to Active Customers?`,()=>{let t=nowISO(),today=t.slice(0,10);o.completedAt=t;o.status='Completed';q.actualStartDate=t;q.updatedAt=t;addHistory(q,'Onboarding Completed','Moved to Active Customers');putQuotes(a);let c=customCustomers(),exists=(c[q.model]||[]).some(x=>x.customer===q.name);if(!exists){c[q.model].push({customer:q.name,account:q.name});localStorage.setItem('apcs_customers_v4',JSON.stringify(c))}let st=profiles(),key=q.model+'|'+q.name+'|'+q.name;if(!st[key])st[key]={commence:today,status:'Active',notes:'Created from completed onboarding.',rates:{}};localStorage.setItem('apcs_profiles_v4',JSON.stringify(st));renderOnboarding();$('onboardingDetail').innerHTML='';renderList();renderRatePage();appNotice(`${q.name} onboarding is complete. View the customer in Our Customers → Active Customers.`,'Onboarding complete','success');go('profile')},{title:'Complete onboarding',confirmText:'Mark Started',type:'success'})}
 ['Portmark','Label','Shrinkwrap','Handstack','Mix product','Single product','Temp logger'].forEach(x=>$('extras').insertAdjacentHTML('beforeend',`<label><input type=checkbox><span>${x}</span></label>`));
-migrateWorkflow();migrateQuoteTypeAndRateCardV2();if(!restore()){addRec();addRoom()}renderQuotes();renderOnboarding();prodUI();loadUI();calc();requestAnimationFrame(()=>{renderList();renderRatePage()});document.addEventListener('input',e=>{if(e.target.closest('#quote'))calc()});document.addEventListener('change',e=>{if(e.target.closest('#quote'))calc()});
+migrateWorkflow();migratePendingStartDatesV13();migrateQuoteTypeAndRateCardV2();if(!restore()){addRec();addRoom()}renderQuotes();renderOnboarding();prodUI();loadUI();calc();requestAnimationFrame(()=>{renderList();renderRatePage()});document.addEventListener('input',e=>{if(e.target.closest('#quote'))calc()});document.addEventListener('change',e=>{if(e.target.closest('#quote'))calc()});
 // v7.1 clean workflow: Draft -> Pending -> Won/Lost; Won derives onboarding directly from quote record
 </script>
 <div id="rateCardExportModal" class="appModal" aria-hidden="true">
@@ -1257,7 +1286,7 @@ migrateWorkflow();migrateQuoteTypeAndRateCardV2();if(!restore()){addRec();addRoo
     </div>
   </div>
 </div>
-<div class="buildTag">Build 10 · 30 Sep</div>
+
 
 
 <div id="globalModal" class="globalModal" aria-hidden="true">
@@ -1273,6 +1302,6 @@ migrateWorkflow();migrateQuoteTypeAndRateCardV2();if(!restore()){addRec();addRoo
     <div id="globalModalActions" class="globalModalActions"></div>
   </div>
 </div>
-<div class="buildBanner">BUILD 11 · CACHE BUSTED</div>
+<div class="buildBanner">BUILD 13 · PENDING DATE FIX</div>
 
 </body></html>
