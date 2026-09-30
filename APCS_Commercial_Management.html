@@ -5,7 +5,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>APCS Commercial Management</title>
-<!-- BUILD: 32.2 FINAL | minimal long-stay cards --><style>
+<!-- BUILD: 34 FINAL | Quote Rate Card PDF includes Annual CPI for Tenant and 3PL --><style>
 :root{--navy:#073d69;--blue:#0b6ea8;--purple:#7057c8;--teal:#16847a;--bg:#eef5f9;--line:#d6e4ec;--text:#173246;--muted:#6d8494}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,"Segoe UI",Arial;background:linear-gradient(#f8fbfd,#edf4f8);color:var(--text)}
 header{height:72px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 24px;position:sticky;top:0;z-index:30}.brand b{font-size:18px;color:#0b416c}.brand small{display:block;color:var(--muted);font-size:11px}.nav{margin-left:auto;height:100%;display:flex}.nav button{border:0;background:transparent;padding:0 20px;font-weight:650;color:#50697b;cursor:pointer;border-bottom:3px solid transparent}.nav button:hover{color:#075f98;background:#f6fbfe}.nav button:active{background:#e2f1f9}.nav button.on{color:#075f98;border-bottom-color:#0b78b8;background:#eef7fc}.navGroup{position:relative;height:100%;display:flex;align-items:stretch}.navGroup>.navMain{height:100%}.navDrop{display:none;position:absolute;top:68px;right:0;min-width:205px;background:#fff;border:1px solid var(--line);border-radius:0 0 10px 10px;box-shadow:0 10px 25px #12384d24;padding:7px;z-index:60}.navGroup:hover .navDrop,.navGroup:focus-within .navDrop{display:block}.navDrop button{display:block;width:100%;height:42px;padding:0 13px!important;text-align:left;border:0!important;border-radius:7px;background:#fff!important;color:#416278!important}.navDrop button:hover{background:#eef7fc!important;color:#075f98!important}.navDrop button.subon{background:#e5f3fb!important;color:#075f98!important;font-weight:750}.navMain .chev{font-size:10px;margin-left:6px}
@@ -1627,49 +1627,58 @@ function tenantPricingScenarios(match){
     :(portfolio.medianRent||matchedRent||400);
   let referenceOut=matchedOut||portfolio.medianOut||74.52;
 
+  // Modest area adjustment only.
   let areaAdj=0;
   if(req.area>0){
-    if(req.area<100)areaAdj=.08;
-    else if(req.area<250)areaAdj=.04;
-    else if(req.area>=800)areaAdj=-.04;
-    else if(req.area>=500)areaAdj=-.02;
+    if(req.area<100)areaAdj=.04;
+    else if(req.area<250)areaAdj=.02;
+    else if(req.area>=800)areaAdj=-.03;
+    else if(req.area>=500)areaAdj=-.015;
   }
 
-  let complexityAdj=0,drivers=[];
-  if(req.rooms.some(r=>['Blast room','Chill room','Frozen room'].includes(r))){
-    complexityAdj+=.04;drivers.push('cold-room requirement +4%');
-  }
-  if(req.dedicatedCold){
-    complexityAdj+=.06;drivers.push('dedicated cold room +6%');
-  }
-  if(req.afterHours){
-    complexityAdj+=.03;drivers.push('after-hours access +3%');
-  }
-  if(req.separateKey){
-    complexityAdj+=.015;drivers.push('separate key +1.5%');
-  }
-  if(req.parking){
-    const park=Math.min(.03,.005*Math.max(1,req.parkingLots||1));
-    complexityAdj+=park;drivers.push(`parking +${(park*100).toFixed(1)}%`);
-  }
+  // Bundle operational complexity into ONE adjustment instead of stacking every item.
+  let complexityPoints=0,drivers=[];
+  const hasCold=req.rooms.some(r=>['Blast room','Chill room','Frozen room'].includes(r));
+  if(hasCold){complexityPoints+=2;drivers.push('temperature-controlled space')}
+  if(req.dedicatedCold){complexityPoints+=2;drivers.push('dedicated cold room')}
+  if(req.afterHours){complexityPoints+=1;drivers.push('after-hours access')}
+  if(req.separateKey){complexityPoints+=.5;drivers.push('separate key')}
+  if(req.parking){complexityPoints+=Math.min(1,Math.max(.5,(req.parkingLots||1)*.25));drivers.push('parking')}
 
-  const cpi1=Math.max(APCS_CPI_FLOOR,APCS_ABS_CPI_REFERENCE);
-  const cpi2=Math.max(APCS_CPI_FLOOR+1,APCS_ABS_CPI_REFERENCE+1);
+  let complexityAdj=0;
+  if(complexityPoints>=5)complexityAdj=.05;
+  else if(complexityPoints>=3)complexityAdj=.035;
+  else if(complexityPoints>=1.5)complexityAdj=.02;
+  else if(complexityPoints>0)complexityAdj=.01;
 
-  const s1Rent=referenceRent*(1+areaAdj+complexityAdj);
-  const protectedReference=Math.max(referenceRent,portfolio.q3Rent||0);
-  const s2Rent=Math.max(s1Rent*1.08,protectedReference*(1+areaAdj+complexityAdj));
+  // Longer contract = lower starting base rent in exchange for occupancy certainty.
+  const years=Math.max(1,Math.floor(req.contractYears||1));
+  let contractDiscount=0;
+  if(years===2)contractDiscount=.015;
+  else if(years===3)contractDiscount=.03;
+  else if(years===4)contractDiscount=.045;
+  else if(years>=5)contractDiscount=.06;
 
-  const s1Out=referenceOut;
-  const s2Out=Math.max(referenceOut,portfolio.q3Out||0);
+  const adjustedBase=referenceRent*(1+areaAdj+complexityAdj)*(1-contractDiscount);
 
-  function scenario(label,rent,out,cpi){
+  // Rent/CPI trade-off:
+  // Scenario 1 = higher starting rent, lower CPI.
+  // Scenario 2 = lower starting rent, higher CPI.
+  const lowCpi=Math.max(APCS_CPI_FLOOR,APCS_ABS_CPI_REFERENCE);
+  const highCpi=Math.max(APCS_CPI_FLOOR+1,APCS_ABS_CPI_REFERENCE+1);
+
+  const higherBaseRent=adjustedBase*1.02;
+  const lowerBaseRent=adjustedBase*.96;
+
+  // Outgoings are recovered at the comparable level, not marked up as a service.
+  const scenarioOut=referenceOut;
+
+  function scenario(label,rent,out,cpi,structure){
     const annual=req.area*(rent+out);
-    const years=Math.max(1,Math.floor(req.contractYears||1));
     let total=0;
     for(let y=0;y<years;y++)total+=annual*Math.pow(1+cpi/100,y);
     return {
-      label,rent,out,cpi,
+      label,structure,rent,out,cpi,
       monthly:annual/12,
       annual,
       totalContract:total,
@@ -1679,7 +1688,8 @@ function tenantPricingScenarios(match){
   }
 
   return {
-    req,portfolio,referenceRent,referenceOut,drivers,
+    req,portfolio,referenceRent,referenceOut,
+    areaAdj,complexityAdj,complexityPoints,contractDiscount,drivers,
     matched:match?.x?{
       customer:match.x.customer,
       account:match.x.account,
@@ -1688,8 +1698,8 @@ function tenantPricingScenarios(match){
       hasNonChargeable:matchedHasNonChargeable
     }:null,
     scenarios:[
-      scenario('Scenario 1 · Portfolio-aligned',s1Rent,s1Out,cpi1),
-      scenario('Scenario 2 · Commercial protection',s2Rent,s2Out,cpi2)
+      scenario('Scenario 1 · Higher Base / Lower Escalation',higherBaseRent,scenarioOut,lowCpi,'higher-base'),
+      scenario('Scenario 2 · Lower Base / Higher Escalation',lowerBaseRent,scenarioOut,highCpi,'lower-base')
     ]
   };
 }
@@ -1725,13 +1735,17 @@ function tenantScenarioHtml(match){
       <div><small>Comparison reference</small><b>${ref}</b></div>
       <div><small>Chargeable area</small><b>${d.req.area?d.req.area.toLocaleString('en-AU')+' m²':'—'}</b></div>
       <div><small>Portfolio median rent</small><b>${d.portfolio.medianRent?money(d.portfolio.medianRent)+'/m²/yr':'—'}</b></div>
-      <div><small>CPI approach</small><b>ABS reference ${APCS_ABS_CPI_REFERENCE.toFixed(1)}% · APCS minimum ${APCS_CPI_FLOOR.toFixed(1)}%</b></div>
+      <div><small>CPI approach</small><b>ABS reference ${APCS_ABS_CPI_REFERENCE.toFixed(1)}% · Scenario floor ${APCS_CPI_FLOOR.toFixed(1)}%</b></div>
     </div>
     <div class=tenantScenarioGrid>${cards}</div>
     <div class=tenantScenarioExplain>
-      <b>Pricing drivers:</b> ${d.req.rooms.length?d.req.rooms.join(', '):'room type not specified'}${d.drivers.length?' · '+d.drivers.join(' · '):''}.
+      <b>Pricing logic:</b>
+      ${d.req.contractYears?`${Math.floor(d.req.contractYears)}-year contract gives ${(d.contractDiscount*100).toFixed(1)}% base-rent commitment discount.`:'No contract-length discount applied.'}
+      ${d.complexityAdj>0?` Operational complexity is bundled into one ${(d.complexityAdj*100).toFixed(1)}% adjustment (${d.drivers.join(', ')}), rather than stacking a separate premium for every item.`:' No operational-complexity premium is required.'}
+      ${d.areaAdj!==0?` Area adjustment: ${d.areaAdj>0?'+':''}${(d.areaAdj*100).toFixed(1)}%.`:''}
+      <br><b>Scenario trade-off:</b> Scenario 1 starts with a higher rent but lower CPI. Scenario 2 starts with a lower rent but higher CPI. Outgoings are recovered at the comparable current level in both scenarios.
       ${d.matched?.hasNonChargeable
-        ?'<br><b>Benchmark adjustment:</b> the matched profile notes indicate non-chargeable/free area, so its lower legacy rent is not used as the new pricing anchor.'
+        ?'<br><b>Benchmark adjustment:</b> the matched profile includes non-chargeable/free area, so its lower legacy rent is not used as the new pricing anchor.'
         :''}
       ${d.portfolio.excludedNonChargeable
         ?`<br>${d.portfolio.excludedNonChargeable} legacy Tenant profile${d.portfolio.excludedNonChargeable===1?'':'s'} with non-chargeable-area notes ${d.portfolio.excludedNonChargeable===1?'was':'were'} excluded from the rent benchmark.`
@@ -2186,6 +2200,66 @@ function canvasJpegToSinglePagePdf(jpegUrl,wPx,hPx){
   chunks.push(bytesFromBinaryString(xref));
   return new Blob([concatBytes(chunks)],{type:'application/pdf'});
 }
+function quotePdfCpi(q){
+  if(!q)return null;
+
+  // Tenant: use the CPI from the pricing scenario that was actually selected.
+  const tenantCpi=q.tenantPricingScenario?.cpi ?? q.tenantPricingScenario?.selected?.cpi;
+  if(q.model==='Tenant' && tenantCpi!==undefined && tenantCpi!==null && tenantCpi!==''){
+    const n=Number(tenantCpi);
+    if(Number.isFinite(n))return n;
+  }
+
+  // If the quote itself already carries a CPI value, use it.
+  const direct=q.cpi ?? q.snapshot?.v?.cpi;
+  if(direct!==undefined && direct!==null && direct!==''){
+    const n=Number(direct);
+    if(Number.isFinite(n))return n;
+  }
+
+  // 3PL / legacy Tenant quotes: use the CPI from the saved comparison/customer profile
+  // when the quote's rate-card source points to a real APCS customer.
+  try{
+    const model=q.model||'3PL';
+    const st=profiles();
+    const src=q.rateCardSource||{};
+    const srcCustomer=String(src.customer||'').trim().toLowerCase();
+    const srcAccount=String(src.account||'').trim().toLowerCase();
+
+    if(srcCustomer && !srcCustomer.startsWith('apcs ')){
+      const hit=allCustomers(model).find(x=>
+        String(x.customer||'').trim().toLowerCase()===srcCustomer &&
+        (!srcAccount || String(x.account||'').trim().toLowerCase()===srcAccount)
+      );
+      if(hit){
+        const v=st[pkey(hit,model)]?.cpi;
+        if(v!==undefined && v!==null && v!==''){
+          const n=Number(v);
+          if(Number.isFinite(n))return n;
+        }
+      }
+    }
+
+    // Contract renewal / existing-customer fallback: match the quote name to an active profile.
+    const qname=String(q.name||'').trim().toLowerCase();
+    if(qname){
+      const hit=allCustomers(model).find(x=>
+        String(x.customer||'').trim().toLowerCase()===qname ||
+        String(x.account||'').split(',').map(v=>v.trim().toLowerCase()).includes(qname)
+      );
+      if(hit){
+        const v=st[pkey(hit,model)]?.cpi;
+        if(v!==undefined && v!==null && v!==''){
+          const n=Number(v);
+          if(Number.isFinite(n))return n;
+        }
+      }
+    }
+  }catch(e){console.warn('Unable to resolve PDF CPI',e)}
+
+  return null;
+}
+
 async function buildStandaloneRateCardPdf(q,rows){
   const letterhead=await loadPdfImage(APCS_TEMPLATE_PAGE);
 
@@ -2224,8 +2298,10 @@ async function buildStandaloneRateCardPdf(q,rows){
   c.fillText(`Commercial model: ${q.model||'-'}`,105,466);
   c.fillText(`Quote type: ${quoteType}`,105,502);
 
+  const pdfCpi=quotePdfCpi(q);
   c.textAlign='right';
   c.fillText(`Prepared: ${new Date().toLocaleDateString('en-AU')}`,1135,430);
+  c.fillText(`Annual CPI: ${pdfCpi!==null?pdfCpi.toFixed(1)+'%':'TBC'}`,1135,466);
   c.textAlign='left';
 
   // Rate table, positioned clear of the watermark/footer.
