@@ -5,7 +5,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>APCS Commercial Management</title>
-<!-- BUILD: 34 FINAL | Quote Rate Card PDF includes Annual CPI for Tenant and 3PL --><style>
+<!-- BUILD: 35 FINAL | visible PDF CPI | quote merge-safe Supabase sync | quote backups --><style>
 :root{--navy:#073d69;--blue:#0b6ea8;--purple:#7057c8;--teal:#16847a;--bg:#eef5f9;--line:#d6e4ec;--text:#173246;--muted:#6d8494}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,"Segoe UI",Arial;background:linear-gradient(#f8fbfd,#edf4f8);color:var(--text)}
 header{height:72px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 24px;position:sticky;top:0;z-index:30}.brand b{font-size:18px;color:#0b416c}.brand small{display:block;color:var(--muted);font-size:11px}.nav{margin-left:auto;height:100%;display:flex}.nav button{border:0;background:transparent;padding:0 20px;font-weight:650;color:#50697b;cursor:pointer;border-bottom:3px solid transparent}.nav button:hover{color:#075f98;background:#f6fbfe}.nav button:active{background:#e2f1f9}.nav button.on{color:#075f98;border-bottom-color:#0b78b8;background:#eef7fc}.navGroup{position:relative;height:100%;display:flex;align-items:stretch}.navGroup>.navMain{height:100%}.navDrop{display:none;position:absolute;top:68px;right:0;min-width:205px;background:#fff;border:1px solid var(--line);border-radius:0 0 10px 10px;box-shadow:0 10px 25px #12384d24;padding:7px;z-index:60}.navGroup:hover .navDrop,.navGroup:focus-within .navDrop{display:block}.navDrop button{display:block;width:100%;height:42px;padding:0 13px!important;text-align:left;border:0!important;border-radius:7px;background:#fff!important;color:#416278!important}.navDrop button:hover{background:#eef7fc!important;color:#075f98!important}.navDrop button.subon{background:#e5f3fb!important;color:#075f98!important;font-weight:750}.navMain .chev{font-size:10px;margin-left:6px}
@@ -477,7 +477,28 @@ async function bootstrapDatabase(){
     apcsHydrating=true;
     let remote=new Set(data.map(r=>r.state_key));
     data.forEach(r=>{
-      if(localStorage.getItem(r.state_key)!==r.raw_value){
+      // Quotes are business records: merge local + remote by quote ID instead of blindly
+      // replacing local state with the remote blob. The newest updatedAt wins.
+      if(r.state_key==='apcs_cm_quotes_v1'){
+        let localRows=[],remoteRows=[];
+        try{localRows=JSON.parse(localStorage.getItem(r.state_key)||'[]')}catch(e){}
+        try{remoteRows=JSON.parse(r.raw_value||'[]')}catch(e){}
+        const merged=new Map();
+        [...remoteRows,...localRows].forEach(q=>{
+          if(!q||!q.id)return;
+          const old=merged.get(q.id);
+          if(!old){merged.set(q.id,q);return}
+          const oldTs=Date.parse(old.updatedAt||old.createdAt||0)||0;
+          const newTs=Date.parse(q.updatedAt||q.createdAt||0)||0;
+          if(newTs>=oldTs)merged.set(q.id,q);
+        });
+        const mergedRaw=JSON.stringify([...merged.values()]);
+        APCS_NATIVE_SET.call(localStorage,r.state_key,mergedRaw);
+        if(mergedRaw!==r.raw_value){
+          // Push the recovered union back to Supabase after hydration.
+          setTimeout(()=>dbPush(r.state_key,mergedRaw),50);
+        }
+      }else if(localStorage.getItem(r.state_key)!==r.raw_value){
         APCS_NATIVE_SET.call(localStorage,r.state_key,r.raw_value);
       }
     });
@@ -1769,6 +1790,14 @@ function selectTenantScenario(i){
     {id:'OUT',code:'OUT',desc:'Outgoings',type:'Tenant',section:'Tenant',_rate:+s.out.toFixed(2)}
   ];
 
+  try{
+    let qs=quoteStore(),qi=qs.findIndex(q=>q.id===currentQuoteId);
+    if(qi>=0){
+      qs[qi].cpi=+s.cpi.toFixed(1);
+      putQuotes(qs);
+    }
+  }catch(e){console.warn('Unable to persist Tenant quote CPI',e)}
+
   const btn=$('tenantScenarioNext');if(btn)btn.disabled=false;
   const hint=$('tenantScenarioChoiceHint');
   if(hint)hint.innerHTML=`Selected <b>${esc(s.label)}</b> · Rent ${money(s.rent)}/m²/year · Outgoings ${money(s.out)}/m²/year · CPI ${s.cpi.toFixed(1)}%`;
@@ -1821,6 +1850,15 @@ function chooseMatch(i){
     $('matchRates').innerHTML=tenantScenarioHtml(z);
     return;
   }
+
+  // Persist the comparison profile CPI on the 3PL quote for PDF/export traceability.
+  try{
+    let qs=quoteStore(),qi=qs.findIndex(q=>q.id===currentQuoteId);
+    if(qi>=0 && z.p?.cpi!==undefined && z.p?.cpi!==null && z.p?.cpi!==''){
+      qs[qi].cpi=Number(z.p.cpi);
+      putQuotes(qs);
+    }
+  }catch(e){console.warn('Unable to persist quote CPI',e)}
 
   let all=SERVICES.concat(z.p.customServices||[]);
   quoteRateServices=all
@@ -2008,7 +2046,17 @@ async function handleQuotePhotos(input){
 }
 const WORKFLOW_VERSION='1.0-clean';
 function quoteStore(){try{return JSON.parse(localStorage.getItem('apcs_cm_quotes_v1')||'[]')}catch(e){return[]}}
-function putQuotes(a){localStorage.setItem('apcs_cm_quotes_v1',JSON.stringify(a))}
+function putQuotes(a){
+  try{
+    const prev=localStorage.getItem('apcs_cm_quotes_v1');
+    if(prev && prev!==JSON.stringify(a)){
+      const backups=JSON.parse(localStorage.getItem('apcs_cm_quotes_backups_v1')||'[]');
+      backups.unshift({at:new Date().toISOString(),raw:prev});
+      localStorage.setItem('apcs_cm_quotes_backups_v1',JSON.stringify(backups.slice(0,10)));
+    }
+  }catch(e){console.warn('Quote backup warning',e)}
+  localStorage.setItem('apcs_cm_quotes_v1',JSON.stringify(a))
+}
 function nowISO(){return new Date().toISOString()}
 function quoteName(){return ($('qname').value||'').trim()||'Untitled quote'}
 function addHistory(q,event,detail=''){q.history=Array.isArray(q.history)?q.history:[];q.history.push({event,detail,at:nowISO()})}
@@ -2300,8 +2348,12 @@ async function buildStandaloneRateCardPdf(q,rows){
 
   const pdfCpi=quotePdfCpi(q);
   c.textAlign='right';
+  c.fillStyle='#536f82';
+  c.font='21px Arial, sans-serif';
   c.fillText(`Prepared: ${new Date().toLocaleDateString('en-AU')}`,1135,430);
-  c.fillText(`Annual CPI: ${pdfCpi!==null?pdfCpi.toFixed(1)+'%':'TBC'}`,1135,466);
+  c.fillStyle='#173246';
+  c.font='700 21px Arial, sans-serif';
+  c.fillText(`Annual CPI: ${pdfCpi!==null?pdfCpi.toFixed(1)+'%':'TBC'}`,1135,470);
   c.textAlign='left';
 
   // Rate table, positioned clear of the watermark/footer.
