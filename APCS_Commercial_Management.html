@@ -5,7 +5,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>APCS Commercial Management</title>
-<!-- BUILD: 27 | Nationwide tenant merged into one customer with 3 accounts --><style>
+<!-- BUILD: 27.1-stable | Nationwide runtime-normalized to one Tenant customer --><style>
 :root{--navy:#073d69;--blue:#0b6ea8;--purple:#7057c8;--teal:#16847a;--bg:#eef5f9;--line:#d6e4ec;--text:#173246;--muted:#6d8494}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,"Segoe UI",Arial;background:linear-gradient(#f8fbfd,#edf4f8);color:var(--text)}
 header{height:72px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 24px;position:sticky;top:0;z-index:30}.brand b{font-size:18px;color:#0b416c}.brand small{display:block;color:var(--muted);font-size:11px}.nav{margin-left:auto;height:100%;display:flex}.nav button{border:0;background:transparent;padding:0 20px;font-weight:650;color:#50697b;cursor:pointer;border-bottom:3px solid transparent}.nav button:hover{color:#075f98;background:#f6fbfe}.nav button:active{background:#e2f1f9}.nav button.on{color:#075f98;border-bottom-color:#0b78b8;background:#eef7fc}.navGroup{position:relative;height:100%;display:flex;align-items:stretch}.navGroup>.navMain{height:100%}.navDrop{display:none;position:absolute;top:68px;right:0;min-width:205px;background:#fff;border:1px solid var(--line);border-radius:0 0 10px 10px;box-shadow:0 10px 25px #12384d24;padding:7px;z-index:60}.navGroup:hover .navDrop,.navGroup:focus-within .navDrop{display:block}.navDrop button{display:block;width:100%;height:42px;padding:0 13px!important;text-align:left;border:0!important;border-radius:7px;background:#fff!important;color:#416278!important}.navDrop button:hover{background:#eef7fc!important;color:#075f98!important}.navDrop button.subon{background:#e5f3fb!important;color:#075f98!important;font-weight:750}.navMain .chev{font-size:10px;margin-left:6px}
@@ -471,8 +471,11 @@ async function bootstrapDatabase(){
     apcsHydrating=false;
     dbBadge('Database synced');
 
-    // Re-render without reloading the page, preventing flicker/reload loops.
-    try{renderQuotes();renderOnboarding();renderList();renderRatePage()}catch(e){console.warn('Post-sync render warning',e)}
+    // Re-apply data cleanup after remote hydration, then render without reloading.
+    try{
+      migrateNationwideTenantProfile();
+      renderQuotes();renderOnboarding();renderList();renderRatePage();
+    }catch(e){console.warn('Post-sync render warning',e)}
   }catch(error){
     apcsHydrating=false;
     console.error(error);
@@ -607,15 +610,31 @@ function migrateNationwideTenantProfile(){
 
   // Remove any custom duplicate tenant records if they were manually added.
   const c=customCustomers();
-  c.Tenant=(c.Tenant||[]).filter(x=>!(
-    x.customer==='Nationwide' &&
-    ['Nationwide','Polar Meatwork','CleosPasta'].includes(x.account)
-  ));
+  c.Tenant=(c.Tenant||[]).filter(x=>String(x.customer||'').trim().toLowerCase()!=='nationwide');
   localStorage.setItem('apcs_customers_v4',JSON.stringify(c));
 }
  function customCustomers(){return JSON.parse(localStorage.getItem('apcs_customers_v4')||'{"3PL":[],"Tenant":[]}')}
 function deletedCustomers(){return JSON.parse(localStorage.getItem('apcs_deleted_customers_v1')||'{"3PL":[],"Tenant":[]}')}
-function allCustomers(model){let deleted=deletedCustomers()[model]||[];return (model==='3PL'?C3:CT).concat(customCustomers()[model]||[]).filter(x=>!deleted.includes(pkey(x,model)))} function pkey(x,model=pm){return model+'|'+x.customer+'|'+x.account}
+function allCustomers(model){
+  let deleted=deletedCustomers()[model]||[];
+  let arr=(model==='3PL'?C3:CT).concat(customCustomers()[model]||[]);
+
+  // Runtime normalization: Nationwide is one Tenant customer with three account aliases.
+  // This runs every render, so even old Supabase/localStorage records cannot recreate duplicates.
+  if(model==='Tenant'){
+    arr=arr.filter(x=>!(String(x.customer||'').trim().toLowerCase()==='nationwide'));
+    arr.push({customer:'Nationwide',account:'Nationwide, Polar Meatwork, CleosPasta'});
+  }
+
+  // De-duplicate by customer+account after normalization.
+  const seen=new Set();
+  return arr.filter(x=>{
+    const k=pkey(x,model);
+    if(deleted.includes(k)||seen.has(k))return false;
+    seen.add(k);
+    return true;
+  });
+} function pkey(x,model=pm){return model+'|'+x.customer+'|'+x.account}
 function selectCustomerByKey(key){let x=allCustomers(pm).find(c=>pkey(c)===key);if(!x)return;selected=x;renderList();renderProfile()}
 function renderList(){
   let arr=allCustomers(pm),s=($('searchCust').value||'').toLowerCase(),st=profiles();
