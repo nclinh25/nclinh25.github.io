@@ -5,7 +5,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>APCS Commercial Management</title>
-<!-- BUILD: 26.1 | fixed profile notes height | no textarea resize handle --><style>
+<!-- BUILD: 26.3 | global textarea resize lock | fixed profile and quote notes heights --><style>
 :root{--navy:#073d69;--blue:#0b6ea8;--purple:#7057c8;--teal:#16847a;--bg:#eef5f9;--line:#d6e4ec;--text:#173246;--muted:#6d8494}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,"Segoe UI",Arial;background:linear-gradient(#f8fbfd,#edf4f8);color:var(--text)}
 header{height:72px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 24px;position:sticky;top:0;z-index:30}.brand b{font-size:18px;color:#0b416c}.brand small{display:block;color:var(--muted);font-size:11px}.nav{margin-left:auto;height:100%;display:flex}.nav button{border:0;background:transparent;padding:0 20px;font-weight:650;color:#50697b;cursor:pointer;border-bottom:3px solid transparent}.nav button:hover{color:#075f98;background:#f6fbfe}.nav button:active{background:#e2f1f9}.nav button.on{color:#075f98;border-bottom-color:#0b78b8;background:#eef7fc}.navGroup{position:relative;height:100%;display:flex;align-items:stretch}.navGroup>.navMain{height:100%}.navDrop{display:none;position:absolute;top:68px;right:0;min-width:205px;background:#fff;border:1px solid var(--line);border-radius:0 0 10px 10px;box-shadow:0 10px 25px #12384d24;padding:7px;z-index:60}.navGroup:hover .navDrop,.navGroup:focus-within .navDrop{display:block}.navDrop button{display:block;width:100%;height:42px;padding:0 13px!important;text-align:left;border:0!important;border-radius:7px;background:#fff!important;color:#416278!important}.navDrop button:hover{background:#eef7fc!important;color:#075f98!important}.navDrop button.subon{background:#e5f3fb!important;color:#075f98!important;font-weight:750}.navMain .chev{font-size:10px;margin-left:6px}
@@ -226,6 +226,25 @@ input, textarea, select, [contenteditable="true"] { user-select: text; -webkit-u
 @media(max-width:900px){.quoteAttachGrid{grid-template-columns:1fr}.basisMini{width:104px;min-width:104px}}
 </style>
 
+
+<style id="textareaResizeLock">
+textarea{
+  resize:none !important;
+}
+#pNotes{
+  height:96px !important;
+  min-height:96px !important;
+  max-height:96px !important;
+  overflow-y:auto !important;
+}
+#qNotes{
+  height:150px !important;
+  min-height:150px !important;
+  max-height:150px !important;
+  overflow-y:auto !important;
+}
+</style>
+
 </head><body>
 <header><div class=brand><b>Austco Polar Cold Storage</b><small>Commercial Management</small></div><div class=nav><button id=nrate class=on onclick="go('rate')">Rate Card</button><div class=navGroup><button id=nquotesMain class=navMain onclick="go('quotes')">Quotes <span class=chev>▼</span></button><div class=navDrop><button id=subquote onclick="go('quote')">Create Quote</button><button id=subquotes onclick="go('quotes')">Quote List</button></div></div><div class=navGroup><button id=ncustomersMain class=navMain onclick="go('onboarding')">Our Customers <span class=chev>▼</span></button><div class=navDrop><button id=subonboarding onclick="go('onboarding')">Onboarding Customers</button><button id=subprofile onclick="go('profile')">Active Customers</button></div></div></div></header>
 
@@ -266,7 +285,7 @@ input, textarea, select, [contenteditable="true"] { user-select: text; -webkit-u
 <div class=g2>
   <div>
     <label>Notes / comments</label>
-    <textarea id=qNotes rows="5" placeholder="Commercial context, customer requests, special conditions, operational notes, follow-up comments…"></textarea>
+    <textarea id=qNotes rows="5" style="resize:none!important;height:150px!important;min-height:150px!important;max-height:150px!important;overflow-y:auto!important" placeholder="Commercial context, customer requests, special conditions, operational notes, follow-up comments…"></textarea>
     <div class=hint>Saved with the quote. Note keywords are also used as an additional customer-matching signal and, if Won, the note is carried into the customer profile for future matching.</div>
   </div>
   <div>
@@ -537,7 +556,7 @@ function historyTable(p){let hist=p.rateHistory||[],current={effectiveDate:p.eff
 function fmtDate(v){if(!v)return'—';let d=new Date(v+'T00:00:00');return isNaN(d)?v:d.toLocaleDateString('en-AU',{day:'2-digit',month:'2-digit',year:'numeric'})}
 function tenantProfileUI(){let pk=$('pParking'),bi=$('pBillsIncluded');if(pk&&$('pParkingCountBox'))$('pParkingCountBox').classList.toggle('hide',pk.value!=='Yes');if(bi&&$('pOutBox'))$('pOutBox').classList.toggle('hide',bi.value!=='Yes')}
 function p3ProfileUI(){let rt=$('pRecType'),prod=$('pProd'),scan=$('pScan'),ex=$('pExport');if(rt){$('pRecSizeBox').classList.toggle('hide',rt.value!=='Container');$('pRecConv').textContent=rt.value==='Truck'?'1 truck = 22 pallets':rt.value==='Container'?'20ft = 22 pallets · 40ft = 44 pallets':''}if(prod){$('pScanBox').classList.toggle('hide',prod.value!=='Frozen');$('pBlastPctBox').classList.toggle('hide',prod.value!=='Blast');if($('pScanPctBox'))$('pScanPctBox').classList.toggle('hide',!(prod.value==='Frozen'&&scan&&scan.value==='Yes'))}if(ex){$('pExportSizeBox').classList.toggle('hide',ex.value!=='Yes');$('pCountryBox').classList.toggle('hide',ex.value!=='Yes')}}
-function renderProfile(){let p=profiles()[pkey(selected)]||{},is3=pm==='3PL';$('profileDetail').innerHTML=`<div style="display:flex;align-items:flex-end;justify-content:space-between;gap:14px;flex-wrap:wrap"><div><h2 style="margin:0">${selected.customer}</h2><div class=hint>Account: <b>${selected.account}</b></div></div>${is3?`<div style="min-width:190px"><label style="margin-bottom:5px">Billing basis</label><select id=pBillingBasis onchange="updateProfileBillingBasis(this.value)"><option value="">Select…</option><option>Carton</option><option>Pallet</option></select></div>`:''}</div><div class=grid style="margin-top:12px"><div><label>Commence date</label><input id=pComm type=date value="${p.commence||''}"></div><div><label>Current rate effective date</label><input id=pEffective type=date value="${p.effectiveDate||''}"></div><div><label>Status</label><select id=pStatus><option>Active</option><option>Inactive</option><option>Prospect</option></select></div><div style="grid-column:span 2"><label>Profile / matching notes</label><textarea id=pNotes rows="3" style="resize:none;min-height:72px;max-height:72px" placeholder="Operational, commercial or customer-specific notes used for future matching">${esc(p.notes||'')}</textarea><div class=hint>Keywords in this note are used as an additional signal when matching future quotes.</div></div></div>${is3?`<h3>Operational pattern</h3>
+function renderProfile(){let p=profiles()[pkey(selected)]||{},is3=pm==='3PL';$('profileDetail').innerHTML=`<div style="display:flex;align-items:flex-end;justify-content:space-between;gap:14px;flex-wrap:wrap"><div><h2 style="margin:0">${selected.customer}</h2><div class=hint>Account: <b>${selected.account}</b></div></div>${is3?`<div style="min-width:190px"><label style="margin-bottom:5px">Billing basis</label><select id=pBillingBasis onchange="updateProfileBillingBasis(this.value)"><option value="">Select…</option><option>Carton</option><option>Pallet</option></select></div>`:''}</div><div class=grid style="margin-top:12px"><div><label>Commence date</label><input id=pComm type=date value="${p.commence||''}"></div><div><label>Current rate effective date</label><input id=pEffective type=date value="${p.effectiveDate||''}"></div><div><label>Status</label><select id=pStatus><option>Active</option><option>Inactive</option><option>Prospect</option></select></div><div style="grid-column:span 2"><label>Profile / matching notes</label><textarea id=pNotes rows="3" style="resize:none!important;height:96px!important;min-height:96px!important;max-height:96px!important;overflow-y:auto!important" placeholder="Operational, commercial or customer-specific notes used for future matching">${esc(p.notes||'')}</textarea><div class=hint>Keywords in this note are used as an additional signal when matching future quotes.</div></div></div>${is3?`<h3>Operational pattern</h3>
 <div class=card style="padding:14px;margin-top:8px"><h4 style="margin:0 0 10px">Receivable</h4><div class=grid>
 <div><label>Receive type</label><select id=pRecType onchange=p3ProfileUI()><option value="">Select…</option><option>Pallets</option><option>Truck</option><option>Container</option></select><div id=pRecSizeBox class=hide style="margin-top:7px"><select id=pRecSize><option value="">Container size…</option><option>20ft</option><option>40ft</option></select></div><div id=pRecConv class=hint></div></div>
 <div><label>Quantity per batch</label><input id=pRecQty type=number min=0 value="${p.recQty||''}"></div>
