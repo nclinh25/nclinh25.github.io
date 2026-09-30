@@ -1,6 +1,21 @@
 <!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<script>
+(function(){
+  const BUILD='11';
+  const u=new URL(location.href);
+  if(u.searchParams.get('build')!==BUILD){
+    u.searchParams.set('build',BUILD);
+    location.replace(u.toString());
+  }
+})();
+</script>
+
 <title>APCS Commercial Management</title>
-<!-- BUILD: v10 no native browser dialogs + scan standard fallback | 2026-09-30 --><style>
+<!-- BUILD: 11 | cache-busted + current-quote scan economics + professional modal --><style>
 :root{--navy:#073d69;--blue:#0b6ea8;--purple:#7057c8;--teal:#16847a;--bg:#eef5f9;--line:#d6e4ec;--text:#173246;--muted:#6d8494}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,"Segoe UI",Arial;background:linear-gradient(#f8fbfd,#edf4f8);color:var(--text)}
 header{height:72px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 24px;position:sticky;top:0;z-index:30}.brand b{font-size:18px;color:#0b416c}.brand small{display:block;color:var(--muted);font-size:11px}.nav{margin-left:auto;height:100%;display:flex}.nav button{border:0;background:transparent;padding:0 20px;font-weight:650;color:#50697b;cursor:pointer;border-bottom:3px solid transparent}.nav button:hover{color:#075f98;background:#f6fbfe}.nav button:active{background:#e2f1f9}.nav button.on{color:#075f98;border-bottom-color:#0b78b8;background:#eef7fc}.navGroup{position:relative;height:100%;display:flex;align-items:stretch}.navGroup>.navMain{height:100%}.navDrop{display:none;position:absolute;top:68px;right:0;min-width:205px;background:#fff;border:1px solid var(--line);border-radius:0 0 10px 10px;box-shadow:0 10px 25px #12384d24;padding:7px;z-index:60}.navGroup:hover .navDrop,.navGroup:focus-within .navDrop{display:block}.navDrop button{display:block;width:100%;height:42px;padding:0 13px!important;text-align:left;border:0!important;border-radius:7px;background:#fff!important;color:#416278!important}.navDrop button:hover{background:#eef7fc!important;color:#075f98!important}.navDrop button.subon{background:#e5f3fb!important;color:#075f98!important;font-weight:750}.navMain .chev{font-size:10px;margin-left:6px}
@@ -140,6 +155,19 @@ input, textarea, select, [contenteditable="true"] { user-select: text; -webkit-u
 .inputModalField:focus{border-color:#0b78b8;box-shadow:0 0 0 3px rgba(11,120,184,.10)}
 .inputModalLabel{font-size:11px;font-weight:750;color:#587184;margin:0 0 6px;display:block;text-transform:uppercase;letter-spacing:.02em}
 .buildTag{position:fixed;right:12px;bottom:12px;z-index:50;font-size:9px;color:#7890a0;background:rgba(255,255,255,.92);border:1px solid #dbe7ee;border-radius:999px;padding:4px 8px;pointer-events:none}
+
+
+.globalModal{position:fixed;inset:0;background:rgba(8,29,44,.48);display:none;align-items:center;justify-content:center;z-index:99999;padding:20px}
+.globalModal.on{display:flex}
+.globalModalCard{width:min(480px,95vw);background:#fff;border:1px solid #d6e4ec;border-radius:18px;box-shadow:0 30px 90px rgba(5,35,55,.34);overflow:hidden}
+.globalModalHead{display:flex;align-items:center;gap:12px;padding:22px 22px 12px}
+.globalModalIcon{width:44px;height:44px;border-radius:12px;background:#eef7fc;color:#075f98;display:flex;align-items:center;justify-content:center}
+.globalModalIcon.success{background:#eaf8ef;color:#08783d}.globalModalIcon.warn{background:#fff6e5;color:#a86600}.globalModalIcon.danger{background:#fff0ef;color:#b42318}
+.globalModalTitle{font-size:18px;font-weight:800;color:#173246}
+.globalModalBody{padding:0 22px 20px;color:#526b7c;font-size:13px;line-height:1.55;white-space:pre-line}
+.globalModalActions{display:flex;justify-content:flex-end;gap:10px;padding:14px 22px 20px;border-top:1px solid #e6eef3;background:#fbfdfe}
+.globalModalActions .btn{min-width:96px}
+.buildBanner{position:fixed;right:12px;bottom:12px;z-index:9999;background:#073d69;color:#fff;border-radius:999px;padding:5px 10px;font-size:10px;font-weight:700;box-shadow:0 4px 18px rgba(7,61,105,.25)}
 
 </style>
 
@@ -384,10 +412,21 @@ function suggestedPatternEconomics(){
   let avgCartons=avgPallets*36;
   let storageRevenue=storCarton?avgCartons*storCarton:avgPallets*storPallet;
 
-  let blastPct=p.product==='Blast'?(Number(p.blastPct)||0)/100:0;
+  // Product handling must come from the CURRENT quote being prepared.
+  // The matched customer profile is only the starting operational/rate pattern.
+  let currentProduct=$('prod')?.value||p.product||'';
+  let currentBlastPct=currentProduct==='Blast'?(Number($('blastPct')?.value)||0)/100:0;
+  let currentScanPct=0;
+  if(currentProduct==='Blast'){
+    currentScanPct=(Number($('scanPct')?.value)||0)/100;
+  }else if(currentProduct==='Frozen'&&$('scan')?.value==='Yes'){
+    currentScanPct=(Number($('scanPct')?.value)||0)/100;
+  }
+
+  let blastPct=currentBlastPct;
   let blastRevenue=weeklyCartons*blastPct*blastRate;
 
-  let scanPct=(p.product==='Blast'||(p.product==='Frozen'&&p.scan==='Yes'))?(Number(p.scanPct)||0)/100:0;
+  let scanPct=currentScanPct;
   let scanRevenue=weeklyCartons*scanPct*scanRate;
 
   // Profile currently stores load-out frequency, but not pallets/cartons per dispatch.
@@ -402,7 +441,7 @@ function suggestedPatternEconomics(){
 
   return {
     p,perBatch,receiptsPerWeek,weeklyPallets,weeklyCartons,dwellDays,avgPallets,
-    receiveRevenue,storageRevenue,blastRevenue,scanRevenue,loadRevenue,
+    receiveRevenue,storageRevenue,blastRevenue,scanRevenue,loadRevenue,scanPct,blastPct,
     total,budget,coverage,monthlyEq,annualEq
   };
 }
@@ -421,7 +460,7 @@ function updateSuggestedEconomics(){
   if(e.p.recEvery)pattern.push(`receivable every ${e.p.recEvery} ${e.p.recUnit||''}`);
   if(e.dwellDays)pattern.push(`storage dwell ${e.dwellDays} days`);
   if(e.p.loEvery)pattern.push(`load out every ${e.p.loEvery} ${e.p.loUnit||''}`);
-  if(e.p.product)pattern.push(e.p.product);
+  if($('prod')?.value)pattern.push($('prod').value);else if(e.p.product)pattern.push(e.p.product);
 
   let targetMultiplier=e.total>0&&e.budget.weekly>0?e.budget.weekly/e.total:0;
   let gap=e.budget.weekly-e.total;
@@ -449,7 +488,7 @@ function updateSuggestedEconomics(){
           <tr><td>Storage</td><td>${money(e.storageRevenue)}</td></tr>
           <tr><td>Load Out</td><td>${money(e.loadRevenue)}</td></tr>
           <tr><td>Blast Freezing</td><td>${money(e.blastRevenue)}</td></tr>
-          <tr><td>Scanning</td><td>${money(e.scanRevenue)}</td></tr>
+          <tr><td>Scanning${e.scanPct!=null?` <span class=hint>(${(e.scanPct*100).toFixed(0)}%)</span>`:''}</td><td>${money(e.scanRevenue)}</td></tr>
           <tr><td><b>Total</b></td><td><b>${money(e.total)}</b></td></tr>
         </table>
       </div>
@@ -531,7 +570,7 @@ function acceptSuggestion(){
   quoteFilter='Pending';
   document.querySelectorAll('.qfilter').forEach(b=>b.classList.toggle('on',b.dataset.filter==='Pending'));
   renderQuotes();go('quotes');
-  setTimeout(()=>appNotice('Quote submitted successfully. It is now Pending. The selected Rate Card has been saved with the quote.','Quote submitted','success'),80)
+  setTimeout(()=>showGlobalModal('Quote submitted successfully. It is now Pending.\n\nThe selected Rate Card has been saved with the quote.',{title:'Quote submitted',type:'success',confirmText:'Done'}),80)
 }
 function snapshot(){
   let v={};
@@ -1002,6 +1041,35 @@ function appConfirm(message,onConfirm,{title='Confirm action',confirmText='Confi
 }
 window.alert=function(message){appNotice(message,'Notification','info')};
 
+
+let globalModalAction=null;
+function closeGlobalModal(){
+  globalModalAction=null;
+  let m=document.getElementById('globalModal');
+  if(m){m.classList.remove('on');m.setAttribute('aria-hidden','true')}
+}
+function showGlobalModal(message,{title='Notification',type='info',confirmText='OK',cancelText='',onConfirm=null}={}){
+  const m=document.getElementById('globalModal');
+  document.getElementById('globalModalTitle').textContent=title;
+  document.getElementById('globalModalBody').textContent=String(message??'');
+  const icon=document.getElementById('globalModalIcon');
+  icon.className='globalModalIcon '+(type==='success'?'success':type==='warning'?'warn':type==='danger'?'danger':'');
+  icon.textContent=type==='success'?'✓':type==='danger'?'!':'i';
+  const actions=document.getElementById('globalModalActions');
+  actions.innerHTML='';
+  globalModalAction=typeof onConfirm==='function'?onConfirm:null;
+  if(cancelText){
+    const b=document.createElement('button'); b.className='btn'; b.textContent=cancelText; b.onclick=closeGlobalModal; actions.appendChild(b);
+  }
+  const ok=document.createElement('button'); ok.className='btn '+(type==='danger'?'dangerBtn':'primary'); ok.textContent=confirmText;
+  ok.onclick=()=>{const fn=globalModalAction;closeGlobalModal();if(fn)fn();};
+  actions.appendChild(ok);
+  m.classList.add('on');m.setAttribute('aria-hidden','false');
+}
+function appNotice(message,title='Notification',type='info'){showGlobalModal(message,{title,type,confirmText:'OK'});}
+function appConfirm(message,onConfirm,opts={}){showGlobalModal(message,{...opts,onConfirm,cancelText:opts.cancelText||'Cancel'});}
+window.alert=(m)=>appNotice(m,'Notification','info');
+
 function esc(v){return String(v??'').replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
 function deleteQuote(id){let a=quoteStore(),q=a.find(x=>x.id===id);if(!q)return;appConfirm(`Delete “${q.name}” permanently?
 
@@ -1190,5 +1258,21 @@ migrateWorkflow();migrateQuoteTypeAndRateCardV2();if(!restore()){addRec();addRoo
   </div>
 </div>
 <div class="buildTag">Build 10 · 30 Sep</div>
+
+
+<div id="globalModal" class="globalModal" aria-hidden="true">
+  <div class="globalModalCard" role="dialog" aria-modal="true">
+    <div class="globalModalHead">
+      <div id="globalModalIcon" class="globalModalIcon">✓</div>
+      <div>
+        <div id="globalModalTitle" class="globalModalTitle">Notification</div>
+        <div class="hint">APCS Commercial Management</div>
+      </div>
+    </div>
+    <div id="globalModalBody" class="globalModalBody"></div>
+    <div id="globalModalActions" class="globalModalActions"></div>
+  </div>
+</div>
+<div class="buildBanner">BUILD 11 · CACHE BUSTED</div>
 
 </body></html>
