@@ -5,7 +5,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>APCS Commercial Management</title>
-<!-- BUILD: 30.2 | Tenant benchmark excludes legacy non-chargeable-area rates --><style>
+<!-- BUILD: 32 | proportional long-stay variance | CHEP $0.11/pallet/day | Tenant auto-pricing only --><style>
 :root{--navy:#073d69;--blue:#0b6ea8;--purple:#7057c8;--teal:#16847a;--bg:#eef5f9;--line:#d6e4ec;--text:#173246;--muted:#6d8494}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,"Segoe UI",Arial;background:linear-gradient(#f8fbfd,#edf4f8);color:var(--text)}
 header{height:72px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 24px;position:sticky;top:0;z-index:30}.brand b{font-size:18px;color:#0b416c}.brand small{display:block;color:var(--muted);font-size:11px}.nav{margin-left:auto;height:100%;display:flex}.nav button{border:0;background:transparent;padding:0 20px;font-weight:650;color:#50697b;cursor:pointer;border-bottom:3px solid transparent}.nav button:hover{color:#075f98;background:#f6fbfe}.nav button:active{background:#e2f1f9}.nav button.on{color:#075f98;border-bottom-color:#0b78b8;background:#eef7fc}.navGroup{position:relative;height:100%;display:flex;align-items:stretch}.navGroup>.navMain{height:100%}.navDrop{display:none;position:absolute;top:68px;right:0;min-width:205px;background:#fff;border:1px solid var(--line);border-radius:0 0 10px 10px;box-shadow:0 10px 25px #12384d24;padding:7px;z-index:60}.navGroup:hover .navDrop,.navGroup:focus-within .navDrop{display:block}.navDrop button{display:block;width:100%;height:42px;padding:0 13px!important;text-align:left;border:0!important;border-radius:7px;background:#fff!important;color:#416278!important}.navDrop button:hover{background:#eef7fc!important;color:#075f98!important}.navDrop button.subon{background:#e5f3fb!important;color:#075f98!important;font-weight:750}.navMain .chev{font-size:10px;margin-left:6px}
@@ -358,19 +358,9 @@ textarea{
 
 <div id=qt class=hide><div class=card><h2>1. Rooms & space</h2><div id=roomRows></div><button class=btn style="margin-top:10px" onclick=addRoom()>+ Add room</button><div class=g3 style="margin-top:12px"><div><label>Location preference</label><input id=locPref></div><div><label>After-hours access?</label><select id=after><option value="">Select…</option><option>No</option><option>Yes</option></select><div class=hint>Standard 6am–5pm</div></div><div><label>Separate key?</label><select id=key><option value="">Select…</option><option>No</option><option>Yes</option></select></div></div></div>
 <div class=card><h2>2. Occupancy & contract</h2><div class=grid><div><label>Bills</label><select id=bills><option value="">Select…</option><option>Tenant pays</option><option>Included in rent</option></select></div><div><label>Parking?</label><select id=parking><option value="">Select…</option><option>No</option><option>Yes</option></select></div><div><label>Parking lots</label><input id=lots type=number></div><div><label>Contract length (years)</label><input id=years type=number></div></div></div>
-<div class=card><h2>3. Tenant pricing</h2>
-<div class=info>
-  <b>Pricing is generated after Submit.</b><br>
-  APCS will compare the requested area, room type and contract length first, then consider dedicated occupancy, separate key, after-hours access, parking, bills/outgoings and note keywords. Two pricing scenarios will be shown against matched customers and the APCS Tenant portfolio benchmark.
-</div>
-<input id=baseRent type=hidden>
-<input id=outgoings type=hidden>
-<input id=coldPrem type=hidden value="0">
-<input id=tenantCpi type=hidden>
-</div>
-<div class=card><h2>4. Capacity check</h2><div class=g3><div><label>3PL onboarding in next 3–6 months?</label><select id=future3pl><option value="">Select…</option><option>No</option><option>Yes</option><option>Not sure</option></select></div><div><label>Expected pallets</label><input id=futurePal type=number></div><div><label>Utilisation</label><div class=info id=util>—</div></div></div><div id=draftWarn class="info warn hide" style="margin-top:10px">Draft only: future 3PL demand is uncertain. Recheck capacity before finalising.</div></div></div>
+<div class=card><h2>3. Capacity check</h2><div class=g3><div><label>3PL onboarding in next 3–6 months?</label><select id=future3pl><option value="">Select…</option><option>No</option><option>Yes</option><option>Not sure</option></select></div><div><label>Expected pallets</label><input id=futurePal type=number></div><div><label>Utilisation</label><div class=info id=util>—</div></div></div><div id=draftWarn class="info warn hide" style="margin-top:10px">Draft only: future 3PL demand is uncertain. Recheck capacity before finalising.</div></div></div>
 
-<div class=card><h2>5. Notes, Comments & Attachments</h2>
+<div class=card><h2 id=notesSectionTitle>5. Notes, Comments & Attachments</h2>
 <div class=g2>
   <div>
     <label>Notes / comments</label>
@@ -549,7 +539,18 @@ function go(p){
     requestAnimationFrame(()=>requestAnimationFrame(()=>renderList()));
   }
 }
-function qmode(v){qm=v;$('q3').classList.toggle('hide',v!=='3PL');$('qt').classList.toggle('hide',v!=='Tenant');$('qm3').classList.toggle('on',v==='3PL');$('qmt').classList.toggle('on',v==='Tenant');$('budgetBtn').classList.toggle('hide',v!=='3PL');calc()}
+function qmode(v){
+  qm=v;
+  $('q3').classList.toggle('hide',v!=='3PL');
+  $('qt').classList.toggle('hide',v!=='Tenant');
+  $('qm3').classList.toggle('on',v==='3PL');
+  $('qmt').classList.toggle('on',v==='Tenant');
+  $('budgetBtn').classList.toggle('hide',v!=='3PL');
+  if($('notesSectionTitle'))$('notesSectionTitle').textContent=v==='Tenant'
+    ?'4. Notes, Comments & Attachments'
+    :'5. Notes, Comments & Attachments';
+  calc()
+}
 function pmode(v){pm=v;$('pm3').classList.toggle('on',v==='3PL');$('pmt').classList.toggle('on',v==='Tenant');selected=null;renderList()}
 function addRec(){let e=document.createElement('div');e.className='row';e.innerHTML=`<button class=x onclick="this.parentElement.remove();calc()">×</button><div class=grid><div><label>Receive type</label><select class=rt onchange="recUI(this)"><option value="">Select…</option><option>Pallets</option><option>Truck</option><option>Container</option></select><div class="csizeBox hide" style="margin-top:7px"><select class=cs onchange="calc()"><option value="">Container size…</option><option>20ft</option><option>40ft</option></select></div><div class=conv hint></div></div><div><label>Quantity per batch</label><input class=rq type=number></div><div><label>First load</label><input class=fd type=date></div><div><label>Frequency</label><div style="display:grid;grid-template-columns:0.8fr 1.2fr;gap:7px;align-items:center"><input class=rf type=number placeholder="Every"><select class=ru><option value="">Unit…</option><option>days</option><option>weeks</option><option>months</option></select></div></div></div><div class=loadnote hint></div>`;$('recRows').appendChild(e);calc()}
 function recUI(s){let r=s.closest('.row'),t=s.value;r.querySelector('.csizeBox').classList.toggle('hide',t!=='Container');r.querySelector('.conv').textContent=t==='Truck'?'1 truck = 22 pallets':t==='Container'?'20ft = 22 pallets · 40ft = 44 pallets':'';calc()}
@@ -570,51 +571,43 @@ function prodUI(){
 function loadUI(){$('domBox').classList.toggle('hide',!$('dom').checked);$('expBox').classList.toggle('hide',!$('exp').checked);calc()}
 function addRoom(){let e=document.createElement('div');e.className='row';e.innerHTML=`<button class=x onclick="this.parentElement.remove();calc()">×</button><div class=g3><div><label>Room</label><select class=room><option value="">Select…</option><option>Blast room</option><option>Chill room</option><option>Frozen room</option><option>Dry storage</option><option>Office</option></select></div><div><label>Square metres</label><input class=sqm type=number></div><div><label>Occupancy</label><select class=ded><option value="">Select…</option><option>Dedicated</option><option>Shared</option></select></div></div>`;$('roomRows').appendChild(e);calc()}
 function getBudget(){return JSON.parse(localStorage.getItem('apcs_budget_v4')||'null')||DEFAULT_B} function openBudget(){budgetModal.classList.add('on');let m=['Jul-26','Aug-26','Sep-26','Oct-26','Nov-26','Dec-26','Jan-27','Feb-27','Mar-27','Apr-27','May-27','Jun-27'],b=getBudget();$('budgetGrid').innerHTML=m.map((x,i)=>`<div><label>${x}</label><input class=bg type=number value="${b[i]}" onchange=saveBudget()></div>`).join('')} function saveBudget(){localStorage.setItem('apcs_budget_v4',JSON.stringify([...document.querySelectorAll('.bg')].map(x=>+x.value||0)));calc()}
-function tenantQuoteProfile(){
-  if(qm!=='Tenant')return null;
-  const name=String($('qname')?.value||'').trim().toLowerCase();
-  if(!name)return null;
-  const customers=allCustomers('Tenant');
-  const match=customers.find(x=>
-    String(x.customer||'').trim().toLowerCase()===name ||
-    String(x.account||'').split(',').map(v=>v.trim().toLowerCase()).includes(name)
-  );
-  if(!match)return null;
-  return {customer:match,profile:profiles()[pkey(match,'Tenant')]||{}};
-}
-function syncTenantPricingFromProfile(){
-  if(qm!=='Tenant')return;
-  const found=tenantQuoteProfile();
-  if(!found)return;
-  const p=found.profile||{};
-  if($('baseRent') && $('baseRent').value==='' && p.rates?.RENT!==undefined && p.rates?.RENT!=='')$('baseRent').value=p.rates.RENT;
-  if($('outgoings') && $('outgoings').value==='' && p.rates?.OUT!==undefined && p.rates?.OUT!=='')$('outgoings').value=p.rates.OUT;
-  if($('tenantCpi') && $('tenantCpi').value==='' && p.cpi!==undefined && p.cpi!=='')$('tenantCpi').value=p.cpi;
-}
 function calc(){if(qm==='3PL'){let loads=0,pals=0,parts=[];document.querySelectorAll('#recRows .row').forEach(r=>{let n=recLoads(r),p=recPals(r);loads+=n;pals+=n*p;r.querySelector('.loadnote').textContent=n?`${n} load(s) to 31/12/2026`:'';if(n&&p)parts.push(`${n} × ${p} pallets = ${n*p}`)});$('recSummary').innerHTML=loads?`<b>Receivable summary:</b> ${loads} total receipts · ${pals.toLocaleString()} pallet-equivalents · ${(pals*36).toLocaleString()} carton-equivalents${parts.length?`<br><span class=hint>${parts.join(' + ')}</span>`:''}`:'<span class=hint>Receivable summary will appear after conditions are entered.</span>';let hd=days($('holdN').value,$('holdU').value);$('holdConv').textContent=hd&&$('holdU').value!=='days'?`(${hd} days)`:'';let cartons=pals*36,scan=($('prod').value==='Blast'||($('prod').value==='Frozen'&&$('scan').value==='Yes'))?(+$('scanPct').value||0)/100:0,blast=$('prod').value==='Blast'?(+$('blastPct').value||0)/100:0,revRec=cartons*.4+cartons*scan*.4+cartons*blast*3.45,revStor=hd?($('storBasis').value==='Pallet'?pals*(hd/7)*12:$('storBasis').value==='Carton'?cartons*(hd/7)*.4:0):0,ld=days($('loFreq').value,$('loUnit').value),events=ld?365/ld:0,lop=($('dom').checked?(+$('domPal').value||0):0)+($('exp').checked?(+$('expQty').value||0)*(($('exp20')?.checked?22:0)+($('exp40')?.checked?44:0)):0),revLO=lop*events*12,areas=[['Receivable',revRec],['Storage',revStor],['Load Out',revLO],['Blast',cartons*blast*3.45]],top=areas.sort((a,b)=>b[1]-a[1])[0],annual=(revRec+revStor)*4+revLO,monthly=annual/12,budget=getBudget().reduce((a,b)=>a+b,0),cov=budget?annual/budget*100:0,ongoing=loads>=3||events>=12;$('monthly').textContent=annual?money(monthly):'—';$('annual').textContent=annual?money(annual):'—';$('thirdLabel').textContent='Top revenue area';$('thirdKpi').textContent=top[1]>0?top[0]:'—';$('coverLabel').textContent='Pipeline budget coverage';$('coverage').textContent=annual?cov.toFixed(1)+'%':'—';$('ins1').innerHTML=annual?(ongoing?'<b>Ongoing</b> — recurring activity is expected.':'<b>Ad-hoc / low-frequency</b> — limited recurring activity.'):'Complete the quote to assess ad-hoc vs ongoing.';$('ins2').innerHTML=top[1]>0?`<b>${top[0]}</b> is the highest estimated revenue area (${money(top[1])} in the model).`:'Complete the quote to identify the highest-revenue area.';let extras=[...document.querySelectorAll('#extras input:checked')].map(x=>x.nextElementSibling.textContent),opps=[];if(blast>0)opps.push(`Blast handling adds incremental revenue on ${Math.round(blast*100)}% of receivable volume.`);if(extras.length)opps.push(`Extra services selected (${extras.join(', ')}) create additional charge opportunities.`);if($('mix').value==='Mixed products')opps.push('<b>Mixed product customer</b> — allow for additional labour and handling time when setting the final rate.');if(hd)opps.push(`Holding-over can generate additional revenue from day ${hd+1} at $0.04/carton; consider whether to charge separately or build the economics into storage.`);$('ins3').innerHTML=opps.length?opps.join(' '):'No additional revenue opportunity identified yet — select blast, extra services, mixed product or storage dwell to generate a note.'}
 else{
-  let area=0;
-  document.querySelectorAll('#roomRows .row').forEach(r=>{area+=Number(r.querySelector('.sqm')?.value)||0});
+  let area=0,rooms=[];
+  document.querySelectorAll('#roomRows .row').forEach(r=>{
+    const sqm=Number(r.querySelector('.sqm')?.value)||0;
+    const room=r.querySelector('.room')?.value||'';
+    area+=sqm;
+    if(room&&!rooms.includes(room))rooms.push(room);
+  });
+
   let u=(+$('futurePal').value||0)/5000*100;
-  $('util').textContent=$('future3pl').value==='Yes'?u.toFixed(2)+'% of 5,000 pallets'+(u<2?' — low impact':''):'—';
+  $('util').textContent=$('future3pl').value==='Yes'
+    ?u.toFixed(2)+'% of 5,000 pallets'+(u<2?' — low impact':'')
+    :'—';
   $('draftWarn').classList.toggle('hide',$('future3pl').value!=='Not sure');
 
-  // Tenant commercial pricing is intentionally generated after Submit.
-  $('monthly').textContent='After Submit';
-  $('annual').textContent='After Submit';
-  $('thirdLabel').textContent='Pricing method';
-  $('thirdKpi').textContent='2 scenarios';
-  $('coverLabel').textContent='Commercial comparison';
-  $('coverage').textContent='After matching';
+  const contractYears=Math.max(0,Math.floor(+$('years').value||0));
 
-  let contractYears=Math.max(0,Math.floor(+$('years').value||0));
-  $('ins1').innerHTML=contractYears
-    ?`<b>Tenant contract:</b> ${contractYears} year${contractYears===1?'':'s'}. Pricing will be generated after Submit using area → room type → contract length as the primary match order.`
-    :'Complete contract length to strengthen the tenant match.';
-  $('ins2').innerHTML=area
-    ?`<b>Occupied area:</b> ${area.toLocaleString()} m². Area is the highest-priority Tenant matching criterion.`
-    :'Add rooms and square metres. Area is the highest-priority Tenant matching criterion.';
-  $('ins3').innerHTML='After Submit, APCS will show matching Tenant profiles (or No Match) and two suggested pricing scenarios using portfolio rent/outgoings, room complexity, access, key, parking and CPI assumptions.';
+  $('monthly').previousElementSibling.textContent='Chargeable area';
+  $('monthly').textContent=area?area.toLocaleString('en-AU')+' m²':'—';
+
+  $('annual').previousElementSibling.textContent='Contract length';
+  $('annual').textContent=contractYears?`${contractYears} year${contractYears===1?'':'s'}`:'—';
+
+  $('thirdLabel').textContent='Room requirement';
+  $('thirdKpi').textContent=rooms.length?rooms.join(', '):'—';
+
+  $('coverLabel').textContent='Pricing';
+  $('coverage').textContent='Generated after Submit';
+
+  $('ins1').innerHTML=area
+    ?`<b>Area first:</b> ${area.toLocaleString('en-AU')} m² will be the primary Tenant matching criterion.`
+    :'Enter the required square metres. Area is the primary Tenant matching criterion.';
+  $('ins2').innerHTML=rooms.length
+    ?`<b>Room type second:</b> ${rooms.join(', ')}. Contract length is considered after room fit.`
+    :'Select the required room type(s).';
+  $('ins3').innerHTML='Submit the quote to choose a ≥90% matching Tenant profile or No Match. APCS will then generate two pricing scenarios using only Rent, Outgoings and CPI.';
 }
 $('draftName').textContent=($('qname').value||'Untitled')+' · '+qm;autoSave()}
 function profiles(){return JSON.parse(localStorage.getItem('apcs_profiles_v4')||'{}')}
@@ -1276,35 +1269,17 @@ function buildCommercialScenarios(){
   const oneBlast=cartons*blastPct*blastRate;
   const oneScan=cartons*scanPct*scanRate;
 
-  // The same warehouse capacity is occupied throughout the comparison horizon.
+  // One complete turnover opportunity = the movement/handling revenue APCS can earn
+  // when the occupied capacity is released and replaced by another batch.
+  // Storage is excluded because the same storage capacity is already being charged
+  // throughout the customer's proposed dwell.
+  const fullTurnoverOpportunity=oneReceive+oneLoad+oneBlast+oneScan;
+
   const horizonWeeks=requestedDays/7;
   const storageRevenue=storRateCarton
     ?cartons*storRateCarton*horizonWeeks
     :pallets*storRatePallet*horizonWeeks;
 
-  function turnoverScenario(turnoverDays,label){
-    // Initial receipt at day 0.
-    // Whenever the stock turns before the proposal horizon ends,
-    // the next batch can immediately use the freed capacity.
-    let receipts=1,loadouts=0;
-    for(let d=turnoverDays;d<=requestedDays+1e-9;d+=turnoverDays){
-      loadouts++;
-      if(d<requestedDays-1e-9)receipts++;
-    }
-
-    const receiveRevenue=oneReceive*receipts;
-    const loadRevenue=oneLoad*loadouts;
-    const blastRevenue=oneBlast*receipts;
-    const scanRevenue=oneScan*receipts;
-    const total=receiveRevenue+loadRevenue+storageRevenue+blastRevenue+scanRevenue;
-
-    return {
-      label,turnoverDays,receipts,loadouts,
-      receiveRevenue,loadRevenue,storageRevenue,blastRevenue,scanRevenue,total
-    };
-  }
-
-  // Customer proposal: one batch occupies the capacity for the full requested dwell.
   const proposal={
     label:'Customer Proposal',
     turnoverDays:requestedDays,
@@ -1320,30 +1295,49 @@ function buildCommercialScenarios(){
     cartons
   };
 
-  const nonRaw=turnoverScenario(90,'Non-Ongoing');
-  const ongoingRaw=turnoverScenario(30,'Ongoing');
+  function benchmark(turnoverDays,label){
+    const excessDays=Math.max(0,requestedDays-turnoverDays);
+    const opportunityFraction=turnoverDays?excessDays/turnoverDays:0;
+    const opportunity=fullTurnoverOpportunity*opportunityFraction;
 
-  function finishBenchmark(raw){
-    const opportunity=Math.max(0,raw.total-proposal.total);
+    // Potential revenue is proposal revenue plus the proportional capacity opportunity.
+    const total=proposal.total+opportunity;
+
     const units=basis==='Pallet'?pallets:cartons;
     const baseRate=basis==='Pallet'?storRatePallet:storRateCarton;
     const recoveryPerUnit=units?opportunity/units:0;
-    const chep=basis==='Pallet'?5:(5/36);
+
+    // CHEP hire = $0.11 per pallet per day.
+    // Long-stay storage rate is weekly, so convert to $0.77/pallet/week.
+    const chepPerPalletPerDay=0.11;
+    const chepPerPalletPerWeek=chepPerPalletPerDay*7;
+    const chep=basis==='Pallet'
+      ?chepPerPalletPerWeek
+      :chepPerPalletPerWeek/36;
+
     const recommended=baseRate+recoveryPerUnit+chep;
+
     return {
-      ...raw,
+      label,
+      turnoverDays,
+      excessDays,
+      opportunityFraction,
+      fullTurnoverOpportunity,
+      total,
       opportunity,
       units,
       basis:basis==='Pallet'?'pallet':'carton',
       baseRate,
       recoveryPerUnit,
+      chepPerPalletPerDay,
+      chepPerPalletPerWeek,
       chep,
       recommended
     };
   }
 
-  const non=finishBenchmark(nonRaw);
-  const ongoing=finishBenchmark(ongoingRaw);
+  const non=benchmark(90,'Non-Ongoing');
+  const ongoing=benchmark(30,'Ongoing');
   const cls=classifyScenarioBenchmark();
 
   return {
@@ -1364,6 +1358,22 @@ function renderScenarioAnalysis(){
 
   const reqMonths=(s.requestedDays/30).toFixed(s.requestedDays%30?1:0);
   const rec=s.recommendedType==='ongoing'?s.ongoing:s.non;
+  const excessMonths=(rec.excessDays/30).toFixed(rec.excessDays%30?1:0);
+
+  function scenarioCard(x,title,turnoverText,recommended){
+    return `<div class="scenarioCard ${recommended?'recommended':''}">
+      <small>${title}</small>
+      <b class=big>${turnoverText}</b>
+      <div>Benchmark dwell: <b>${Math.round(x.turnoverDays)} days</b></div>
+      <div>Excess dwell: <b>${Math.round(x.excessDays)} days</b></div>
+      <div>Full turnover opportunity: <b>${money(x.fullTurnoverOpportunity)}</b></div>
+      <div>Opportunity fraction: <b>${x.opportunityFraction.toFixed(2)}×</b></div>
+      <div>Potential revenue: <b>${money(x.total)}</b></div>
+      <div>Opportunity variance: <b>${money(x.opportunity)}</b></div>
+      <div style="margin-top:7px">Suggested long-stay rate: <b>${money(x.recommended)}/${x.basis}/week</b></div>
+      ${recommended?'<div class=recommendPill style="margin-top:8px">Closest profile match</div>':''}
+    </div>`;
+  }
 
   return `<div class=scenarioWrap>
     <div class=scenarioTitle>
@@ -1372,32 +1382,13 @@ function renderScenarioAnalysis(){
     </div>
 
     <div class=hint>
-      Same storage quantity and same selected rate card are used in all cases.
-      The benchmark shows the revenue APCS could generate if the same capacity turned over sooner instead of remaining with the customer's proposed dwell.
+      Opportunity variance now increases proportionally with the time the customer remains beyond the benchmark dwell.
+      Storage revenue is not double-counted: the opportunity component uses receivable, load-out, blast and scan revenue only.
     </div>
 
     <div class=scenarioGrid>
-      <div class="scenarioCard ${s.recommendedType==='non-ongoing'?'recommended':''}">
-        <small>Scenario 1 · Non-Ongoing</small>
-        <b class=big>3-month turnover</b>
-        <div>Receipts in ${reqMonths}-month horizon: <b>${s.non.receipts}</b></div>
-        <div>Load-outs in horizon: <b>${s.non.loadouts}</b></div>
-        <div>Potential revenue: <b>${money(s.non.total)}</b></div>
-        <div>Opportunity variance: <b>${money(s.non.opportunity)}</b></div>
-        <div style="margin-top:7px">Suggested long-stay rate: <b>${money(s.non.recommended)}/${s.non.basis}/week</b></div>
-        ${s.recommendedType==='non-ongoing'?'<div class=recommendPill style="margin-top:8px">Closest profile match</div>':''}
-      </div>
-
-      <div class="scenarioCard ${s.recommendedType==='ongoing'?'recommended':''}">
-        <small>Scenario 2 · Ongoing</small>
-        <b class=big>1-month turnover</b>
-        <div>Receipts in ${reqMonths}-month horizon: <b>${s.ongoing.receipts}</b></div>
-        <div>Load-outs in horizon: <b>${s.ongoing.loadouts}</b></div>
-        <div>Potential revenue: <b>${money(s.ongoing.total)}</b></div>
-        <div>Opportunity variance: <b>${money(s.ongoing.opportunity)}</b></div>
-        <div style="margin-top:7px">Suggested long-stay rate: <b>${money(s.ongoing.recommended)}/${s.ongoing.basis}/week</b></div>
-        ${s.recommendedType==='ongoing'?'<div class=recommendPill style="margin-top:8px">Closest profile match</div>':''}
-      </div>
+      ${scenarioCard(s.non,'Scenario 1 · Non-Ongoing','3-month turnover',s.recommendedType==='non-ongoing')}
+      ${scenarioCard(s.ongoing,'Scenario 2 · Ongoing','1-month turnover',s.recommendedType==='ongoing')}
 
       <div class=scenarioCard>
         <small>Customer Proposal</small>
@@ -1410,28 +1401,42 @@ function renderScenarioAnalysis(){
     </div>
 
     <table class=scenarioCompare>
-      <thead><tr><th>Scenario</th><th>Turnover</th><th>Receipts</th><th>Load-outs</th><th>Revenue</th><th>Opportunity variance</th><th>Long-stay rate</th></tr></thead>
+      <thead><tr><th>Scenario</th><th>Benchmark dwell</th><th>Excess dwell</th><th>Full turnover opportunity</th><th>Opportunity variance</th><th>Long-stay rate</th></tr></thead>
       <tbody>
-        <tr><td>${s.non.label}${s.recommendedType==='non-ongoing'?' ★':''}</td><td>3 months</td><td>${s.non.receipts}</td><td>${s.non.loadouts}</td><td>${money(s.non.total)}</td><td>${money(s.non.opportunity)}</td><td>${money(s.non.recommended)}/${s.non.basis}/wk</td></tr>
-        <tr><td>${s.ongoing.label}${s.recommendedType==='ongoing'?' ★':''}</td><td>1 month</td><td>${s.ongoing.receipts}</td><td>${s.ongoing.loadouts}</td><td>${money(s.ongoing.total)}</td><td>${money(s.ongoing.opportunity)}</td><td>${money(s.ongoing.recommended)}/${s.ongoing.basis}/wk</td></tr>
-        <tr><td>Customer Proposal</td><td>${reqMonths} months</td><td>1</td><td>1</td><td>${money(s.proposal.total)}</td><td>—</td><td>Current storage rate</td></tr>
+        <tr><td>${s.non.label}${s.recommendedType==='non-ongoing'?' ★':''}</td><td>3 months</td><td>${Math.round(s.non.excessDays)} days</td><td>${money(s.non.fullTurnoverOpportunity)}</td><td>${money(s.non.opportunity)}</td><td>${money(s.non.recommended)}/${s.non.basis}/wk</td></tr>
+        <tr><td>${s.ongoing.label}${s.recommendedType==='ongoing'?' ★':''}</td><td>1 month</td><td>${Math.round(s.ongoing.excessDays)} days</td><td>${money(s.ongoing.fullTurnoverOpportunity)}</td><td>${money(s.ongoing.opportunity)}</td><td>${money(s.ongoing.recommended)}/${s.ongoing.basis}/wk</td></tr>
+        <tr><td>Customer Proposal</td><td>${reqMonths} months</td><td>—</td><td>—</td><td>—</td><td>Current storage rate</td></tr>
       </tbody>
     </table>
 
     <div class=longStayProposal>
       <b>Proposed long-stay storage rate from day ${Math.round(s.thresholdDays)+1}:</b><br>
       <b>${money(rec.recommended)} per ${rec.basis} per week</b><br><br>
+
+      <b>Opportunity calculation:</b><br>
+      Full turnover opportunity ${money(rec.fullTurnoverOpportunity)}
+      × (${Math.round(rec.excessDays)} excess days ÷ ${Math.round(rec.turnoverDays)} benchmark days)
+      = <b>${money(rec.opportunity)} opportunity variance</b>.<br><br>
+
+      <b>Rate calculation:</b><br>
       Base storage: <b>${money(rec.baseRate)}</b>
       + opportunity recovery: <b>${money(rec.recoveryPerUnit)}</b>
-      + CHEP allocation: <b>${money(rec.chep)}</b>
+      + CHEP: <b>${money(rec.chep)}</b>
       = <b>${money(rec.recommended)} per ${rec.basis} per week</b>.<br><br>
-      This rate <b>replaces</b> the normal storage rate after the customer's requested ${Math.round(s.requestedDays)}-day dwell period plus 2 weeks.
+
+      CHEP is calculated at <b>$0.11 per pallet per day = $0.77 per pallet per week</b>.
       ${s.billingBasis==='Pallet'
-        ?` The quote is pallet-based, so opportunity variance is divided by the total pallets in storage and CHEP is added at $5.00 per pallet.`
-        :` The quote is carton-based, so opportunity variance is divided by the total cartons in storage and CHEP is allocated at $5 ÷ 36 = ${money(5/36)} per carton.`}
+        ?` Because the quote is pallet-based, $0.77 is added per pallet per week.`
+        :` Because the quote is carton-based, CHEP is allocated as $0.77 ÷ 36 = ${money(0.77/36)} per carton per week.`}
+      <br><br>
+      This rate <b>replaces</b> the normal storage rate after the customer's requested ${Math.round(s.requestedDays)}-day dwell period plus 2 weeks.
     </div>
 
-    <div class=scenarioExplanation><b>Benchmark rationale:</b> ${esc(s.reason)} The alternative benchmark remains visible for comparison.</div>
+    <div class=scenarioExplanation>
+      <b>Benchmark rationale:</b> ${esc(s.reason)}
+      The recommended benchmark has ${excessMonths} month${Number(excessMonths)===1?'':'s'} of excess dwell relative to the customer's request.
+      The alternative benchmark remains visible for comparison.
+    </div>
   </div>`;
 }
 function updateSuggestedEconomics(){
@@ -1568,7 +1573,8 @@ function addCustomQuoteService(){
 }
 
 
-const APCS_ABS_CPI_REFERENCE=3.5; // ABS all-groups annual CPI, July 2026
+
+const APCS_ABS_CPI_REFERENCE=3.5;
 const APCS_CPI_FLOOR=6;
 let tenantScenarioSelection=null;
 let tenantScenarioData=null;
@@ -1585,6 +1591,10 @@ function percentileNum(arr,p){
   const idx=(a.length-1)*p,lo=Math.floor(idx),hi=Math.ceil(idx);
   return lo===hi?a[lo]:a[lo]+(a[hi]-a[lo])*(idx-lo);
 }
+function tenantHasNonChargeableArea(p){
+  const note=String(p?.notes||'').toLowerCase();
+  return /non[-\s]?chargeable|non charge|free\s*(sqm|m2|m²|area|space)|complimentary\s*(sqm|m2|m²|area|space)|not\s+charged\s+for\s+(sqm|m2|m²|area|space)/i.test(note);
+}
 function tenantQuoteRequirements(){
   let area=0,rooms=[],dedicatedCold=false;
   document.querySelectorAll('#roomRows .row').forEach(r=>{
@@ -1598,6 +1608,7 @@ function tenantQuoteRequirements(){
   return {
     area,
     rooms,
+    dedicatedCold,
     contractYears:Number($('years')?.value)||0,
     separateKey:$('key')?.value==='Yes',
     afterHours:$('after')?.value==='Yes',
@@ -1607,34 +1618,26 @@ function tenantQuoteRequirements(){
     location:$('locPref')?.value||''
   };
 }
-function tenantHasNonChargeableArea(p){
-  const note=String(p?.notes||'').toLowerCase();
-  return /non[-\s]?chargeable|non charge|free\s*(sqm|m2|m²|area|space)|complimentary\s*(sqm|m2|m²|area|space)|not\s+charged\s+for\s+(sqm|m2|m²|area|space)/i.test(note);
-}
 function tenantPortfolioBenchmark(){
   const st=profiles();
-  const rows=allCustomers('Tenant').map(x=>({x,p:st[pkey(x,'Tenant')]||{}}))
+  const rows=allCustomers('Tenant')
+    .map(x=>({x,p:st[pkey(x,'Tenant')]||{}}))
     .filter(z=>Object.keys(z.p).length)
     .map(z=>({...z,hasNonChargeable:tenantHasNonChargeableArea(z.p)}));
 
-  // Pricing benchmark excludes profiles whose notes indicate free/non-chargeable area.
-  // Their headline $/m² rate is not directly comparable with a fully chargeable new tenancy.
   const comparableRows=rows.filter(z=>!z.hasNonChargeable);
   const benchmarkRows=comparableRows.length?comparableRows:rows;
-
   const rents=benchmarkRows.map(z=>Number(z.p.rates?.RENT)).filter(v=>v>0);
   const outs=benchmarkRows.map(z=>Number(z.p.rates?.OUT)).filter(v=>v>0);
 
   return {
-    rows,
-    comparableRows,
+    rows,comparableRows,
     medianRent:medianNum(rents),
     q3Rent:percentileNum(rents,.75),
     minRent:rents.length?Math.min(...rents):0,
     maxRent:rents.length?Math.max(...rents):0,
     medianOut:medianNum(outs),
     q3Out:percentileNum(outs,.75),
-    count:rents.length,
     excludedNonChargeable:rows.filter(z=>z.hasNonChargeable).length
   };
 }
@@ -1646,12 +1649,11 @@ function tenantPricingScenarios(match){
   const matchedOut=Number(mp.rates?.OUT)||0;
   const matchedHasNonChargeable=tenantHasNonChargeableArea(mp);
 
-  // If the matched customer's note shows non-chargeable/free area,
-  // do NOT use its lower headline rate as the pricing anchor for a fully-chargeable new deal.
-  let referenceRent=(!matchedHasNonChargeable&&matchedRent)?matchedRent:(portfolio.medianRent||matchedRent||400);
+  let referenceRent=(!matchedHasNonChargeable&&matchedRent)
+    ?matchedRent
+    :(portfolio.medianRent||matchedRent||400);
   let referenceOut=matchedOut||portfolio.medianOut||74.52;
 
-  // Area adjustment: smaller occupancies carry a modest premium; larger occupancies get scale relief.
   let areaAdj=0;
   if(req.area>0){
     if(req.area<100)areaAdj=.08;
@@ -1660,35 +1662,43 @@ function tenantPricingScenarios(match){
     else if(req.area>=500)areaAdj=-.02;
   }
 
-  // Service/complexity premiums driven by the quote requirements.
-  let serviceAdj=0,drivers=[];
-  if(req.rooms.some(r=>['Blast room','Chill room','Frozen room'].includes(r))){serviceAdj+=.04;drivers.push('cold-room requirement +4%')}
-  if(req.dedicatedCold){serviceAdj+=.06;drivers.push('dedicated cold room +6%')}
-  if(req.afterHours){serviceAdj+=.03;drivers.push('after-hours access +3%')}
-  if(req.separateKey){serviceAdj+=.015;drivers.push('separate key +1.5%')}
+  let complexityAdj=0,drivers=[];
+  if(req.rooms.some(r=>['Blast room','Chill room','Frozen room'].includes(r))){
+    complexityAdj+=.04;drivers.push('cold-room requirement +4%');
+  }
+  if(req.dedicatedCold){
+    complexityAdj+=.06;drivers.push('dedicated cold room +6%');
+  }
+  if(req.afterHours){
+    complexityAdj+=.03;drivers.push('after-hours access +3%');
+  }
+  if(req.separateKey){
+    complexityAdj+=.015;drivers.push('separate key +1.5%');
+  }
   if(req.parking){
     const park=Math.min(.03,.005*Math.max(1,req.parkingLots||1));
-    serviceAdj+=park;drivers.push(`parking +${(park*100).toFixed(1)}%`);
+    complexityAdj+=park;drivers.push(`parking +${(park*100).toFixed(1)}%`);
   }
 
   const cpi1=Math.max(APCS_CPI_FLOOR,APCS_ABS_CPI_REFERENCE);
   const cpi2=Math.max(APCS_CPI_FLOOR+1,APCS_ABS_CPI_REFERENCE+1);
 
-  const s1Rent=referenceRent*(1+areaAdj+serviceAdj);
-  const portfolioProtection=Math.max(referenceRent,portfolio.q3Rent||0);
-  const s2Rent=Math.max(s1Rent*1.08,portfolioProtection*(1+areaAdj+serviceAdj));
+  const s1Rent=referenceRent*(1+areaAdj+complexityAdj);
+  const protectedReference=Math.max(referenceRent,portfolio.q3Rent||0);
+  const s2Rent=Math.max(s1Rent*1.08,protectedReference*(1+areaAdj+complexityAdj));
+
   const s1Out=referenceOut;
   const s2Out=Math.max(referenceOut,portfolio.q3Out||0);
 
-  function calcScenario(label,rent,out,cpi,kind){
-    const annualBase=req.area*(rent+out);
-    let total=0;
+  function scenario(label,rent,out,cpi){
+    const annual=req.area*(rent+out);
     const years=Math.max(1,Math.floor(req.contractYears||1));
-    for(let y=0;y<years;y++)total+=annualBase*Math.pow(1+cpi/100,y);
+    let total=0;
+    for(let y=0;y<years;y++)total+=annual*Math.pow(1+cpi/100,y);
     return {
-      label,kind,rent,out,cpi,
-      annual:annualBase,
-      monthly:annualBase/12,
+      label,rent,out,cpi,
+      monthly:annual/12,
+      annual,
       totalContract:total,
       blended:rent+out,
       upliftVsReference:referenceRent?((rent/referenceRent)-1)*100:0
@@ -1696,15 +1706,17 @@ function tenantPricingScenarios(match){
   }
 
   return {
-    req,portfolio,
-    matched:match?.x?{customer:match.x.customer,account:match.x.account,rent:matchedRent,out:matchedOut,hasNonChargeable:matchedHasNonChargeable}:null,
-    referenceRent,referenceOut,
-    areaAdj,serviceAdj,drivers,
-    absCpi:APCS_ABS_CPI_REFERENCE,
-    cpiFloor:APCS_CPI_FLOOR,
+    req,portfolio,referenceRent,referenceOut,drivers,
+    matched:match?.x?{
+      customer:match.x.customer,
+      account:match.x.account,
+      rent:matchedRent,
+      out:matchedOut,
+      hasNonChargeable:matchedHasNonChargeable
+    }:null,
     scenarios:[
-      calcScenario('Scenario 1 · Portfolio-aligned',s1Rent,s1Out,cpi1,'balanced'),
-      calcScenario('Scenario 2 · Commercial protection',s2Rent,s2Out,cpi2,'protect')
+      scenario('Scenario 1 · Portfolio-aligned',s1Rent,s1Out,cpi1),
+      scenario('Scenario 2 · Commercial protection',s2Rent,s2Out,cpi2)
     ]
   };
 }
@@ -1713,42 +1725,44 @@ function tenantScenarioHtml(match){
   tenantScenarioSelection=null;
   const d=tenantScenarioData;
   const ref=d.matched
-    ?`${esc(d.matched.customer)}${d.matched.account?` (${esc(d.matched.account)})`:''}${d.matched.hasNonChargeable?' · legacy non-chargeable area noted':''}`
-    :'APCS Tenant portfolio median';
-  const rentRange=d.portfolio.minRent&&d.portfolio.maxRent
-    ?`${money(d.portfolio.minRent)}–${money(d.portfolio.maxRent)}/m²/yr`
-    :'Limited saved rate data';
+    ?`${esc(d.matched.customer)}${d.matched.account?` (${esc(d.matched.account)})`:''}`
+    :'APCS Tenant portfolio';
 
   const cards=d.scenarios.map((s,i)=>`
     <div id="tenantScenarioCard${i}" class=tenantScenarioCard>
       <h4>${s.label}</h4>
-      <div class=tenantScenarioPrice>${money(s.rent)}/m²/year</div>
+      <div class=tenantScenarioPrice>${money(s.rent)}/m²/year rent</div>
       <div class=tenantScenarioLine><span>Outgoings</span><b>${money(s.out)}/m²/year</b></div>
       <div class=tenantScenarioLine><span>Annual CPI</span><b>${s.cpi.toFixed(1)}%</b></div>
+      <div class=tenantScenarioLine><span>Blended charge</span><b>${money(s.blended)}/m²/year</b></div>
       <div class=tenantScenarioLine><span>Monthly revenue</span><b>${money(s.monthly)}</b></div>
       <div class=tenantScenarioLine><span>Annual revenue</span><b>${money(s.annual)}</b></div>
       <div class=tenantScenarioLine><span>Total contract revenue</span><b>${money(s.totalContract)}</b></div>
-      <div class=tenantScenarioLine><span>Rent uplift vs reference</span><b>${s.upliftVsReference>=0?'+':''}${s.upliftVsReference.toFixed(1)}%</b></div>
-      <div class=tenantScenarioActions><button class="btn ${i===0?'primary':''}" onclick="selectTenantScenario(${i})">Select Scenario ${i+1}</button></div>
+      <div class=tenantScenarioActions>
+        <button class="btn ${i===0?'primary':''}" onclick="selectTenantScenario(${i})">Select Scenario ${i+1}</button>
+      </div>
     </div>`).join('');
 
   return `<div class=tenantScenarioWrap>
     <h3>${esc(quoteName())} - Tenant Pricing Comparison</h3>
-    <div class=hint>Pricing is generated from the new tenant requirements. Matched customers are a reference only; their operating assumptions are not copied into this quote.</div>
+    <div class=hint>
+      Tenant pricing contains only <b>Rent, Outgoings and CPI</b>. No 3PL service charges are added.
+    </div>
     <div class=tenantScenarioBench>
-      <div><small>Pricing reference</small><b>${ref}</b></div>
-      <div><small>APCS portfolio median rent</small><b>${d.portfolio.medianRent?money(d.portfolio.medianRent)+'/m²/yr':'—'}</b></div>
-      <div><small>APCS saved rent range</small><b>${rentRange}</b></div>
-      <div><small>CPI reference</small><b>ABS ${d.absCpi.toFixed(1)}% · APCS floor ${d.cpiFloor.toFixed(1)}%</b></div>
+      <div><small>Comparison reference</small><b>${ref}</b></div>
+      <div><small>Chargeable area</small><b>${d.req.area?d.req.area.toLocaleString('en-AU')+' m²':'—'}</b></div>
+      <div><small>Portfolio median rent</small><b>${d.portfolio.medianRent?money(d.portfolio.medianRent)+'/m²/yr':'—'}</b></div>
+      <div><small>CPI approach</small><b>ABS reference ${APCS_ABS_CPI_REFERENCE.toFixed(1)}% · APCS minimum ${APCS_CPI_FLOOR.toFixed(1)}%</b></div>
     </div>
     <div class=tenantScenarioGrid>${cards}</div>
     <div class=tenantScenarioExplain>
-      <b>Pricing drivers:</b> Area ${d.req.area.toLocaleString()} m² · ${d.req.rooms.length?d.req.rooms.join(', '):'room type not specified'}${d.drivers.length?' · '+d.drivers.join(' · '):''}.
-      Scenario 1 stays closer to the matched/portfolio reference. Scenario 2 adds a commercial buffer and protects against higher-complexity occupancy.
-      ${d.req.bills?` Bills arrangement: ${esc(d.req.bills)}.`:''}
-      ${d.matched?.hasNonChargeable?`<br><b>Benchmark adjustment:</b> the matched customer's notes indicate non-chargeable/free area, so its lower headline rent is shown for context but is <b>not used as the pricing anchor</b>. The suggested rent instead uses the comparable APCS Tenant portfolio benchmark where area is chargeable.`:''}
-      ${d.portfolio.excludedNonChargeable?`<br><span class=hint>${d.portfolio.excludedNonChargeable} Tenant profile${d.portfolio.excludedNonChargeable===1?'':'s'} with non-chargeable-area notes ${d.portfolio.excludedNonChargeable===1?'was':'were'} excluded from the rent benchmark.</span>`:''}
-      <br><b>Profitability note:</b> this compares revenue and portfolio positioning. True profit/margin cannot be confirmed unless property, utilities, labour and other occupancy costs are stored in the model.
+      <b>Pricing drivers:</b> ${d.req.rooms.length?d.req.rooms.join(', '):'room type not specified'}${d.drivers.length?' · '+d.drivers.join(' · '):''}.
+      ${d.matched?.hasNonChargeable
+        ?'<br><b>Benchmark adjustment:</b> the matched profile notes indicate non-chargeable/free area, so its lower legacy rent is not used as the new pricing anchor.'
+        :''}
+      ${d.portfolio.excludedNonChargeable
+        ?`<br>${d.portfolio.excludedNonChargeable} legacy Tenant profile${d.portfolio.excludedNonChargeable===1?'':'s'} with non-chargeable-area notes ${d.portfolio.excludedNonChargeable===1?'was':'were'} excluded from the rent benchmark.`
+        :''}
     </div>
     <div class=nextBar>
       <span class=hint id=tenantScenarioChoiceHint>Select one pricing scenario to continue.</span>
@@ -1757,21 +1771,20 @@ function tenantScenarioHtml(match){
   </div>`;
 }
 function selectTenantScenario(i){
-  if(!tenantScenarioData?.scenarios?.[i])return;
+  const s=tenantScenarioData?.scenarios?.[i];
+  if(!s)return;
   tenantScenarioSelection=i;
   document.querySelectorAll('.tenantScenarioCard').forEach((x,j)=>x.classList.toggle('selected',j===i));
-  const s=tenantScenarioData.scenarios[i];
-  $('baseRent').value=s.rent.toFixed(2);
-  $('outgoings').value=s.out.toFixed(2);
-  $('tenantCpi').value=s.cpi.toFixed(1);
-  $('coldPrem').value='0';
+
+  // Tenant rate card has ONLY Rent and Outgoings.
   quoteRateServices=[
     {id:'RENT',code:'RENT',desc:'Rent',type:'Tenant',section:'Tenant',_rate:+s.rent.toFixed(2)},
     {id:'OUT',code:'OUT',desc:'Outgoings',type:'Tenant',section:'Tenant',_rate:+s.out.toFixed(2)}
   ];
+
   const btn=$('tenantScenarioNext');if(btn)btn.disabled=false;
-  const hint=$('tenantScenarioChoiceHint');if(hint)hint.innerHTML=`Selected <b>${esc(s.label)}</b> · ${money(s.rent)}/m²/year + ${money(s.out)} outgoings · CPI ${s.cpi.toFixed(1)}%`;
-  calc();
+  const hint=$('tenantScenarioChoiceHint');
+  if(hint)hint.innerHTML=`Selected <b>${esc(s.label)}</b> · Rent ${money(s.rent)}/m²/year · Outgoings ${money(s.out)}/m²/year · CPI ${s.cpi.toFixed(1)}%`;
 }
 function chooseNoMatch(){
   chosenMatch={x:null,p:{rates:{},customServices:[]},score:0,noMatch:true};
@@ -1852,50 +1865,62 @@ function chooseMatch(i){
 
 function acceptSuggestion(){
   let a=quoteStore(),q=a.find(x=>x.id===currentQuoteId);
-  if(q){
-    q.stage='Submitted';q.status='Pending';q.updatedAt=nowISO();
-    q.quoteType=q.quoteType||q.snapshot?.v?.quoteType||'New Quote';q.billingBasis=q.billingBasis||q.snapshot?.v?.billingBasis||'';
-    q.suggestedRates={};
-    q.selectedRateCard=[];
-    q.rateCardSource=chosenMatch?.x?{customer:chosenMatch.x.customer,account:chosenMatch.x.account}:chosenMatch?.noMatch?{customer:'APCS Standard Rate Card',account:'STANDARD'}:q.rateCardSource||null;
+  if(!q)return;
 
+  if(qm==='Tenant'&&(tenantScenarioSelection===null||!tenantScenarioData?.scenarios?.[tenantScenarioSelection])){
+    appNotice('Select one Tenant pricing scenario before continuing.','Pricing scenario required','warning');
+    return;
+  }
+
+  q.stage='Submitted';q.status='Pending';q.updatedAt=nowISO();
+  q.quoteType=q.quoteType||q.snapshot?.v?.quoteType||'New Quote';
+  q.suggestedRates={};
+  q.selectedRateCard=[];
+  q.rateCardSource=chosenMatch?.x
+    ?{customer:chosenMatch.x.customer,account:chosenMatch.x.account}
+    :chosenMatch?.noMatch
+      ?{customer:qm==='Tenant'?'APCS Tenant Portfolio':'APCS Standard Rate Card',account:'STANDARD'}
+      :q.rateCardSource||null;
+
+  if(qm==='Tenant'){
+    const s=tenantScenarioData.scenarios[tenantScenarioSelection];
+
+    q.suggestedRates.RENT=+s.rent.toFixed(2);
+    q.suggestedRates.OUT=+s.out.toFixed(2);
+    q.selectedRateCard=[
+      {id:'RENT',code:'RENT',desc:'Rent',type:'Tenant',section:'Tenant',rate:+s.rent.toFixed(2)},
+      {id:'OUT',code:'OUT',desc:'Outgoings',type:'Tenant',section:'Tenant',rate:+s.out.toFixed(2)}
+    ];
+
+    q.tenantPricingScenario={
+      selectedIndex:tenantScenarioSelection,
+      selected:s,
+      comparison:tenantScenarioData,
+      cpi:+s.cpi.toFixed(1),
+      absCpiReference:APCS_ABS_CPI_REFERENCE,
+      cpiFloor:APCS_CPI_FLOOR
+    };
+    q.commercialScenarios=null;
+
+    if(!(q.history||[]).some(h=>h.event==='Submitted'))addHistory(q,'Submitted','Status set to Pending');
+    addHistory(q,'Tenant Pricing Selected',`${s.label}: Rent ${money(s.rent)}/m²/year + Outgoings ${money(s.out)}/m²/year · CPI ${s.cpi.toFixed(1)}%`);
+  }else{
     quoteRateServices.forEach(s=>{
       q.suggestedRates[s.id]=s._rate??'';
       q.selectedRateCard.push({
-        id:s.id,
-        code:s.code||'',
-        desc:s.desc||'',
-        type:s.type||'',
-        section:s.section||'',
-        rate:s._rate??''
+        id:s.id,code:s.code||'',desc:s.desc||'',type:s.type||'',section:s.section||'',rate:s._rate??''
       });
     });
-
-    // Persist the relevant pricing/scenario analysis with the quote.
-    if(qm==='Tenant'){
-      if(tenantScenarioSelection===null||!tenantScenarioData?.scenarios?.[tenantScenarioSelection])return;
-      q.tenantPricingScenario={
-        selectedIndex:tenantScenarioSelection,
-        selected:tenantScenarioData.scenarios[tenantScenarioSelection],
-        comparison:tenantScenarioData,
-        absCpiReference:APCS_ABS_CPI_REFERENCE,
-        cpiFloor:APCS_CPI_FLOOR
-      };
-      q.commercialScenarios=null;
-    }else{
-      q.commercialScenarios=buildCommercialScenarios();
-    }
+    q.commercialScenarios=buildCommercialScenarios();
     if(!(q.history||[]).some(h=>h.event==='Submitted'))addHistory(q,'Submitted','Status set to Pending');
     addHistory(q,'Rate Card Saved',`${q.selectedRateCard.length} selected service(s)`);
-    if(qm==='Tenant'&&q.tenantPricingScenario?.selected){
-      const s=q.tenantPricingScenario.selected;
-      addHistory(q,'Tenant Pricing Scenario',`${s.label}: ${money(s.rent)}/m²/year rent + ${money(s.out)} outgoings · CPI ${s.cpi.toFixed(1)}%`);
-    }else if(q.commercialScenarios){
+    if(q.commercialScenarios){
       let r=q.commercialScenarios.recommendedType==='ongoing'?'Ongoing 1-month':'Non-Ongoing 3-month';
       addHistory(q,'Scenario Analysis',`Recommended benchmark: ${r}`);
     }
-    putQuotes(a);
   }
+
+  putQuotes(a);
   matchModal.classList.remove('on');
   currentQuoteId=null;
   localStorage.removeItem('apcs_cm_current_quote_v1');
@@ -1905,6 +1930,7 @@ function acceptSuggestion(){
   renderQuotes();go('quotes');
   setTimeout(()=>showGlobalModal('Quote submitted successfully. It is now Pending.',{title:'Quote submitted',type:'success',confirmText:'Done'}),80)
 }
+
 function snapshot(){
   let v={};
   document.querySelectorAll('#quote input,#quote select,#quote textarea').forEach((e,i)=>{
@@ -2563,9 +2589,10 @@ function deleteTask(qid,tid){let a=quoteStore(),q=a.find(x=>x.id===qid);if(!q)re
 function markStarted(qid){let a=quoteStore(),q=a.find(x=>x.id===qid);if(!q)return;let o=ensureOnboarding(q),s=onboardingState(o);if(s.pct!==100){appNotice('All onboarding tasks must be completed first.','Onboarding incomplete','warning');return}appConfirm(`Mark ${q.name} as Started and move the customer to Active Customers?`,()=>{let t=nowISO(),today=t.slice(0,10);o.completedAt=t;o.status='Completed';q.actualStartDate=t;q.updatedAt=t;addHistory(q,'Onboarding Completed','Moved to Active Customers');putQuotes(a);let c=customCustomers(),exists=(c[q.model]||[]).some(x=>x.customer===q.name);if(!exists){c[q.model].push({customer:q.name,account:q.name});localStorage.setItem('apcs_customers_v4',JSON.stringify(c))}let st=profiles(),key=q.model+'|'+q.name+'|'+q.name;if(!st[key]){
   let rates={};
   (q.selectedRateCard||[]).forEach(r=>rates[r.id]=r.rate);
-  st[key]={commence:today,status:'Active',notes:(q.quoteNotes||q.snapshot?.v?.qNotes||'').trim()||'Created from completed onboarding.',billingBasis:q.billingBasis||q.snapshot?.v?.billingBasis||'',rates};
+  st[key]={commence:today,status:'Active',notes:(q.quoteNotes||q.snapshot?.v?.qNotes||'').trim()||'Created from completed onboarding.',billingBasis:q.billingBasis||q.snapshot?.v?.billingBasis||'',rates,cpi:q.model==='Tenant'?(q.tenantPricingScenario?.cpi??''):''};
 }else{
   st[key].billingBasis=q.billingBasis||q.snapshot?.v?.billingBasis||st[key].billingBasis||'';
+  if(q.model==='Tenant'&&q.tenantPricingScenario?.cpi!=null)st[key].cpi=q.tenantPricingScenario.cpi;
   const incomingNote=(q.quoteNotes||q.snapshot?.v?.qNotes||'').trim();
   if(incomingNote){
     const existingNote=String(st[key].notes||'').trim();
