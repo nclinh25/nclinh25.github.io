@@ -5,7 +5,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>APCS Commercial Management</title>
-<!-- BUILD: 32.1 | simplified long-stay cards | Opportunity lost wording --><style>
+<!-- BUILD: 32.2 FINAL | minimal long-stay cards --><style>
 :root{--navy:#073d69;--blue:#0b6ea8;--purple:#7057c8;--teal:#16847a;--bg:#eef5f9;--line:#d6e4ec;--text:#173246;--muted:#6d8494}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,"Segoe UI",Arial;background:linear-gradient(#f8fbfd,#edf4f8);color:var(--text)}
 header{height:72px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 24px;position:sticky;top:0;z-index:30}.brand b{font-size:18px;color:#0b416c}.brand small{display:block;color:var(--muted);font-size:11px}.nav{margin-left:auto;height:100%;display:flex}.nav button{border:0;background:transparent;padding:0 20px;font-weight:650;color:#50697b;cursor:pointer;border-bottom:3px solid transparent}.nav button:hover{color:#075f98;background:#f6fbfe}.nav button:active{background:#e2f1f9}.nav button.on{color:#075f98;border-bottom-color:#0b78b8;background:#eef7fc}.navGroup{position:relative;height:100%;display:flex;align-items:stretch}.navGroup>.navMain{height:100%}.navDrop{display:none;position:absolute;top:68px;right:0;min-width:205px;background:#fff;border:1px solid var(--line);border-radius:0 0 10px 10px;box-shadow:0 10px 25px #12384d24;padding:7px;z-index:60}.navGroup:hover .navDrop,.navGroup:focus-within .navDrop{display:block}.navDrop button{display:block;width:100%;height:42px;padding:0 13px!important;text-align:left;border:0!important;border-radius:7px;background:#fff!important;color:#416278!important}.navDrop button:hover{background:#eef7fc!important;color:#075f98!important}.navDrop button.subon{background:#e5f3fb!important;color:#075f98!important;font-weight:750}.navMain .chev{font-size:10px;margin-left:6px}
@@ -1358,9 +1358,8 @@ function renderScenarioAnalysis(){
 
   const reqMonths=(s.requestedDays/30).toFixed(s.requestedDays%30?1:0);
   const rec=s.recommendedType==='ongoing'?s.ongoing:s.non;
-  const excessMonths=(rec.excessDays/30).toFixed(rec.excessDays%30?1:0);
 
-  function scenarioCard(x,title,turnoverText,recommended){
+  function card(x,title,turnoverText,recommended){
     return `<div class="scenarioCard ${recommended?'recommended':''}">
       <small>${title}</small>
       <b class=big>${turnoverText}</b>
@@ -1378,14 +1377,9 @@ function renderScenarioAnalysis(){
       <span class=recommendPill>Recommended: ${rec.label} benchmark</span>
     </div>
 
-    <div class=hint>
-      Opportunity lost increases proportionally with the time the customer remains beyond the benchmark dwell.
-    </div>
-
     <div class=scenarioGrid>
-      ${scenarioCard(s.non,'Scenario 1 · Non-Ongoing','3-month turnover',s.recommendedType==='non-ongoing')}
-      ${scenarioCard(s.ongoing,'Scenario 2 · Ongoing','1-month turnover',s.recommendedType==='ongoing')}
-
+      ${card(s.non,'Scenario 1 · Non-Ongoing','3-month turnover',s.recommendedType==='non-ongoing')}
+      ${card(s.ongoing,'Scenario 2 · Ongoing','1-month turnover',s.recommendedType==='ongoing')}
       <div class=scenarioCard>
         <small>Customer Proposal</small>
         <b class=big>${reqMonths} month${Number(reqMonths)===1?'':'s'} dwell</b>
@@ -1397,7 +1391,9 @@ function renderScenarioAnalysis(){
     </div>
 
     <table class=scenarioCompare>
-      <thead><tr><th>Scenario</th><th>Benchmark dwell</th><th>Excess dwell</th><th>Opportunity lost</th><th>Long-stay rate</th></tr></thead>
+      <thead>
+        <tr><th>Scenario</th><th>Benchmark dwell</th><th>Excess dwell</th><th>Opportunity lost</th><th>Long-stay rate</th></tr>
+      </thead>
       <tbody>
         <tr><td>${s.non.label}${s.recommendedType==='non-ongoing'?' ★':''}</td><td>3 months</td><td>${Math.round(s.non.excessDays)} days</td><td>${money(s.non.opportunity)}</td><td>${money(s.non.recommended)}/${s.non.basis}/wk</td></tr>
         <tr><td>${s.ongoing.label}${s.recommendedType==='ongoing'?' ★':''}</td><td>1 month</td><td>${Math.round(s.ongoing.excessDays)} days</td><td>${money(s.ongoing.opportunity)}</td><td>${money(s.ongoing.recommended)}/${s.ongoing.basis}/wk</td></tr>
@@ -1408,30 +1404,11 @@ function renderScenarioAnalysis(){
     <div class=longStayProposal>
       <b>Proposed long-stay storage rate from day ${Math.round(s.thresholdDays)+1}:</b><br>
       <b>${money(rec.recommended)} per ${rec.basis} per week</b><br><br>
-
-      <b>Opportunity calculation:</b><br>
-      Full turnover opportunity ${money(rec.fullTurnoverOpportunity)}
-      × (${Math.round(rec.excessDays)} excess days ÷ ${Math.round(rec.turnoverDays)} benchmark days)
-      = <b>${money(rec.opportunity)} opportunity lost</b>.<br><br>
-
-      <b>Rate calculation:</b><br>
       Base storage: <b>${money(rec.baseRate)}</b>
       + opportunity recovery: <b>${money(rec.recoveryPerUnit)}</b>
       + CHEP: <b>${money(rec.chep)}</b>
       = <b>${money(rec.recommended)} per ${rec.basis} per week</b>.<br><br>
-
-      CHEP is calculated at <b>$0.11 per pallet per day = $0.77 per pallet per week</b>.
-      ${s.billingBasis==='Pallet'
-        ?` Because the quote is pallet-based, $0.77 is added per pallet per week.`
-        :` Because the quote is carton-based, CHEP is allocated as $0.77 ÷ 36 = ${money(0.77/36)} per carton per week.`}
-      <br><br>
-      This rate <b>replaces</b> the normal storage rate after the customer's requested ${Math.round(s.requestedDays)}-day dwell period plus 2 weeks.
-    </div>
-
-    <div class=scenarioExplanation>
-      <b>Benchmark rationale:</b> ${esc(s.reason)}
-      The recommended benchmark has ${excessMonths} month${Number(excessMonths)===1?'':'s'} of excess dwell relative to the customer's request.
-      The alternative benchmark remains visible for comparison.
+      CHEP = <b>$0.11 per pallet per day = $0.77 per pallet per week</b>.
     </div>
   </div>`;
 }
