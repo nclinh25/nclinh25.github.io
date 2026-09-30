@@ -5,7 +5,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>APCS Commercial Management</title>
-<!-- BUILD: 22 | direct Supabase REST | no reload | 4-week long-stay recovery --><style>
+<!-- BUILD: 24.1 | footer text only softened | final opportunity + CHEP logic | Supabase REST --><style>
 :root{--navy:#073d69;--blue:#0b6ea8;--purple:#7057c8;--teal:#16847a;--bg:#eef5f9;--line:#d6e4ec;--text:#173246;--muted:#6d8494}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,"Segoe UI",Arial;background:linear-gradient(#f8fbfd,#edf4f8);color:var(--text)}
 header{height:72px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 24px;position:sticky;top:0;z-index:30}.brand b{font-size:18px;color:#0b416c}.brand small{display:block;color:var(--muted);font-size:11px}.nav{margin-left:auto;height:100%;display:flex}.nav button{border:0;background:transparent;padding:0 20px;font-weight:650;color:#50697b;cursor:pointer;border-bottom:3px solid transparent}.nav button:hover{color:#075f98;background:#f6fbfe}.nav button:active{background:#e2f1f9}.nav button.on{color:#075f98;border-bottom-color:#0b78b8;background:#eef7fc}.navGroup{position:relative;height:100%;display:flex;align-items:stretch}.navGroup>.navMain{height:100%}.navDrop{display:none;position:absolute;top:68px;right:0;min-width:205px;background:#fff;border:1px solid var(--line);border-radius:0 0 10px 10px;box-shadow:0 10px 25px #12384d24;padding:7px;z-index:60}.navGroup:hover .navDrop,.navGroup:focus-within .navDrop{display:block}.navDrop button{display:block;width:100%;height:42px;padding:0 13px!important;text-align:left;border:0!important;border-radius:7px;background:#fff!important;color:#416278!important}.navDrop button:hover{background:#eef7fc!important;color:#075f98!important}.navDrop button.subon{background:#e5f3fb!important;color:#075f98!important;font-weight:750}.navMain .chev{font-size:10px;margin-left:6px}
@@ -264,7 +264,6 @@ input, textarea, select, [contenteditable="true"] { user-select: text; -webkit-u
 <script>
 const C3=[{"customer": "Australian Beef Trading Centre", "account": "ABTC"}, {"customer": "Antap", "account": "ANTAP"}, {"customer": "Asmarina", "account": "ASM"}, {"customer": "Audlay", "account": "KAR-PX"}, {"customer": "Aurum Poultry", "account": "AP"}, {"customer": "Thomas Food INT", "account": "TFI"}, {"customer": "Australian Lamb Colac", "account": "ALC"}, {"customer": "Colt Transport", "account": "CT"}, {"customer": "Effective Logistics", "account": "EF"}, {"customer": "G&K O'Connors", "account": "OCONN"}, {"customer": "G&K O'Connors", "account": "OCC"}, {"customer": "G&K O'Connors", "account": "GKOA"}, {"customer": "G&V Transport", "account": "GV"}, {"customer": "Harmony Fine Foods", "account": "HAR"}, {"customer": "Harmony Mixed", "account": "HARM"}, {"customer": "John Dee", "account": "JD"}, {"customer": "Australian Beef Company Pty Ltd", "account": "JOC"}, {"customer": "MCG International", "account": "MCG"}, {"customer": "Mort & Co", "account": "MCM"}, {"customer": "Paradigm Foods", "account": "PF"}, {"customer": "Paradigm Foods", "account": "PFC"}, {"customer": "Ravensworth", "account": "RAV"}, {"customer": "RPC Foods", "account": "RPCF"}, {"customer": "Security Foods", "account": "SEC"}, {"customer": "Smiths TMP", "account": "STMP"}, {"customer": "Stone Axe", "account": "SAX"}, {"customer": "Stone Axe", "account": "SAXC"}], CT=[{"customer": "A&D", "account": "A&D"}, {"customer": "A&A", "account": "A&A"}, {"customer": "Farmers Mate 4 Pets", "account": "Farmers Mate 4 Pets"}, {"customer": "French Par Bake", "account": "French Par Bake"}, {"customer": "Melrina", "account": "Melrina"}, {"customer": "Nationwide", "account": "Nationwide"}, {"customer": "Nationwide", "account": "Polar Meatwork"}, {"customer": "Nationwide", "account": "CleosPasta"}], SERVICES=[{"id": "svc000", "section": "Service - Frozen", "type": "Handling", "code": "108", "desc": "Port marking per carton", "standard": null}, {"id": "svc001", "section": "Service - Frozen", "type": "Handling", "code": "108A", "desc": "Port marking per carton (2+ port marks per container USA)", "standard": null}, {"id": "svc002", "section": "Service - Frozen", "type": "Handling", "code": "109", "desc": "Shrink wrapping per pallet", "standard": null}, {"id": "svc003", "section": "Service - Frozen", "type": "Handling", "code": "116", "desc": "Order Picking per carton", "standard": null}, {"id": "svc004", "section": "Service - Frozen", "type": "Handling", "code": "119", "desc": "Temp Logger", "standard": null}, {"id": "svc005", "section": "Service - Frozen", "type": "Handling", "code": "130", "desc": "Print Supplied Labels", "standard": null}, {"id": "svc006", "section": "Service - Frozen", "type": "Handling", "code": "131", "desc": "Carton / Pallet labels per label", "standard": null}, {"id": "svc007", "section": "Service - Frozen", "type": "Handling", "code": "132", "desc": "SSCC Labeling", "standard": null}, {"id": "svc008", "section": "Service - Frozen", "type": "Handling", "code": "320P", "desc": "Pallet Movements", "standard": null}, {"id": "svc009", "section": "Service - Frozen", "type": "Handling", "code": "523", "desc": "Loading 20ft container", "standard": null}, {"id": "svc010", "section": "Service - Frozen", "type": "Handling", "code": "523EU", "desc": "Loading 20ft container (Europe)", "standard": null}, {"id": "svc011", "section": "Service - Frozen", "type": "Handling", "code": "523A", "desc": "Loading/Unloading 20ft container (Primal)", "standard": null}, {"id": "svc012", "section": "Service - Frozen", "type": "Handling", "code": "523D", "desc": "Loading 20ft container (751+ Cartons)", "standard": null}, {"id": "svc013", "section": "Service - Frozen", "type": "Handling", "code": "524", "desc": "Unloading 20ft container", "standard": null}, {"id": "svc014", "section": "Service - Frozen", "type": "Handling", "code": "525", "desc": "Loading 40ft container", "standard": null}, {"id": "svc015", "section": "Service - Frozen", "type": "Handling", "code": "525A", "desc": "Loading/Unloading 40ft container (Primal)", "standard": null}, {"id": "svc016", "section": "Service - Frozen", "type": "Handling", "code": "525EU", "desc": "Loading 40ft container (Europe)", "standard": null}, {"id": "svc017", "section": "Service - Frozen", "type": "Handling", "code": "525D", "desc": "Loading 40ft container (1501+ Cartons)", "standard": null}, {"id": "svc018", "section": "Service - Frozen", "type": "Handling", "code": "526", "desc": "Unloading 40ft container", "standard": null}, {"id": "svc019", "section": "Service - Frozen", "type": "Handling", "code": "526B", "desc": "Unloading 40ft container (1501+ Cartons)", "standard": null}, {"id": "svc020", "section": "Service - Frozen", "type": "Blast", "code": "BREC", "desc": "Blast freezing per carton", "standard": 3.45}, {"id": "svc021", "section": "Service - Frozen", "type": "Blast", "code": "FRPA", "desc": "Adhoc Blast Freezing", "standard": null}, {"id": "svc023", "section": "Service - Frozen", "type": "Handling", "code": "LLOP", "desc": "Order picking carton order", "standard": null}, {"id": "svc024", "section": "Service - Frozen", "type": "Handling", "code": "PICK", "desc": "Handling out of store per carton", "standard": 0.4}, {"id": "svc026", "section": "Service - Frozen", "type": "Handling", "code": "REC", "desc": "Handling into store per carton", "standard": 0.4}, {"id": "svc028", "section": "Service - Frozen", "type": "Handling", "code": "SCAN", "desc": "Catchweight Scanning per carton", "standard": 0.4}, {"id": "svc030", "section": "Service - Frozen", "type": "Storage", "code": "STOR", "desc": "Storage per week or part thereof per carton", "standard": 0.44}, {"id": "svc031", "section": "Service - Chilled", "type": "Handling", "code": "PICKP", "desc": "Handling out of store per pallet", "standard": 12}, {"id": "svc032", "section": "Service - Chilled", "type": "Handling", "code": "RECP", "desc": "Handling into store per pallet", "standard": 12}, {"id": "svc033", "section": "Service - Chilled", "type": "Storage", "code": "STOPP / STOP", "desc": "Storage per week or part thereof per pallet", "standard": 13.44}, {"id": "svc034", "section": "Administration Charges", "type": "Handling", "code": "105", "desc": "Export permit", "standard": null}, {"id": "svc035", "section": "Administration Charges", "type": "Handling", "code": "106", "desc": "PRA only", "standard": null}, {"id": "svc036", "section": "Administration Charges", "type": "Handling", "code": "107", "desc": "RFP Additional lines charged per line", "standard": null}, {"id": "svc037", "section": "Administration Charges", "type": "Handling", "code": "110", "desc": "RFP only", "standard": null}, {"id": "svc038", "section": "Administration Charges", "type": "Handling", "code": "111", "desc": "Halal Interim Certificate", "standard": null}, {"id": "svc039", "section": "Administration Charges", "type": "Handling", "code": "120", "desc": "Admin Charge Per Container / Order", "standard": null}, {"id": "svc040", "section": "Administration Charges", "type": "Handling", "code": "121", "desc": "Container Logistics per container", "standard": null}, {"id": "svc041", "section": "Administration Charges", "type": "Handling", "code": "600", "desc": "Meat transfer certificate", "standard": null}, {"id": "svc042", "section": "Administration Charges", "type": "Handling", "code": "621", "desc": "Late Order Advice", "standard": null}, {"id": "svc043", "section": "Administration Charges", "type": "Handling", "code": "625", "desc": "20ft Container Transport per container", "standard": null}, {"id": "svc044", "section": "Administration Charges", "type": "Handling", "code": "626", "desc": "40ft Container Transport per container", "standard": null}, {"id": "svc045", "section": "Overtime – Weekday", "type": "Handling", "code": "", "desc": "Supervisor per hour/person", "standard": null}, {"id": "svc046", "section": "Overtime – Weekday", "type": "Handling", "code": "", "desc": "Labour per hour/person", "standard": null}, {"id": "svc047", "section": "Overtime – Weekday", "type": "Handling", "code": "", "desc": "Forklift operator per hour/person", "standard": null}, {"id": "svc048", "section": "Saturday – Minimum 4 hours Charge", "type": "Handling", "code": "", "desc": "Supervisor per hour/person", "standard": null}, {"id": "svc049", "section": "Saturday – Minimum 4 hours Charge", "type": "Handling", "code": "", "desc": "Labour per hour/person", "standard": null}, {"id": "svc050", "section": "Saturday – Minimum 4 hours Charge", "type": "Handling", "code": "", "desc": "Forklift operator per hour/person", "standard": null}, {"id": "svc051", "section": "Sunday / Public Holiday – Minimum 4 hours Charge", "type": "Handling", "code": "", "desc": "Supervisor per hour/person", "standard": null}, {"id": "svc052", "section": "Sunday / Public Holiday – Minimum 4 hours Charge", "type": "Handling", "code": "", "desc": "Labour per hour/person", "standard": null}, {"id": "svc053", "section": "Sunday / Public Holiday – Minimum 4 hours Charge", "type": "Handling", "code": "", "desc": "Forklift operator per hour/person", "standard": null}], DEFAULT_B=[0, 4000, 8000, 60000, 120000, 143000, 112000, 90000, 100000, 110000, 115000, 120000];
 let qm='3PL',pm='3PL',selected=null,timer,chosenMatch=null;
-const LONG_STAY_RECOVERY_WEEKS=4;
 /* Supabase persistence bridge: direct REST API, no external JS library required. */
 const APCS_SUPABASE_URL='https://facwyhjemlhmlbqcebqi.supabase.co';
 const APCS_SUPABASE_KEY='sb_publishable_kHFBSykS_QqFGlE3GFHgmA_mTKfXG2j';
@@ -798,98 +797,187 @@ function buildCommercialScenarios(){
   const requestedDays=quoteDwellDays();
   if(!requestedDays)return null;
 
-  const proposal=scenarioForDwell(requestedDays);
-  const nonDays=90;   // non-ongoing benchmark: 3 months
-  const ongoingDays=30; // ongoing benchmark: 1 month
-  const horizonDays=requestedDays;
+  const basis=currentBillingBasis();
+  const proposalBase=scenarioForDwell(requestedDays);
+  const pallets=proposalBase.batchPallets;
+  const cartons=proposalBase.cartons;
 
-  function benchmark(days,label){
-    const one=scenarioForDwell(days);
-    const cycles=Math.max(horizonDays/days,1);
-    const total=one.total*cycles;
-    const opportunity=Math.max(0,total-proposal.total);
-    const recoveryWeeks=LONG_STAY_RECOVERY_WEEKS;
-    const units=one.storRateCarton?proposal.cartons:proposal.batchPallets;
-    const baseRate=one.storRateCarton||one.storRatePallet||0;
-    const uplift=units&&recoveryWeeks?opportunity/(units*recoveryWeeks):0;
-    const recommended=baseRate+uplift;
-    return {label,days,cycles,total,opportunity,recommended,baseRate,uplift,recoveryWeeks,basis:one.storRateCarton?'carton':'pallet'};
+  const recRateCarton=basis==='Carton'?selectedRateValue('REC'):0;
+  const recRatePallet=basis==='Pallet'?selectedRateValue('RECP'):0;
+  const pickRateCarton=basis==='Carton'?selectedRateValue('PICK'):0;
+  const pickRatePallet=basis==='Pallet'?selectedRateValue('PICKP'):0;
+  const storRateCarton=basis==='Carton'?selectedRateValue('STOR'):0;
+  const storRatePallet=basis==='Pallet'?selectedRateValue('STOP'):0;
+  const blastRate=selectedRateValue('BREC');
+  const scanRate=selectedRateValue('SCAN');
+
+  const q=currentQuoteRecord(),v=q?.snapshot?.v||{};
+  const product=v.prod||$('prod')?.value||'';
+  const blastPct=product==='Blast'?(Number(v.blastPct??$('blastPct')?.value)||0)/100:0;
+  let scanPct=0;
+  if(product==='Blast')scanPct=(Number(v.scanPct??$('scanPct')?.value)||0)/100;
+  else if(product==='Frozen'&&((v.scan??$('scan')?.value)==='Yes'))scanPct=(Number(v.scanPct??$('scanPct')?.value)||0)/100;
+
+  const oneReceive=recRateCarton?cartons*recRateCarton:pallets*recRatePallet;
+  const oneLoad=pickRateCarton?cartons*pickRateCarton:pallets*pickRatePallet;
+  const oneBlast=cartons*blastPct*blastRate;
+  const oneScan=cartons*scanPct*scanRate;
+
+  // The same warehouse capacity is occupied throughout the comparison horizon.
+  const horizonWeeks=requestedDays/7;
+  const storageRevenue=storRateCarton
+    ?cartons*storRateCarton*horizonWeeks
+    :pallets*storRatePallet*horizonWeeks;
+
+  function turnoverScenario(turnoverDays,label){
+    // Initial receipt at day 0.
+    // Whenever the stock turns before the proposal horizon ends,
+    // the next batch can immediately use the freed capacity.
+    let receipts=1,loadouts=0;
+    for(let d=turnoverDays;d<=requestedDays+1e-9;d+=turnoverDays){
+      loadouts++;
+      if(d<requestedDays-1e-9)receipts++;
+    }
+
+    const receiveRevenue=oneReceive*receipts;
+    const loadRevenue=oneLoad*loadouts;
+    const blastRevenue=oneBlast*receipts;
+    const scanRevenue=oneScan*receipts;
+    const total=receiveRevenue+loadRevenue+storageRevenue+blastRevenue+scanRevenue;
+
+    return {
+      label,turnoverDays,receipts,loadouts,
+      receiveRevenue,loadRevenue,storageRevenue,blastRevenue,scanRevenue,total
+    };
   }
 
-  const non=benchmark(nonDays,'Non-Ongoing');
-  const ongoing=benchmark(ongoingDays,'Ongoing');
+  // Customer proposal: one batch occupies the capacity for the full requested dwell.
+  const proposal={
+    label:'Customer Proposal',
+    turnoverDays:requestedDays,
+    receipts:1,
+    loadouts:1,
+    receiveRevenue:oneReceive,
+    loadRevenue:oneLoad,
+    storageRevenue,
+    blastRevenue:oneBlast,
+    scanRevenue:oneScan,
+    total:oneReceive+oneLoad+storageRevenue+oneBlast+oneScan,
+    batchPallets:pallets,
+    cartons
+  };
+
+  const nonRaw=turnoverScenario(90,'Non-Ongoing');
+  const ongoingRaw=turnoverScenario(30,'Ongoing');
+
+  function finishBenchmark(raw){
+    const opportunity=Math.max(0,raw.total-proposal.total);
+    const units=basis==='Pallet'?pallets:cartons;
+    const baseRate=basis==='Pallet'?storRatePallet:storRateCarton;
+    const recoveryPerUnit=units?opportunity/units:0;
+    const chep=basis==='Pallet'?5:(5/36);
+    const recommended=baseRate+recoveryPerUnit+chep;
+    return {
+      ...raw,
+      opportunity,
+      units,
+      basis:basis==='Pallet'?'pallet':'carton',
+      baseRate,
+      recoveryPerUnit,
+      chep,
+      recommended
+    };
+  }
+
+  const non=finishBenchmark(nonRaw);
+  const ongoing=finishBenchmark(ongoingRaw);
   const cls=classifyScenarioBenchmark();
+
   return {
     requestedDays,
     graceDays:14,
     thresholdDays:requestedDays+14,
+    billingBasis:basis,
     proposal,
     non,
     ongoing,
     recommendedType:cls.type,
-    recoveryWeeks:LONG_STAY_RECOVERY_WEEKS,
     reason:cls.reason
   };
 }
 function renderScenarioAnalysis(){
   const s=buildCommercialScenarios();
   if(!s)return '<div class=scenarioWrap><b>Scenario analysis</b><div class=hint style="margin-top:6px">Enter an expected holding period to calculate long-stay scenarios.</div></div>';
+
   const reqMonths=(s.requestedDays/30).toFixed(s.requestedDays%30?1:0);
   const rec=s.recommendedType==='ongoing'?s.ongoing:s.non;
+
   return `<div class=scenarioWrap>
     <div class=scenarioTitle>
       <h3>Long-Stay Commercial Scenario Analysis</h3>
       <span class=recommendPill>Recommended: ${rec.label} benchmark</span>
     </div>
-    <div class=hint>Comparison uses the same customer volume and selected rate card. Long-stay pricing would commence after the requested dwell period + 2 weeks.</div>
+
+    <div class=hint>
+      Same storage quantity and same selected rate card are used in all cases.
+      The benchmark shows the revenue APCS could generate if the same capacity turned over sooner instead of remaining with the customer's proposed dwell.
+    </div>
 
     <div class=scenarioGrid>
       <div class="scenarioCard ${s.recommendedType==='non-ongoing'?'recommended':''}">
         <small>Scenario 1 · Non-Ongoing</small>
         <b class=big>3-month turnover</b>
+        <div>Receipts in ${reqMonths}-month horizon: <b>${s.non.receipts}</b></div>
+        <div>Load-outs in horizon: <b>${s.non.loadouts}</b></div>
         <div>Potential revenue: <b>${money(s.non.total)}</b></div>
-        <div>Opportunity lost vs proposal: <b>${money(s.non.opportunity)}</b></div>
-        <div style="margin-top:7px">Suggested long-stay rate: <b>${money(s.non.recommended)}/${s.non.basis}/week</b></div><div class=hint style="margin-top:4px">${money(s.non.baseRate)} base + ${money(s.non.uplift)} recovery uplift over ${s.non.recoveryWeeks} weeks</div>
+        <div>Opportunity variance: <b>${money(s.non.opportunity)}</b></div>
+        <div style="margin-top:7px">Suggested long-stay rate: <b>${money(s.non.recommended)}/${s.non.basis}/week</b></div>
         ${s.recommendedType==='non-ongoing'?'<div class=recommendPill style="margin-top:8px">Closest profile match</div>':''}
       </div>
+
       <div class="scenarioCard ${s.recommendedType==='ongoing'?'recommended':''}">
         <small>Scenario 2 · Ongoing</small>
         <b class=big>1-month turnover</b>
+        <div>Receipts in ${reqMonths}-month horizon: <b>${s.ongoing.receipts}</b></div>
+        <div>Load-outs in horizon: <b>${s.ongoing.loadouts}</b></div>
         <div>Potential revenue: <b>${money(s.ongoing.total)}</b></div>
-        <div>Opportunity lost vs proposal: <b>${money(s.ongoing.opportunity)}</b></div>
-        <div style="margin-top:7px">Suggested long-stay rate: <b>${money(s.ongoing.recommended)}/${s.ongoing.basis}/week</b></div><div class=hint style="margin-top:4px">${money(s.ongoing.baseRate)} base + ${money(s.ongoing.uplift)} recovery uplift over ${s.ongoing.recoveryWeeks} weeks</div>
+        <div>Opportunity variance: <b>${money(s.ongoing.opportunity)}</b></div>
+        <div style="margin-top:7px">Suggested long-stay rate: <b>${money(s.ongoing.recommended)}/${s.ongoing.basis}/week</b></div>
         ${s.recommendedType==='ongoing'?'<div class=recommendPill style="margin-top:8px">Closest profile match</div>':''}
       </div>
+
       <div class=scenarioCard>
         <small>Customer Proposal</small>
         <b class=big>${reqMonths} month${Number(reqMonths)===1?'':'s'} dwell</b>
+        <div>Receipts in horizon: <b>1</b></div>
+        <div>Load-outs in horizon: <b>1</b></div>
         <div>Estimated proposal revenue: <b>${money(s.proposal.total)}</b></div>
         <div>Volume: <b>${Math.round(s.proposal.batchPallets).toLocaleString()} pallets / ${Math.round(s.proposal.cartons).toLocaleString()} cartons</b></div>
-        <div style="margin-top:7px">Long-stay rate starts after: <b>${Math.round(s.thresholdDays)} days</b></div>
       </div>
     </div>
 
     <table class=scenarioCompare>
-      <thead><tr><th>Scenario</th><th>Turnover</th><th>Cycles in proposal horizon</th><th>Revenue</th><th>Opportunity lost</th><th>Long-stay rate</th></tr></thead>
+      <thead><tr><th>Scenario</th><th>Turnover</th><th>Receipts</th><th>Load-outs</th><th>Revenue</th><th>Opportunity variance</th><th>Long-stay rate</th></tr></thead>
       <tbody>
-        <tr><td>${s.non.label}${s.recommendedType==='non-ongoing'?' ★':''}</td><td>3 months</td><td>${s.non.cycles.toFixed(2)}</td><td>${money(s.non.total)}</td><td>${money(s.non.opportunity)}</td><td>${money(s.non.recommended)}/${s.non.basis}/wk</td></tr>
-        <tr><td>${s.ongoing.label}${s.recommendedType==='ongoing'?' ★':''}</td><td>1 month</td><td>${s.ongoing.cycles.toFixed(2)}</td><td>${money(s.ongoing.total)}</td><td>${money(s.ongoing.opportunity)}</td><td>${money(s.ongoing.recommended)}/${s.ongoing.basis}/wk</td></tr>
-        <tr><td>Customer Proposal</td><td>${reqMonths} months</td><td>1.00</td><td>${money(s.proposal.total)}</td><td>—</td><td>Current selected storage rate</td></tr>
+        <tr><td>${s.non.label}${s.recommendedType==='non-ongoing'?' ★':''}</td><td>3 months</td><td>${s.non.receipts}</td><td>${s.non.loadouts}</td><td>${money(s.non.total)}</td><td>${money(s.non.opportunity)}</td><td>${money(s.non.recommended)}/${s.non.basis}/wk</td></tr>
+        <tr><td>${s.ongoing.label}${s.recommendedType==='ongoing'?' ★':''}</td><td>1 month</td><td>${s.ongoing.receipts}</td><td>${s.ongoing.loadouts}</td><td>${money(s.ongoing.total)}</td><td>${money(s.ongoing.opportunity)}</td><td>${money(s.ongoing.recommended)}/${s.ongoing.basis}/wk</td></tr>
+        <tr><td>Customer Proposal</td><td>${reqMonths} months</td><td>1</td><td>1</td><td>${money(s.proposal.total)}</td><td>—</td><td>Current storage rate</td></tr>
       </tbody>
     </table>
 
     <div class=longStayProposal>
       <b>Proposed long-stay storage rate from day ${Math.round(s.thresholdDays)+1}:</b><br>
-      ${s.recommendedType==='ongoing'
-        ?`${money(s.ongoing.recommended)} per ${s.ongoing.basis} per week`
-        :`${money(s.non.recommended)} per ${s.non.basis} per week`}.
-      This <b>replaces</b> the normal storage rate once the customer exceeds the agreed ${Math.round(s.requestedDays)}-day dwell period plus 2 weeks.
-      <br><br>
-      <b>Calculation:</b> normal storage rate + opportunity-loss recovery uplift spread over <b>${LONG_STAY_RECOVERY_WEEKS} weeks</b>.
-      ${currentBillingBasis()==='Pallet'
-        ?` Because this quote is pallet-based, the recovery is calculated per whole pallet (1 pallet = 36 cartons).`
-        :` Because this quote is carton-based, the recovery is calculated per carton.`}
+      <b>${money(rec.recommended)} per ${rec.basis} per week</b><br><br>
+      Base storage: <b>${money(rec.baseRate)}</b>
+      + opportunity recovery: <b>${money(rec.recoveryPerUnit)}</b>
+      + CHEP allocation: <b>${money(rec.chep)}</b>
+      = <b>${money(rec.recommended)} per ${rec.basis} per week</b>.<br><br>
+      This rate <b>replaces</b> the normal storage rate after the customer's requested ${Math.round(s.requestedDays)}-day dwell period plus 2 weeks.
+      ${s.billingBasis==='Pallet'
+        ?` The quote is pallet-based, so opportunity variance is divided by the total pallets in storage and CHEP is added at $5.00 per pallet.`
+        :` The quote is carton-based, so opportunity variance is divided by the total cartons in storage and CHEP is allocated at $5 ÷ 36 = ${money(5/36)} per carton.`}
     </div>
+
     <div class=scenarioExplanation><b>Benchmark rationale:</b> ${esc(s.reason)} The alternative benchmark remains visible for comparison.</div>
   </div>`;
 }
@@ -1388,6 +1476,12 @@ async function buildStandaloneRateCardPdf(q,rows){
 
   // Exact letterhead background: logo, geometric theme, watermark and contact footer.
   c.drawImage(letterhead,0,0,canvas.width,canvas.height);
+
+  // Lighten only the footer contact text; keep the blue footer artwork at full strength.
+  c.save();
+  c.fillStyle='rgba(255,255,255,0.50)';
+  c.fillRect(360,1575,820,105);
+  c.restore();
 
   const quoteType=q.quoteType||q.snapshot?.v?.quoteType||'New Quote';
   const title=quoteType==='Contract Renewal'
