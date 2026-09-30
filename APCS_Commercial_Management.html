@@ -5,7 +5,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>APCS Commercial Management</title>
-<!-- BUILD: 36 FINAL | stable named receivable snapshot | legacy-safe restore | quote backups --><style>
+<!-- BUILD: 37 FINAL | Tenant matching by nearest chargeable area only --><style>
 :root{--navy:#073d69;--blue:#0b6ea8;--purple:#7057c8;--teal:#16847a;--bg:#eef5f9;--line:#d6e4ec;--text:#173246;--muted:#6d8494}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,"Segoe UI",Arial;background:linear-gradient(#f8fbfd,#edf4f8);color:var(--text)}
 header{height:72px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 24px;position:sticky;top:0;z-index:30}.brand b{font-size:18px;color:#0b416c}.brand small{display:block;color:var(--muted);font-size:11px}.nav{margin-left:auto;height:100%;display:flex}.nav button{border:0;background:transparent;padding:0 20px;font-weight:650;color:#50697b;cursor:pointer;border-bottom:3px solid transparent}.nav button:hover{color:#075f98;background:#f6fbfe}.nav button:active{background:#e2f1f9}.nav button.on{color:#075f98;border-bottom-color:#0b78b8;background:#eef7fc}.navGroup{position:relative;height:100%;display:flex;align-items:stretch}.navGroup>.navMain{height:100%}.navDrop{display:none;position:absolute;top:68px;right:0;min-width:205px;background:#fff;border:1px solid var(--line);border-radius:0 0 10px 10px;box-shadow:0 10px 25px #12384d24;padding:7px;z-index:60}.navGroup:hover .navDrop,.navGroup:focus-within .navDrop{display:block}.navDrop button{display:block;width:100%;height:42px;padding:0 13px!important;text-align:left;border:0!important;border-radius:7px;background:#fff!important;color:#416278!important}.navDrop button:hover{background:#eef7fc!important;color:#075f98!important}.navDrop button.subon{background:#e5f3fb!important;color:#075f98!important;font-weight:750}.navMain .chev{font-size:10px;margin-left:6px}
@@ -897,102 +897,21 @@ function scoreProfile(p){
       earned+=3*noteScore;
     }
   }else{
-    // TENANT MATCHING PRIORITY:
-    // 1. Required area / m²
-    // 2. Room type
-    // 3. Contract length
-    // 4. Secondary fit: location, after-hours, parking, bills, notes
-
-    const qArea=Number($('futurePal')?.value)||Number($('qtArea')?.value)||Number($('area')?.value)||0;
-    // Actual Tenant quote uses requested room rows. Sum entered m² from those rows.
+    // TENANT MATCHING:
+    // Match only by the closest chargeable area (m²).
+    // Other fields remain useful for pricing, but they do not block or reduce the match.
     let requestedArea=0;
     document.querySelectorAll('#roomRows .row').forEach(r=>{
-      const inputs=[...r.querySelectorAll('input[type=number]')];
-      if(inputs.length)requestedArea+=Number(inputs[0].value)||0;
+      requestedArea+=Number(r.querySelector('.sqm')?.value)||0;
     });
-    if(requestedArea>0){
-      possible+=40;
-      const pArea=Number(p.area)||0;
-      if(pArea>0){
-        const diff=Math.abs(pArea-requestedArea)/requestedArea;
-        if(diff<=0.10)earned+=40;
-        else if(diff<=0.20)earned+=34;
-        else if(diff<=0.30)earned+=26;
-        else if(diff<=0.40)earned+=16;
-        else if(diff<=0.50)earned+=8;
-        // >50% difference gets 0 area points.
-      }
-    }
 
-    // Room-type comparison from Tenant quote room rows.
-    const qRooms=[];
-    document.querySelectorAll('#roomRows .row').forEach(r=>{
-      const sel=r.querySelector('select');
-      const val=(sel?.value||'').trim();
-      if(val&&!qRooms.includes(val))qRooms.push(val);
-    });
-    if(qRooms.length){
-      possible+=30;
-      const pRooms=Array.isArray(p.rooms)?p.rooms:String(p.rooms||'').split(',').map(x=>x.trim()).filter(Boolean);
-      if(pRooms.length){
-        const matched=qRooms.filter(x=>pRooms.includes(x)).length;
-        const ratio=matched/qRooms.length;
-        earned+=30*ratio;
-      }
-    }
-
-    // Contract length comparison comes third.
-    const qContract=Number($('years')?.value)||0;
-    if(qContract){
-      possible+=15;
-      const pContract=Number(p.contract)||0;
-      if(pContract){
-        const diff=Math.abs(pContract-qContract);
-        if(diff===0)earned+=15;
-        else if(diff===1)earned+=12;
-        else if(diff===2)earned+=8;
-        else if(diff===3)earned+=4;
-      }
-    }
-
-    // Secondary criteria only. These cannot compensate for a poor area/room fit.
-    const qLoc=String($('locPref')?.value||'').trim().toLowerCase();
-    if(qLoc){
-      possible+=5;
-      const pLoc=String(p.location||'').toLowerCase();
-      if(pLoc&&(
-        pLoc.includes(qLoc) || qLoc.includes(pLoc) ||
-        noteKeywordMatchScore(qLoc,pLoc)>=0.5
-      ))earned+=5;
-    }
-
-    const qAfter=$('after')?.value||'';
-    if(qAfter){
-      possible+=3;
-      if(String(p.afterHours||'')===qAfter)earned+=3;
-    }
-
-    const qParking=$('parking')?.value||'';
-    if(qParking){
-      possible+=3;
-      if(String(p.parking||'')===qParking)earned+=3;
-    }
-
-    const qBills=$('bills')?.value||'';
-    if(qBills){
-      possible+=2;
-      const pBills=p.billsIncluded==='Yes'?'Included in rent':(p.billsIncluded==='No'?'Tenant pays':'');
-      if(pBills===qBills)earned+=2;
-    }
-
-    const qNote=fieldText('qNotes')||currentQuoteRecord()?.quoteNotes||'';
-    const noteScore=noteKeywordMatchScore(qNote,p.notes||'');
-    if(noteScore!==null){
-      possible+=2;
-      earned+=2*noteScore;
+    const profileArea=Number(p.area)||0;
+    if(requestedArea>0 && profileArea>0){
+      possible=100;
+      const diffPct=Math.abs(profileArea-requestedArea)/requestedArea;
+      earned=Math.max(0,100-(diffPct*100));
     }
   }
-
   return possible?Math.round(earned/possible*100):0;
 }
 function submitQuote(){
@@ -1012,6 +931,15 @@ function confirmBillingBasis(basis){
   closeBillingBasisModal();
   proceedSubmitQuote(basis);
 }
+function tenantAreaGap(p){
+  let requestedArea=0;
+  document.querySelectorAll('#roomRows .row').forEach(r=>{
+    requestedArea+=Number(r.querySelector('.sqm')?.value)||0;
+  });
+  const profileArea=Number(p?.area)||0;
+  if(!(requestedArea>0) || !(profileArea>0))return Number.POSITIVE_INFINITY;
+  return Math.abs(profileArea-requestedArea);
+}
 function proceedSubmitQuote(basis){
   let rec=saveQuoteRecord('Submitted','Pending');
   if(basis){
@@ -1028,21 +956,27 @@ function proceedSubmitQuote(basis){
   let st=profiles(),
       all=allCustomers(qm).map(x=>({x,p:st[pkey(x,qm)]||{}}))
         .filter(z=>Object.keys(z.p).length)
-        .map(z=>({...z,score:scoreProfile(z.p)}))
-        .sort((a,b)=>b.score-a.score);
+        .map(z=>({...z,score:scoreProfile(z.p),areaGap:qm==='Tenant'?tenantAreaGap(z.p):null}))
+        .sort((a,b)=>qm==='Tenant'?(a.areaGap-b.areaGap):(b.score-a.score));
 
-  let arr=all.filter(z=>z.score>=90).slice(0,qm==='3PL'?3:2);
+  let arr=qm==='Tenant'
+    ?all.filter(z=>Number.isFinite(z.areaGap)).slice(0,2)
+    :all.filter(z=>z.score>=90).slice(0,3);
+
   $('matchHint').textContent=qm==='3PL'
     ?'Only profiles with at least a 90% match are shown. A comparison customer is used only as a starting rate-card reference. Choose No Match to use APCS standard rates.'
-    :'Tenant matches prioritise required area first, then room type, then contract length. Secondary factors such as location, access, parking, bills and notes are used after those primary criteria. Choose a ≥90% comparison profile or No Match; APCS will then generate two pricing scenarios.';
+    :'Tenant comparison customers are selected by the closest chargeable area (m²). Room type, contract length, access, parking and notes are used for pricing context only and do not block the match.';
 
   let qMatchNote=fieldText('qNotes')||rec.quoteNotes||'';
   let cards=arr.map((z,i)=>{
     const qk=matchKeywords(qMatchNote),pk=new Set(matchKeywords(z.p.notes||''));
     const hits=qk.filter(w=>pk.has(w)).slice(0,4);
+    const tenantMeta=qm==='Tenant'
+      ?` · ${Number(z.p.area||0).toLocaleString('en-AU')} m² · gap ${Number(z.areaGap||0).toLocaleString('en-AU')} m²`
+      :` · ${z.score}% match${hits.length?` · note keywords: ${hits.map(esc).join(', ')}`:''}`;
     return `<div class=match onclick="chooseMatch(${i})">
       <b>${z.x.customer}</b>
-      <div class=hint>${z.x.account} · ${z.score}% match${hits.length?` · note keywords: ${hits.map(esc).join(', ')}`:''}</div>
+      <div class=hint>${z.x.account}${tenantMeta}</div>
     </div>`
   }).join('');
 
