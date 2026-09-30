@@ -5,7 +5,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>APCS Commercial Management</title>
-<!-- BUILD: 39 FINAL | Tenant nearest-area matching + legacy profile-key fallback --><style>
+<!-- BUILD: 40 FINAL | Tenant CPI recovery + editable final pricing + reliable draft resume --><style>
 :root{--navy:#073d69;--blue:#0b6ea8;--purple:#7057c8;--teal:#16847a;--bg:#eef5f9;--line:#d6e4ec;--text:#173246;--muted:#6d8494}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,"Segoe UI",Arial;background:linear-gradient(#f8fbfd,#edf4f8);color:var(--text)}
 header{height:72px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 24px;position:sticky;top:0;z-index:30}.brand b{font-size:18px;color:#0b416c}.brand small{display:block;color:var(--muted);font-size:11px}.nav{margin-left:auto;height:100%;display:flex}.nav button{border:0;background:transparent;padding:0 20px;font-weight:650;color:#50697b;cursor:pointer;border-bottom:3px solid transparent}.nav button:hover{color:#075f98;background:#f6fbfe}.nav button:active{background:#e2f1f9}.nav button.on{color:#075f98;border-bottom-color:#0b78b8;background:#eef7fc}.navGroup{position:relative;height:100%;display:flex;align-items:stretch}.navGroup>.navMain{height:100%}.navDrop{display:none;position:absolute;top:68px;right:0;min-width:205px;background:#fff;border:1px solid var(--line);border-radius:0 0 10px 10px;box-shadow:0 10px 25px #12384d24;padding:7px;z-index:60}.navGroup:hover .navDrop,.navGroup:focus-within .navDrop{display:block}.navDrop button{display:block;width:100%;height:42px;padding:0 13px!important;text-align:left;border:0!important;border-radius:7px;background:#fff!important;color:#416278!important}.navDrop button:hover{background:#eef7fc!important;color:#075f98!important}.navDrop button.subon{background:#e5f3fb!important;color:#075f98!important;font-weight:750}.navMain .chev{font-size:10px;margin-left:6px}
@@ -527,6 +527,19 @@ textarea{
   .mode button{padding:0 10px}
   .nav button,.navGroup>.navMain{font-size:11px}
 }
+</style>
+
+
+<style id="tenant-final-rate-style">
+.tenantRecoveryBox{margin:12px 0;padding:12px 14px;border:1px solid #ecd48a;background:#fff9df;border-radius:10px;font-size:11px;line-height:1.55;color:#5d4a12}
+.tenantFinalEditor{margin-top:14px;border:2px solid #0b78b8;border-radius:12px;padding:14px;background:#f7fcff}
+.tenantFinalInputs{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.tenantFinalKpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+.tenantFinalKpis>div{border:1px solid #d7e6ee;border-radius:9px;padding:9px;background:#fff}
+.tenantFinalKpis small{display:block;color:#6e8797;font-size:9px;margin-bottom:4px}
+.tenantFinalKpis b{font-size:13px;color:#0b4f7d}
+@media(max-width:760px){.tenantFinalInputs{grid-template-columns:1fr}.tenantFinalKpis{grid-template-columns:1fr 1fr}}
+@media(max-width:430px){.tenantFinalKpis{grid-template-columns:1fr}}
 </style>
 
 </head><body>
@@ -1797,6 +1810,21 @@ function tenantPortfolioBenchmark(){
     excludedNonChargeable:rows.filter(z=>z.hasNonChargeable).length
   };
 }
+function missedCpiYearsFromNote(note){
+  const t=String(note||'').toLowerCase();
+  if(!t.includes('cpi'))return 0;
+  if(!/(not|no|haven|hasn|without|miss|skip|never|didn|appl)/i.test(t))return 0;
+  const patterns=[
+    /(?:past|last|previous)\s+(\d+(?:\.\d+)?)\s*years?/i,
+    /(\d+(?:\.\d+)?)\s*years?.{0,40}cpi/i,
+    /cpi.{0,40}(\d+(?:\.\d+)?)\s*years?/i
+  ];
+  for(const p of patterns){
+    const m=t.match(p);
+    if(m)return Math.max(0,Math.floor(Number(m[1])||0));
+  }
+  return 0;
+}
 function tenantPricingScenarios(match){
   const req=tenantQuoteRequirements();
   const portfolio=tenantPortfolioBenchmark();
@@ -1805,12 +1833,26 @@ function tenantPricingScenarios(match){
   const matchedOut=Number(mp.rates?.OUT)||0;
   const matchedHasNonChargeable=tenantHasNonChargeableArea(mp);
 
-  let referenceRent=(!matchedHasNonChargeable&&matchedRent)
-    ?matchedRent
-    :(portfolio.medianRent||matchedRent||400);
-  let referenceOut=matchedOut||portfolio.medianOut||74.52;
+  const MIN_TENANT_RENT=400;
+  const lowCpi=Math.max(APCS_CPI_FLOOR,APCS_ABS_CPI_REFERENCE);
+  const highCpi=Math.max(APCS_CPI_FLOOR+1,APCS_ABS_CPI_REFERENCE+1);
 
-  // Modest area adjustment only.
+  const missedYears=missedCpiYearsFromNote(mp.notes||'');
+  let historicalLost=0;
+  let cpiCatchupRent=matchedRent||0;
+  if(matchedRent>0 && missedYears>0){
+    for(let y=1;y<=missedYears;y++){
+      historicalLost += req.area * ((matchedRent*Math.pow(1+lowCpi/100,y))-matchedRent);
+    }
+    cpiCatchupRent=matchedRent*Math.pow(1+lowCpi/100,missedYears);
+  }
+
+  let comparableRent=(!matchedHasNonChargeable&&matchedRent)
+    ?matchedRent
+    :(portfolio.medianRent||matchedRent||MIN_TENANT_RENT);
+  const referenceOut=matchedOut||portfolio.medianOut||74.52;
+  const baseFloor=Math.max(MIN_TENANT_RENT,cpiCatchupRent||0,comparableRent||0);
+
   let areaAdj=0;
   if(req.area>0){
     if(req.area<100)areaAdj=.04;
@@ -1819,7 +1861,6 @@ function tenantPricingScenarios(match){
     else if(req.area>=500)areaAdj=-.015;
   }
 
-  // Bundle operational complexity into ONE adjustment instead of stacking every item.
   let complexityPoints=0,drivers=[];
   const hasCold=req.rooms.some(r=>['Blast room','Chill room','Frozen room'].includes(r));
   if(hasCold){complexityPoints+=2;drivers.push('temperature-controlled space')}
@@ -1834,7 +1875,6 @@ function tenantPricingScenarios(match){
   else if(complexityPoints>=1.5)complexityAdj=.02;
   else if(complexityPoints>0)complexityAdj=.01;
 
-  // Longer contract = lower starting base rent in exchange for occupancy certainty.
   const years=Math.max(1,Math.floor(req.contractYears||1));
   let contractDiscount=0;
   if(years===2)contractDiscount=.015;
@@ -1842,49 +1882,100 @@ function tenantPricingScenarios(match){
   else if(years===4)contractDiscount=.045;
   else if(years>=5)contractDiscount=.06;
 
-  const adjustedBase=referenceRent*(1+areaAdj+complexityAdj)*(1-contractDiscount);
+  const commercialBase=Math.max(
+    MIN_TENANT_RENT,
+    baseFloor*(1+areaAdj+complexityAdj)*(1-contractDiscount)
+  );
 
-  // Rent/CPI trade-off:
-  // Scenario 1 = higher starting rent, lower CPI.
-  // Scenario 2 = lower starting rent, higher CPI.
-  const lowCpi=Math.max(APCS_CPI_FLOOR,APCS_ABS_CPI_REFERENCE);
-  const highCpi=Math.max(APCS_CPI_FLOOR+1,APCS_ABS_CPI_REFERENCE+1);
+  const lowFactor=Array.from({length:years},(_,y)=>Math.pow(1+lowCpi/100,y)).reduce((a,b)=>a+b,0);
+  const recoveryRentLow=req.area>0&&historicalLost>0
+    ?historicalLost/(req.area*lowFactor)
+    :0;
+  const higherBaseRent=Math.max(MIN_TENANT_RENT,commercialBase+recoveryRentLow);
 
-  const higherBaseRent=adjustedBase*1.02;
-  const lowerBaseRent=adjustedBase*.96;
-
-  // Outgoings are recovered at the comparable level, not marked up as a service.
-  const scenarioOut=referenceOut;
+  const targetRentContract=req.area*higherBaseRent*lowFactor;
+  const highFactor=Array.from({length:years},(_,y)=>Math.pow(1+highCpi/100,y)).reduce((a,b)=>a+b,0);
+  const lowerBaseSolved=req.area>0&&highFactor>0
+    ?targetRentContract/(req.area*highFactor)
+    :higherBaseRent;
+  const lowerBaseRent=Math.max(MIN_TENANT_RENT,lowerBaseSolved);
 
   function scenario(label,rent,out,cpi,structure){
     const annual=req.area*(rent+out);
     let total=0;
-    for(let y=0;y<years;y++)total+=annual*Math.pow(1+cpi/100,y);
+    for(let y=0;y<years;y++){
+      total += req.area*((rent*Math.pow(1+cpi/100,y))+out);
+    }
     return {
       label,structure,rent,out,cpi,
       monthly:annual/12,
       annual,
       totalContract:total,
       blended:rent+out,
-      upliftVsReference:referenceRent?((rent/referenceRent)-1)*100:0
+      upliftVsReference:matchedRent?((rent/matchedRent)-1)*100:0
     };
   }
 
   return {
-    req,portfolio,referenceRent,referenceOut,
+    req,portfolio,minRent:MIN_TENANT_RENT,
+    referenceRent:comparableRent,referenceOut,
+    baseFloor,commercialBase,
+    missedYears,historicalLost,cpiCatchupRent,recoveryRentLow,
     areaAdj,complexityAdj,complexityPoints,contractDiscount,drivers,
     matched:match?.x?{
       customer:match.x.customer,
       account:match.x.account,
-      rent:matchedRent,
-      out:matchedOut,
+      rent:matchedRent,out:matchedOut,
+      notes:mp.notes||'',
       hasNonChargeable:matchedHasNonChargeable
     }:null,
     scenarios:[
-      scenario('Scenario 1 · Higher Base / Lower Escalation',higherBaseRent,scenarioOut,lowCpi,'higher-base'),
-      scenario('Scenario 2 · Lower Base / Higher Escalation',lowerBaseRent,scenarioOut,highCpi,'lower-base')
+      scenario('Scenario 1 · Higher Base / Lower Escalation',higherBaseRent,referenceOut,lowCpi,'higher-base'),
+      scenario('Scenario 2 · Lower Base / Higher Escalation',lowerBaseRent,referenceOut,highCpi,'lower-base')
     ]
   };
+}
+function tenantFinalPricingValues(){
+  const rent=Number($('tenantFinalRent')?.value)||0;
+  const out=Number($('tenantFinalOut')?.value)||0;
+  const cpi=Number($('tenantFinalCpi')?.value)||0;
+  const area=tenantScenarioData?.req?.area||0;
+  const years=Math.max(1,Math.floor(tenantScenarioData?.req?.contractYears||1));
+  const annual=area*(rent+out);
+  let total=0;
+  for(let y=0;y<years;y++)total+=area*((rent*Math.pow(1+cpi/100,y))+out);
+  return {rent,out,cpi,area,years,monthly:annual/12,annual,total,blended:rent+out};
+}
+function updateTenantFinalPricing(){
+  if(!$('tenantFinalRent'))return;
+  const v=tenantFinalPricingValues();
+  $('tenantFinalMonthly').textContent=v.annual?money(v.monthly):'—';
+  $('tenantFinalAnnual').textContent=v.annual?money(v.annual):'—';
+  $('tenantFinalTotal').textContent=v.total?money(v.total):'—';
+  $('tenantFinalBlended').textContent=(v.rent||v.out)?money(v.blended)+'/m²/year':'—';
+  quoteRateServices=[
+    {id:'RENT',code:'RENT',desc:'Rent',type:'Tenant',section:'Tenant',_rate:+v.rent.toFixed(2)},
+    {id:'OUT',code:'OUT',desc:'Outgoings',type:'Tenant',section:'Tenant',_rate:+v.out.toFixed(2)}
+  ];
+  const hint=$('tenantScenarioChoiceHint');
+  if(hint)hint.innerHTML=`Final rate · Rent <b>${money(v.rent)}/m²/year</b> · Outgoings <b>${money(v.out)}/m²/year</b> · CPI <b>${v.cpi.toFixed(1)}%</b>`;
+}
+function renderTenantFinalRateCard(s){
+  return `<div class=tenantFinalEditor id=tenantFinalEditor>
+    <h3 style="margin:0 0 5px">Final Tenant Rate Card</h3>
+    <div class=hint style="margin-bottom:10px">The selected scenario is only a starting point. Adjust Rent, Outgoings or CPI before saving.</div>
+    <div class=tenantFinalInputs>
+      <div><label>Rent $/m²/year</label><input id=tenantFinalRent type=number step=.01 min=0 value="${Number(s.rent).toFixed(2)}" oninput=updateTenantFinalPricing()></div>
+      <div><label>Outgoings $/m²/year</label><input id=tenantFinalOut type=number step=.01 min=0 value="${Number(s.out).toFixed(2)}" oninput=updateTenantFinalPricing()></div>
+      <div><label>Annual CPI %</label><input id=tenantFinalCpi type=number step=.1 min=0 value="${Number(s.cpi).toFixed(1)}" oninput=updateTenantFinalPricing()></div>
+    </div>
+    <div class=tenantFinalKpis>
+      <div><small>Blended charge</small><b id=tenantFinalBlended>—</b></div>
+      <div><small>Monthly revenue</small><b id=tenantFinalMonthly>—</b></div>
+      <div><small>Annual revenue</small><b id=tenantFinalAnnual>—</b></div>
+      <div><small>Total ${Math.max(1,Math.floor(tenantScenarioData?.req?.contractYears||1))}-year contract revenue</small><b id=tenantFinalTotal>—</b></div>
+    </div>
+  </div>`;
 }
 function tenantScenarioHtml(match){
   tenantScenarioData=tenantPricingScenarios(match);
@@ -1900,43 +1991,42 @@ function tenantScenarioHtml(match){
       <div class=tenantScenarioPrice>${money(s.rent)}/m²/year rent</div>
       <div class=tenantScenarioLine><span>Outgoings</span><b>${money(s.out)}/m²/year</b></div>
       <div class=tenantScenarioLine><span>Annual CPI</span><b>${s.cpi.toFixed(1)}%</b></div>
-      <div class=tenantScenarioLine><span>Blended charge</span><b>${money(s.blended)}/m²/year</b></div>
       <div class=tenantScenarioLine><span>Monthly revenue</span><b>${money(s.monthly)}</b></div>
       <div class=tenantScenarioLine><span>Annual revenue</span><b>${money(s.annual)}</b></div>
       <div class=tenantScenarioLine><span>Total contract revenue</span><b>${money(s.totalContract)}</b></div>
-      <div class=tenantScenarioActions>
-        <button class="btn ${i===0?'primary':''}" onclick="selectTenantScenario(${i})">Select Scenario ${i+1}</button>
-      </div>
+      <div class=tenantScenarioActions><button class="btn ${i===0?'primary':''}" onclick="selectTenantScenario(${i})">Use as Starting Point</button></div>
     </div>`).join('');
 
   return `<div class=tenantScenarioWrap>
     <h3>${esc(quoteName())} - Tenant Pricing Comparison</h3>
-    <div class=hint>
-      Tenant pricing contains only <b>Rent, Outgoings and CPI</b>. No 3PL service charges are added.
-    </div>
+    <div class=hint>Suggested scenarios are references only. The final Rent, Outgoings and CPI remain editable before submission.</div>
     <div class=tenantScenarioBench>
       <div><small>Comparison reference</small><b>${ref}</b></div>
       <div><small>Chargeable area</small><b>${d.req.area?d.req.area.toLocaleString('en-AU')+' m²':'—'}</b></div>
-      <div><small>Portfolio median rent</small><b>${d.portfolio.medianRent?money(d.portfolio.medianRent)+'/m²/yr':'—'}</b></div>
-      <div><small>CPI approach</small><b>ABS reference ${APCS_ABS_CPI_REFERENCE.toFixed(1)}% · Scenario floor ${APCS_CPI_FLOOR.toFixed(1)}%</b></div>
+      <div><small>Minimum rent floor</small><b>${money(d.minRent)}/m²/year</b></div>
+      <div><small>CPI approach</small><b>Floor ${APCS_CPI_FLOOR.toFixed(1)}% · alternate ${Math.max(APCS_CPI_FLOOR+1,APCS_ABS_CPI_REFERENCE+1).toFixed(1)}%</b></div>
     </div>
+    ${d.missedYears>0&&d.historicalLost>0?`
+      <div class=tenantRecoveryBox>
+        <b>Historical CPI recovery</b>
+        <div>${d.missedYears} missed annual CPI increase${d.missedYears===1?'':'s'} detected from the matched customer note.</div>
+        <div>Estimated under-recovered rent: <b>${money(d.historicalLost)}</b>.</div>
+        <div>CPI catch-up rent before recovery: <b>${money(d.cpiCatchupRent)}/m²/year</b>.</div>
+        <div>The suggested starting rent spreads this lost revenue across the new ${Math.max(1,Math.floor(d.req.contractYears||1))}-year contract.</div>
+      </div>`:''}
     <div class=tenantScenarioGrid>${cards}</div>
+    <div id=tenantFinalRateHost></div>
     <div class=tenantScenarioExplain>
-      <b>Pricing logic:</b>
-      ${d.req.contractYears?`${Math.floor(d.req.contractYears)}-year contract gives ${(d.contractDiscount*100).toFixed(1)}% base-rent commitment discount.`:'No contract-length discount applied.'}
-      ${d.complexityAdj>0?` Operational complexity is bundled into one ${(d.complexityAdj*100).toFixed(1)}% adjustment (${d.drivers.join(', ')}), rather than stacking a separate premium for every item.`:' No operational-complexity premium is required.'}
-      ${d.areaAdj!==0?` Area adjustment: ${d.areaAdj>0?'+':''}${(d.areaAdj*100).toFixed(1)}%.`:''}
-      <br><b>Scenario trade-off:</b> Scenario 1 starts with a higher rent but lower CPI. Scenario 2 starts with a lower rent but higher CPI. Outgoings are recovered at the comparable current level in both scenarios.
-      ${d.matched?.hasNonChargeable
-        ?'<br><b>Benchmark adjustment:</b> the matched profile includes non-chargeable/free area, so its lower legacy rent is not used as the new pricing anchor.'
-        :''}
-      ${d.portfolio.excludedNonChargeable
-        ?`<br>${d.portfolio.excludedNonChargeable} legacy Tenant profile${d.portfolio.excludedNonChargeable===1?'':'s'} with non-chargeable-area notes ${d.portfolio.excludedNonChargeable===1?'was':'were'} excluded from the rent benchmark.`
-        :''}
+      <b>Pricing logic:</b> Minimum rent ${money(d.minRent)}/m²/year.
+      ${d.req.contractYears?` ${Math.floor(d.req.contractYears)}-year commitment adjustment ${(d.contractDiscount*100).toFixed(1)}%.`:''}
+      ${d.complexityAdj>0?` Bundled operational complexity ${(d.complexityAdj*100).toFixed(1)}% (${d.drivers.join(', ')}).`:''}
+      ${d.areaAdj!==0?` Area adjustment ${d.areaAdj>0?'+':''}${(d.areaAdj*100).toFixed(1)}%.`:''}
+      <br><b>Scenario trade-off:</b> Scenario 1 uses higher starting rent / lower CPI. Scenario 2 uses higher CPI to allow a lower starting rent while targeting a similar total contract value.
+      ${d.matched?.hasNonChargeable?'<br><b>Benchmark adjustment:</b> non-chargeable/free legacy area is not allowed to pull the new rent below the floor.':''}
     </div>
     <div class=nextBar>
-      <span class=hint id=tenantScenarioChoiceHint>Select one pricing scenario to continue.</span>
-      <button id=tenantScenarioNext class="btn primary" disabled onclick=acceptSuggestion()>Next →</button>
+      <span class=hint id=tenantScenarioChoiceHint>Select a scenario as a starting point, then adjust the final rate if required.</span>
+      <button id=tenantScenarioNext class="btn primary" disabled onclick=acceptSuggestion()>Save Final Rate →</button>
     </div>
   </div>`;
 }
@@ -1945,24 +2035,76 @@ function selectTenantScenario(i){
   if(!s)return;
   tenantScenarioSelection=i;
   document.querySelectorAll('.tenantScenarioCard').forEach((x,j)=>x.classList.toggle('selected',j===i));
-
-  // Tenant rate card has ONLY Rent and Outgoings.
-  quoteRateServices=[
-    {id:'RENT',code:'RENT',desc:'Rent',type:'Tenant',section:'Tenant',_rate:+s.rent.toFixed(2)},
-    {id:'OUT',code:'OUT',desc:'Outgoings',type:'Tenant',section:'Tenant',_rate:+s.out.toFixed(2)}
-  ];
-
-  try{
-    let qs=quoteStore(),qi=qs.findIndex(q=>q.id===currentQuoteId);
-    if(qi>=0){
-      qs[qi].cpi=+s.cpi.toFixed(1);
-      putQuotes(qs);
-    }
-  }catch(e){console.warn('Unable to persist Tenant quote CPI',e)}
-
+  const host=$('tenantFinalRateHost');
+  if(host)host.innerHTML=renderTenantFinalRateCard(s);
+  updateTenantFinalPricing();
   const btn=$('tenantScenarioNext');if(btn)btn.disabled=false;
-  const hint=$('tenantScenarioChoiceHint');
-  if(hint)hint.innerHTML=`Selected <b>${esc(s.label)}</b> · Rent ${money(s.rent)}/m²/year · Outgoings ${money(s.out)}/m²/year · CPI ${s.cpi.toFixed(1)}%`;
+  setTimeout(()=>$('tenantFinalEditor')?.scrollIntoView({behavior:'smooth',block:'nearest'}),30);
+}
+function acceptSuggestion(){
+  let a=quoteStore(),q=a.find(x=>x.id===currentQuoteId);
+  if(!q)return;
+
+  if(qm==='Tenant'&&(tenantScenarioSelection===null||!tenantScenarioData?.scenarios?.[tenantScenarioSelection])){
+    appNotice('Select one Tenant pricing scenario as a starting point before continuing.','Pricing scenario required','warning');
+    return;
+  }
+
+  q.stage='Submitted';q.status='Pending';q.updatedAt=nowISO();
+  q.quoteType=q.quoteType||q.snapshot?.v?.quoteType||'New Quote';
+  q.suggestedRates={};
+  q.selectedRateCard=[];
+  q.rateCardSource=chosenMatch?.x
+    ?{customer:chosenMatch.x.customer,account:chosenMatch.x.account}
+    :chosenMatch?.noMatch
+      ?{customer:qm==='Tenant'?'APCS Tenant Portfolio':'APCS Standard Rate Card',account:'STANDARD'}
+      :q.rateCardSource||null;
+
+  if(qm==='Tenant'){
+    const suggested=tenantScenarioData.scenarios[tenantScenarioSelection];
+    const final=tenantFinalPricingValues();
+    q.suggestedRates.RENT=+final.rent.toFixed(2);
+    q.suggestedRates.OUT=+final.out.toFixed(2);
+    q.selectedRateCard=[
+      {id:'RENT',code:'RENT',desc:'Rent',type:'Tenant',section:'Tenant',rate:+final.rent.toFixed(2)},
+      {id:'OUT',code:'OUT',desc:'Outgoings',type:'Tenant',section:'Tenant',rate:+final.out.toFixed(2)}
+    ];
+    q.cpi=+final.cpi.toFixed(1);
+    q.tenantPricingScenario={
+      selectedIndex:tenantScenarioSelection,
+      suggested,
+      final:{rent:+final.rent.toFixed(2),out:+final.out.toFixed(2),cpi:+final.cpi.toFixed(1),monthly:final.monthly,annual:final.annual,totalContract:final.total},
+      comparison:tenantScenarioData,
+      cpi:+final.cpi.toFixed(1),
+      absCpiReference:APCS_ABS_CPI_REFERENCE,
+      cpiFloor:APCS_CPI_FLOOR
+    };
+    q.commercialScenarios=null;
+    if(!(q.history||[]).some(h=>h.event==='Submitted'))addHistory(q,'Submitted','Status set to Pending');
+    addHistory(q,'Tenant Final Rate',`Rent ${money(final.rent)}/m²/year + Outgoings ${money(final.out)}/m²/year · CPI ${final.cpi.toFixed(1)}% · Total contract ${money(final.total)}`);
+  }else{
+    quoteRateServices.forEach(s=>{
+      q.suggestedRates[s.id]=s._rate??'';
+      q.selectedRateCard.push({id:s.id,code:s.code||'',desc:s.desc||'',type:s.type||'',section:s.section||'',rate:s._rate??''});
+    });
+    q.commercialScenarios=buildCommercialScenarios();
+    if(!(q.history||[]).some(h=>h.event==='Submitted'))addHistory(q,'Submitted','Status set to Pending');
+    addHistory(q,'Rate Card Saved',`${q.selectedRateCard.length} selected service(s)`);
+    if(q.commercialScenarios){
+      let r=q.commercialScenarios.recommendedType==='ongoing'?'Ongoing 1-month':'Non-Ongoing 3-month';
+      addHistory(q,'Scenario Analysis',`Recommended benchmark: ${r}`);
+    }
+  }
+
+  putQuotes(a);
+  matchModal.classList.remove('on');
+  currentQuoteId=null;
+  localStorage.removeItem('apcs_cm_current_quote_v1');
+  clearQuoteForm();
+  quoteFilter='Pending';
+  document.querySelectorAll('.qfilter').forEach(b=>b.classList.toggle('on',b.dataset.filter==='Pending'));
+  renderQuotes();go('quotes');
+  setTimeout(()=>showGlobalModal('Quote submitted successfully. It is now Pending.',{title:'Quote submitted',type:'success',confirmText:'Done'}),80)
 }
 function chooseNoMatch(){
   chosenMatch={x:null,p:{rates:{},customServices:[]},score:0,noMatch:true};
@@ -2150,7 +2292,8 @@ function snapshot(){
     rooms:$('roomRows').innerHTML,
     receivableRows:collectReceivableRows(),
     tenantRoomRows:collectTenantRoomRows(),
-    snapshotVersion:2
+    snapshotVersion:3,
+    scrollY:window.scrollY||0
   }
 }
 function setReceivableRows(rows){
@@ -2311,7 +2454,7 @@ function addHistory(q,event,detail=''){q.history=Array.isArray(q.history)?q.hist
 function defaultOnboarding(q){return{quoteId:q.id,status:'In Progress',createdAt:nowISO(),tasks:(DEFAULT_ONBOARDING[q.model]||[]).map((t,i)=>({...t,id:'T-'+Date.now()+'-'+i,done:false,dueDate:'',notes:''}))}}
 function ensureOnboarding(q){if(!q.onboarding)q.onboarding=defaultOnboarding(q);if(!Array.isArray(q.onboarding.tasks))q.onboarding.tasks=defaultOnboarding(q).tasks;return q.onboarding}
 function saveQuoteRecord(stage='Draft',status=''){let a=quoteStore(),now=nowISO(),snap=snapshot();if(!currentQuoteId)currentQuoteId='Q-'+Date.now();let i=a.findIndex(x=>x.id===currentQuoteId),old=i>=0?a[i]:{};let rec={...old,id:currentQuoteId,name:quoteName(),model:qm,quoteType:$('quoteType')?.value||old.quoteType||'New Quote',quoteNotes:fieldText('qNotes'),attachments:JSON.parse(JSON.stringify(quotePhotos||[])),stage,status:status||(stage==='Draft'?'Draft':old.status||'Pending'),snapshot:snap,updatedAt:now,createdAt:old.createdAt||now,submittedAt:stage==='Submitted'?(old.submittedAt||now):old.submittedAt};if(!old.id)addHistory(rec,stage==='Draft'?'Draft Created':'Submitted');if(stage==='Submitted'&&old.stage!=='Submitted')addHistory(rec,'Submitted','Status set to Pending');if(rec.status!=='Won'){delete rec.expectedStartDate;delete rec.renewalEffectiveDate}if(i>=0)a[i]=rec;else a.push(rec);putQuotes(a);localStorage.setItem('apcs_cm_current_quote_v1',currentQuoteId);$('draftName').textContent=rec.name;$('saveState').textContent=stage==='Draft'?'Draft saved':'Submitted';return rec}
-function saveDraft(){let rec=saveQuoteRecord('Draft','Draft');renderQuotes();let when=new Date(rec.updatedAt).toLocaleString('en-AU',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true});$('draftSavedMessage').innerHTML=`<b>${esc(rec.name||'Untitled draft')}</b> has been saved to Quotes on <b>${when}</b>.<br><span class=hint>You can continue this draft later from Quotes → Quote List → Drafts.</span>`;$('draftSavedModal').classList.add('on')}
+function saveDraft(){let rec=saveQuoteRecord('Draft','Draft');renderQuotes();let when=new Date(rec.updatedAt).toLocaleString('en-AU',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true});$('draftSavedMessage').innerHTML=`<b>${esc(rec.name||'Untitled draft')}</b> has been saved to Quotes on <b>${when}</b>.<br><span class=hint>Continue will restore the saved fields and return you to the same place in the quote.</span>`;$('draftSavedModal').classList.add('on')}
 function finishDraftSave(){$('draftSavedModal').classList.remove('on');currentQuoteId=null;localStorage.removeItem('apcs_cm_current_quote_v1');clearQuoteForm()}
 function autoSave(){if(suppressAutosave)return;clearTimeout(timer);$('saveState').textContent='Autosaving…';timer=setTimeout(()=>{if(!currentQuoteId)return;let a=quoteStore(),existing=a.find(x=>x.id===currentQuoteId);if(existing&&existing.stage==='Draft')saveQuoteRecord('Draft','Draft')},250)}
 function migrateLegacyQuoteSnapshots(){
@@ -2327,7 +2470,32 @@ function migrateLegacyQuoteSnapshots(){
 }
 function clearQuoteForm(){suppressAutosave=true;quotePhotos=[];clearTimeout(timer);document.querySelectorAll('#quote input,#quote textarea').forEach(e=>{if(e.type==='checkbox')e.checked=false;else e.value=''});document.querySelectorAll('#quote select').forEach(e=>e.selectedIndex=0);setFieldText('qNotes','');$('recRows').innerHTML='';$('roomRows').innerHTML='';addRec();addRoom();qmode('3PL');if($('quoteType'))$('quoteType').value='New Quote';$('draftName').textContent='Untitled draft · 3PL';$('saveState').textContent='Ready for a new quote';prodUI();loadUI();calc();renderQuotePhotos();suppressAutosave=false}
 function newQuote(){currentQuoteId=null;localStorage.removeItem('apcs_cm_current_quote_v1');clearQuoteForm();go('quote')}
-function loadQuote(id){let q=quoteStore().find(x=>x.id===id);if(!q){appNotice('This quote could not be found.','Quote not found','warning');return}if(q.stage!=='Draft'){appNotice('Submitted quotes are records. Use the status actions in Quote List.','Submitted quote','info');go('quotes');return}go('quote');currentQuoteId=id;quotePhotos=JSON.parse(JSON.stringify(q.attachments||[]));localStorage.setItem('apcs_cm_current_quote_v1',id);let s=q.snapshot||{};qmode(s.qm||q.model||'3PL');restoreSnapshotValues(s);$('draftName').textContent=(q.name||'Untitled quote')+' · '+(q.model||'3PL');$('saveState').textContent='Draft loaded — continue editing';prodUI();loadUI();calc();renderQuotePhotos();window.scrollTo({top:0,behavior:'smooth'})}
+function loadQuote(id){
+  let q=quoteStore().find(x=>x.id===id);
+  if(!q){appNotice('This quote could not be found.','Quote not found','warning');return}
+  if(q.stage!=='Draft'){appNotice('Submitted quotes are records. Use the status actions in Quote List.','Submitted quote','info');go('quotes');return}
+
+  suppressAutosave=true;
+  clearTimeout(timer);
+  go('quote');
+  currentQuoteId=id;
+  quotePhotos=JSON.parse(JSON.stringify(q.attachments||[]));
+  localStorage.setItem('apcs_cm_current_quote_v1',id);
+
+  const s=q.snapshot||{};
+  qmode(s.qm||q.model||'3PL');
+  restoreSnapshotValues(s);
+  if($('quoteType'))$('quoteType').value=q.quoteType||s.v?.quoteType||'New Quote';
+
+  $('draftName').textContent=(q.name||'Untitled quote')+' · '+(q.model||'3PL');
+  $('saveState').textContent='Draft loaded — continue where you left off';
+
+  prodUI();loadUI();calc();renderQuotePhotos();
+  suppressAutosave=false;
+
+  const y=Number(s.scrollY)||0;
+  setTimeout(()=>window.scrollTo({top:y,behavior:'auto'}),60);
+}
 
 function editSubmittedQuote(id){
   let q=quoteStore().find(x=>x.id===id);
