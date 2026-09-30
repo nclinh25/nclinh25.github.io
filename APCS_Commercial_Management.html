@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>APCS Commercial Management</title>
-<!-- BUILD: Exact APCS DOTX Letterhead v8 | full rendered template background | 2026-09-30 --><style>
+<!-- BUILD: v10 no native browser dialogs + scan standard fallback | 2026-09-30 --><style>
 :root{--navy:#073d69;--blue:#0b6ea8;--purple:#7057c8;--teal:#16847a;--bg:#eef5f9;--line:#d6e4ec;--text:#173246;--muted:#6d8494}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,"Segoe UI",Arial;background:linear-gradient(#f8fbfd,#edf4f8);color:var(--text)}
 header{height:72px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 24px;position:sticky;top:0;z-index:30}.brand b{font-size:18px;color:#0b416c}.brand small{display:block;color:var(--muted);font-size:11px}.nav{margin-left:auto;height:100%;display:flex}.nav button{border:0;background:transparent;padding:0 20px;font-weight:650;color:#50697b;cursor:pointer;border-bottom:3px solid transparent}.nav button:hover{color:#075f98;background:#f6fbfe}.nav button:active{background:#e2f1f9}.nav button.on{color:#075f98;border-bottom-color:#0b78b8;background:#eef7fc}.navGroup{position:relative;height:100%;display:flex;align-items:stretch}.navGroup>.navMain{height:100%}.navDrop{display:none;position:absolute;top:68px;right:0;min-width:205px;background:#fff;border:1px solid var(--line);border-radius:0 0 10px 10px;box-shadow:0 10px 25px #12384d24;padding:7px;z-index:60}.navGroup:hover .navDrop,.navGroup:focus-within .navDrop{display:block}.navDrop button{display:block;width:100%;height:42px;padding:0 13px!important;text-align:left;border:0!important;border-radius:7px;background:#fff!important;color:#416278!important}.navDrop button:hover{background:#eef7fc!important;color:#075f98!important}.navDrop button.subon{background:#e5f3fb!important;color:#075f98!important;font-weight:750}.navMain .chev{font-size:10px;margin-left:6px}
@@ -121,6 +121,26 @@ input, textarea, select, [contenteditable="true"] { user-select: text; -webkit-u
 .appModalActions{display:flex;justify-content:flex-end;gap:10px;padding:14px 22px 20px;background:#fbfdfe;border-top:1px solid #e5eef3}
 .appModalActions .btn{min-width:96px}
 
+
+.sysModal{position:fixed;inset:0;background:rgba(9,30,45,.46);display:none;align-items:center;justify-content:center;z-index:12000;padding:20px}
+.sysModal.on{display:flex}
+.sysModalCard{width:min(470px,96vw);background:#fff;border:1px solid #d6e4ec;border-radius:18px;box-shadow:0 28px 80px rgba(10,43,64,.30);overflow:hidden;animation:sysPop .16s ease-out}
+@keyframes sysPop{from{opacity:.45;transform:translateY(8px) scale(.985)}to{opacity:1;transform:none}}
+.sysModalHead{display:flex;align-items:center;gap:12px;padding:20px 22px 12px}
+.sysModalIcon{width:42px;height:42px;border-radius:12px;background:#eef7fc;color:#075f98;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.sysModalIcon.warn{background:#fff4e5;color:#a86600}.sysModalIcon.success{background:#eaf8ef;color:#08783d}.sysModalIcon.danger{background:#fff0ef;color:#b42318}
+.sysModalIcon svg{width:22px;height:22px}
+.sysModalTitle{font-size:18px;font-weight:800;color:#173246}
+.sysModalBody{padding:0 22px 20px;color:#526b7c;font-size:13px;line-height:1.55;white-space:pre-line}
+.sysModalActions{display:flex;justify-content:flex-end;gap:10px;padding:14px 22px 20px;background:#fbfdfe;border-top:1px solid #e5eef3}
+.sysModalActions .btn{min-width:92px}
+
+
+.inputModalField{width:100%;border:1px solid #c9dce7;border-radius:10px;padding:11px 12px;font:inherit;color:#173246;background:#fff;outline:none}
+.inputModalField:focus{border-color:#0b78b8;box-shadow:0 0 0 3px rgba(11,120,184,.10)}
+.inputModalLabel{font-size:11px;font-weight:750;color:#587184;margin:0 0 6px;display:block;text-transform:uppercase;letter-spacing:.02em}
+.buildTag{position:fixed;right:12px;bottom:12px;z-index:50;font-size:9px;color:#7890a0;background:rgba(255,255,255,.92);border:1px solid #dbe7ee;border-radius:999px;padding:4px 8px;pointer-events:none}
+
 </style>
 
 </head><body>
@@ -233,10 +253,35 @@ function deletedCustomers(){return JSON.parse(localStorage.getItem('apcs_deleted
 function allCustomers(model){let deleted=deletedCustomers()[model]||[];return (model==='3PL'?C3:CT).concat(customCustomers()[model]||[]).filter(x=>!deleted.includes(pkey(x,model)))} function pkey(x,model=pm){return model+'|'+x.customer+'|'+x.account}
 function selectCustomerByKey(key){let x=allCustomers(pm).find(c=>pkey(c)===key);if(!x)return;selected=x;renderList();renderProfile()}
 function renderList(){let arr=allCustomers(pm),s=($('searchCust').value||'').toLowerCase();$('custList').innerHTML='';arr.filter(x=>(x.customer+' '+x.account).toLowerCase().includes(s)).forEach(x=>{let d=document.createElement('div');d.className='cust'+(selected&&pkey(selected)===pkey(x)?' on':'');let b=document.createElement('button');b.type='button';b.className='custName';b.textContent=x.customer;b.onclick=()=>selectCustomerByKey(pkey(x));let sm=document.createElement('small');sm.textContent=x.account+' · '+pm;d.appendChild(b);d.appendChild(sm);$('custList').appendChild(d)});if(selected&&!arr.some(x=>pkey(x)===pkey(selected)))selected=null;if(!selected&&arr.length){selected=arr[0];renderList();renderProfile()}else if(!arr.length){$('profileDetail').innerHTML='<div class=hint>No customers in this model.</div>'}}
-function addCustomer(){let n=prompt('Customer name');if(!n)return;let a=prompt('Account / short code',n)||n,c=customCustomers();c[pm].push({customer:n,account:a});localStorage.setItem('apcs_customers_v4',JSON.stringify(c));selected={customer:n,account:a};renderList();renderProfile()}
-function deleteCurrentCustomer(){if(!selected)return;let name=selected.customer,account=selected.account;if(!confirm(`Delete “${name} (${account})”?
+function addCustomer(){
+  showInputModal({title:'Add Customer',label:'Customer name',confirmText:'Next',onConfirm:(n)=>{
+    if(!n)return;
+    closeInputModal();
+    setTimeout(()=>showInputModal({title:'Add Customer',label:'Account / short code',value:n,confirmText:'Add Customer',onConfirm:(a)=>{
+      a=a||n;
+      let c=customCustomers();c[pm].push({customer:n,account:a});
+      localStorage.setItem('apcs_customers_v4',JSON.stringify(c));
+      selected={customer:n,account:a};closeInputModal();renderList();renderProfile();
+    }}),80);
+  }});
+}
+function deleteCurrentCustomer(){
+  if(!selected)return;
+  let name=selected.customer,account=selected.account;
+  appConfirm(`Delete “${name} (${account})”?
 
-This will remove the customer from the Customer Profile and Rate Card. This action cannot be undone from this screen.`))return;let key=pkey(selected),c=customCustomers();c[pm]=(c[pm]||[]).filter(x=>pkey(x)!==key);localStorage.setItem('apcs_customers_v4',JSON.stringify(c));let d=deletedCustomers();if(!(d[pm]||[]).includes(key))(d[pm]||(d[pm]=[])).push(key);localStorage.setItem('apcs_deleted_customers_v1',JSON.stringify(d));let st=profiles();delete st[key];localStorage.setItem('apcs_profiles_v4',JSON.stringify(st));selected=null;renderList();renderRatePage()}
+This will remove the customer from the Customer Profile and Rate Card. This action cannot be undone from this screen.`,()=>{
+    let key=pkey(selected),c=customCustomers();
+    c[pm]=(c[pm]||[]).filter(x=>pkey(x)!==key);
+    localStorage.setItem('apcs_customers_v4',JSON.stringify(c));
+    let d=deletedCustomers();
+    if(!(d[pm]||[]).includes(key))(d[pm]||(d[pm]=[])).push(key);
+    localStorage.setItem('apcs_deleted_customers_v1',JSON.stringify(d));
+    let st=profiles();delete st[key];
+    localStorage.setItem('apcs_profiles_v4',JSON.stringify(st));
+    selected=null;renderList();renderRatePage();
+  },{title:'Delete customer',confirmText:'Delete',type:'danger'});
+}
 function serviceRows(p){let custom=p.customServices||[],all=SERVICES.concat(custom);let last='';return all.map(s=>{let sec='';if(s.section!==last){last=s.section;sec=`<tr class=sectionrow><td colspan=6>${s.section}</td></tr>`}let val=p.rates&&p.rates[s.id]!=null?p.rates[s.id]:(s.standard??'');return sec+`<tr><td>${s.type||'Custom'}</td><td>${s.code||'—'}</td><td>${s.desc}</td><td><input class=prate data-id="${s.id}" type=number step=.01 value="${val}"></td><td><input class=pnote data-id="${s.id}" value="${p.rateNotes?.[s.id]||''}"></td><td>${s.custom?`<button class=x onclick="removeCustom('${s.id}')">×</button>`:''}</td></tr>`}).join('')}
 function historyTable(p){let hist=p.rateHistory||[],current={effectiveDate:p.effectiveDate||'',cpi:p.lastAppliedCpi??p.cpi??'',rates:p.rates||{},current:true},versions=[current].concat([...hist].reverse());if(!versions.length)return'';let all=pm==='Tenant'?[{id:'RENT',code:'RENT',desc:'Rent — $/m²/year'},{id:'OUT',code:'OUT',desc:'Outgoings — $/m²/year'}]:SERVICES.concat(p.customServices||[]);return `<div class=historyWrap><table class=history><thead><tr><th class=svc>Rate / Service</th>${versions.map((v,i)=>`<th class="${i===0?'current':'past'}">${i===0?'Current':'Previous'}<br><small>${v.effectiveDate?fmtDate(v.effectiveDate):'No effective date'}${v.cpi!==''&&v.cpi!=null?` · CPI ${Number(v.cpi).toFixed(1)}%`:''}</small></th>`).join('')}</tr></thead><tbody>${all.map(x=>`<tr><td class=svc><b>${x.code||'—'}</b> — ${x.desc}</td>${versions.map((v,i)=>`<td class="${i===0?'current':'past'}">${money(v.rates?.[x.id])}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`}
 function fmtDate(v){if(!v)return'—';let d=new Date(v+'T00:00:00');return isNaN(d)?v:d.toLocaleDateString('en-AU',{day:'2-digit',month:'2-digit',year:'numeric'})}
@@ -264,10 +309,31 @@ function renderProfile(){let p=profiles()[pkey(selected)]||{},is3=pm==='3PL';$('
 <div class=card style="padding:14px;margin-top:10px"><h4 style="margin:0 0 10px">Extra services</h4><div class=checks id=pExtras>${['Portmark','Label','Shrinkwrap','Handstack','Temp Logger'].map(x=>`<label><input type=checkbox value="${x}" ${(p.extras||[]).includes?.(x)?'checked':''}><span>${x}</span></label>`).join('')}</div></div>
 <div class=grid style="margin-top:10px"><div><label>Reporting frequency</label><select id=pReport><option value="">Select…</option><option>Daily</option><option>Weekly</option><option>Monthly</option></select></div><div><label>Annual CPI clause (%)</label><input id=pCpi type=number step=.1 value="${p.cpi??''}" placeholder="0.0"></div></div><div class=cpiBar><div class=cpiField><label>CPI to apply</label><div class=cpiInput><input id=pCpiApply type=number step=.1 value="${p.cpi??''}" placeholder="0.0"><span>%</span></div></div><button class="btn applyCpi" onclick=applyCPI()>Apply CPI %</button><button class="btn historyBtn" onclick=openRateHistory() title="Rate History" aria-label="Rate History"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></svg></button></div><h3>Current Rate Card — editable</h3><div class=rateWrap><table class=rateTable><thead><tr><th>Type</th><th>Code</th><th>Service description</th><th>Rate</th><th>Note</th><th></th></tr></thead><tbody>${serviceRows(p)}</tbody></table></div><h3>Add service charge</h3><div class=addline><div><label>Type</label><input id=newType placeholder="Handling / Storage…"></div><div><label>Code</label><input id=newCode></div><div><label>Description</label><input id=newDesc></div><div><label>Rate</label><input id=newRate type=number step=.01></div><button class=btn onclick=addServiceCharge()>Add</button></div>`:`<h3>Tenant profile</h3><div class=grid><div><label>Contract length (years)</label><input id=pContract type=number min=1 step=1 value="${p.contract||''}"></div><div><label>Chargeable area (m²)</label><input id=pArea type=number min=0 step=.01 value="${p.area||''}" placeholder="m²"></div><div><label>Current rent ($/m²/year)</label><input id=pRent type=number min=0 step=.01 value="${p.rates?.RENT??''}" placeholder="$/m²/year"></div><div><label>Annual CPI clause (%)</label><input id=pCpi type=number step=.1 value="${p.cpi??''}" placeholder="0.0"></div></div><div style="margin-top:10px"><label>Rooms</label><div class=checks id=pRooms>${['Blast Room','Chill Room','Frozen Room','Dry Storage','Office'].map(r=>`<label><input type=checkbox value="${r}" ${(p.rooms||[]).includes?.(r)||String(p.rooms||'').split(',').map(x=>x.trim()).includes(r)?'checked':''}><span>${r}</span></label>`).join('')}</div></div><div class=grid style="margin-top:10px"><div><label>Location / preference</label><input id=pLoc value="${p.location||''}" placeholder="e.g. near loading bay"></div><div><label>After-hours access?</label><select id=pAfter onchange=tenantProfileUI()><option value="">Select…</option><option ${p.afterHours==='No'?'selected':''}>No</option><option ${p.afterHours==='Yes'?'selected':''}>Yes</option></select></div><div><label>Parking space?</label><select id=pParking onchange=tenantProfileUI()><option value="">Select…</option><option ${p.parking==='No'?'selected':''}>No</option><option ${p.parking==='Yes'?'selected':''}>Yes</option></select></div><div id=pParkingCountBox class="${p.parking==='Yes'?'':'hide'}"><label>Number of parking spaces</label><input id=pParkingCount type=number min=1 step=1 value="${p.parkingCount||''}"></div><div><label>Bills included in rent?</label><select id=pBillsIncluded onchange=tenantProfileUI()><option value="">Select…</option><option ${p.billsIncluded==='No'?'selected':''}>No</option><option ${p.billsIncluded==='Yes'?'selected':''}>Yes</option></select></div><div id=pOutBox class="${p.billsIncluded==='Yes'?'':'hide'}"><label>Outgoings ($/m²/year)</label><input id=pOut type=number min=0 step=.01 value="${p.rates?.OUT??''}" placeholder="$/m²/year"></div></div><div class=cpiBar><div class=cpiField><label>CPI to apply</label><div class=cpiInput><input id=pCpiApply type=number step=.1 value="${p.cpi??''}" placeholder="0.0"><span>%</span></div></div><button class="btn applyCpi" onclick=applyCPI()>Apply CPI %</button><button class="btn historyBtn" onclick=openRateHistory() title="Rate History" aria-label="Rate History"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></svg></button></div><h3>Tenant Rate Card</h3><div class=rateWrap><table class=rateTable><thead><tr><th>Code</th><th>Description</th><th>Unit</th><th>Current rate</th></tr></thead><tbody><tr><td>RENT</td><td>Rent</td><td>$/m²/year</td><td><b>${money(p.rates?.RENT)}</b></td></tr><tr><td>OUT</td><td>Outgoings</td><td>$/m²/year</td><td><b>${p.billsIncluded==='Yes'?money(p.rates?.OUT):'Not included in rent'}</b></td></tr></tbody></table></div>`}<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:12px"><button class="btn primary" onclick=saveCurrentProfile()>Save Profile</button><button class="btn dangerBtn" onclick=deleteCurrentCustomer()>Delete Customer</button></div>`;if(p.status)$('pStatus').value=p.status;if(is3){if(p.recType)$('pRecType').value=p.recType;if(p.recSize)$('pRecSize').value=p.recSize;if(p.recUnit)$('pRecUnit').value=p.recUnit;if(p.product)$('pProd').value=p.product;if(p.scan)$('pScan').value=p.scan;if(p.mix)$('pMix').value=p.mix;if(p.holdU)$('pHoldU').value=p.holdU;if(p.loUnit)$('pLoUnit').value=p.loUnit;if(p.domestic)$('pDomestic').value=p.domestic;if(p.exportMarket)$('pExport').value=p.exportMarket;let exSizes=Array.isArray(p.exportSize)?p.exportSize:(p.exportSize?[p.exportSize]:[]);if($('pExport20'))$('pExport20').checked=exSizes.includes('20ft');if($('pExport40'))$('pExport40').checked=exSizes.includes('40ft');if(p.report)$('pReport').value=p.report;p3ProfileUI()}else tenantProfileUI()}
 function openRateHistory(){if(!selected)return;let p=profiles()[pkey(selected)]||{};$('historySubtitle').textContent=`${selected.customer} — ${selected.account} · current and previous effective rate periods`;$('historyContent').innerHTML=historyTable(p);$('historyModal').classList.add('on')}
-function applyCPI(){if(!selected)return;if($('pCpiApply'))$('pCpi').value=$('pCpiApply').value;saveCurrentProfile(false);let st=profiles(),k=pkey(selected),p=st[k]||{},cpi=Number(p.cpi);if(!isFinite(cpi)||cpi===0){alert('Enter a CPI % first.');return}let populated=Object.entries(p.rates||{}).filter(([id,v])=>v!==''&&v!=null&&!isNaN(Number(v)));if(!populated.length){alert('There are no populated current rates to apply CPI to.');return}if(!confirm(`Apply CPI to all populated current rates for ${selected.customer} — ${selected.account}?\n\nCPI: ${cpi.toFixed(2)}%\nThe current rate card will be archived in Rate History.`))return;p.rateHistory=p.rateHistory||[];p.rateHistory.push({effectiveDate:p.effectiveDate||p.commence||'',cpi:p.lastAppliedCpi??'',rates:JSON.parse(JSON.stringify(p.rates||{})),capturedAt:new Date().toISOString()});let nr={...(p.rates||{})};populated.forEach(([id,v])=>nr[id]=+(Number(v)*(1+cpi/100)).toFixed(4));p.rates=nr;p.lastAppliedCpi=cpi;p.effectiveDate=new Date().toISOString().slice(0,10);st[k]=p;localStorage.setItem('apcs_profiles_v4',JSON.stringify(st));renderProfile();renderRatePage();alert('CPI applied. Previous rates were saved to Rate History.')}
+function applyCPI(){
+  if(!selected)return;
+  if($('pCpiApply'))$('pCpi').value=$('pCpiApply').value;
+  saveCurrentProfile(false);
+  let st=profiles(),k=pkey(selected),p=st[k]||{},cpi=Number(p.cpi);
+  if(!isFinite(cpi)||cpi===0){appNotice('Enter a CPI % first.','CPI required','warning');return}
+  let populated=Object.entries(p.rates||{}).filter(([id,v])=>v!==''&&v!=null&&!isNaN(Number(v)));
+  if(!populated.length){appNotice('There are no populated current rates to apply CPI to.','No rates found','warning');return}
+  appConfirm(`Apply CPI to all populated current rates for ${selected.customer} — ${selected.account}?
+
+CPI: ${cpi.toFixed(2)}%
+The current rate card will be archived in Rate History.`,()=>{
+    p.rateHistory=p.rateHistory||[];
+    p.rateHistory.push({effectiveDate:p.effectiveDate||p.commence||'',cpi:p.lastAppliedCpi??'',rates:JSON.parse(JSON.stringify(p.rates||{})),capturedAt:new Date().toISOString()});
+    let nr={...(p.rates||{})};
+    populated.forEach(([id,v])=>nr[id]=+(Number(v)*(1+cpi/100)).toFixed(4));
+    p.rates=nr;p.lastAppliedCpi=cpi;p.effectiveDate=new Date().toISOString().slice(0,10);
+    st[k]=p;localStorage.setItem('apcs_profiles_v4',JSON.stringify(st));
+    renderProfile();renderRatePage();
+    appNotice('CPI applied. Previous rates were saved to Rate History.','CPI applied','success');
+  },{title:'Apply CPI',confirmText:'Apply CPI',type:'warning'});
+}
 function addServiceCharge(){if(!$('newDesc').value)return;saveCurrentProfile(false);let st=profiles(),k=pkey(selected),p=st[k]||{},id='custom_'+Date.now();p.customServices=p.customServices||[];p.customServices.push({id,section:'Custom Service Charges',type:$('newType').value||'Custom',code:$('newCode').value,desc:$('newDesc').value,standard:+$('newRate').value||null,custom:true});p.rates=p.rates||{};if($('newRate').value)p.rates[id]=+$('newRate').value;st[k]=p;localStorage.setItem('apcs_profiles_v4',JSON.stringify(st));renderProfile()}
 function removeCustom(id){saveCurrentProfile(false);let st=profiles(),p=st[pkey(selected)]||{};p.customServices=(p.customServices||[]).filter(x=>x.id!==id);if(p.rates)delete p.rates[id];st[pkey(selected)]=p;localStorage.setItem('apcs_profiles_v4',JSON.stringify(st));renderProfile()}
-function saveCurrentProfile(show=true){if(!selected)return;let st=profiles(),old=st[pkey(selected)]||{},p={...old,commence:$('pComm').value,cpi:$('pCpi').value,effectiveDate:$('pEffective').value,status:$('pStatus').value,notes:$('pNotes').value,rates:{...(old.rates||{})},rateNotes:{...(old.rateNotes||{})}};document.querySelectorAll('.prate').forEach(x=>p.rates[x.dataset.id]=x.value);document.querySelectorAll('.pnote').forEach(x=>p.rateNotes[x.dataset.id]=x.value);if(pm==='3PL'){let extras=[...document.querySelectorAll('#pExtras input:checked')].map(x=>x.value);Object.assign(p,{recType:$('pRecType').value,recSize:$('pRecType').value==='Container'?$('pRecSize').value:'',recQty:$('pRecQty').value,recEvery:$('pRecEvery').value,recUnit:$('pRecUnit').value,product:$('pProd').value,scan:$('pProd').value==='Frozen'?$('pScan').value:'',scanPct:$('pProd').value==='Frozen'&&$('pScan').value==='Yes'?$('pScanPct').value:'',blastPct:$('pProd').value==='Blast'?$('pBlastPct').value:'',mix:$('pMix').value,holdN:$('pHoldN').value,holdU:$('pHoldU').value,loEvery:$('pLoEvery').value,loUnit:$('pLoUnit').value,domestic:$('pDomestic').value,exportMarket:$('pExport').value,exportSize:$('pExport').value==='Yes'?[...document.querySelectorAll('#pExportSizeBox input:checked')].map(x=>x.value):[],country:$('pExport').value==='Yes'?$('pCountry').value:'',extras,report:$('pReport').value});}else {let rooms=[...document.querySelectorAll('#pRooms input:checked')].map(x=>x.value);Object.assign(p,{rooms,location:$('pLoc').value,afterHours:$('pAfter').value,parking:$('pParking').value,parkingCount:$('pParking').value==='Yes'?$('pParkingCount').value:'',billsIncluded:$('pBillsIncluded').value,contract:$('pContract').value,area:$('pArea').value});p.rates.RENT=$('pRent').value;p.rates.OUT=$('pBillsIncluded').value==='Yes'?$('pOut').value:'';}st[pkey(selected)]=p;localStorage.setItem('apcs_profiles_v4',JSON.stringify(st));renderRatePage();if(show)alert('Profile saved. Rate Card updated.')}
+function saveCurrentProfile(show=true){if(!selected)return;let st=profiles(),old=st[pkey(selected)]||{},p={...old,commence:$('pComm').value,cpi:$('pCpi').value,effectiveDate:$('pEffective').value,status:$('pStatus').value,notes:$('pNotes').value,rates:{...(old.rates||{})},rateNotes:{...(old.rateNotes||{})}};document.querySelectorAll('.prate').forEach(x=>p.rates[x.dataset.id]=x.value);document.querySelectorAll('.pnote').forEach(x=>p.rateNotes[x.dataset.id]=x.value);if(pm==='3PL'){let extras=[...document.querySelectorAll('#pExtras input:checked')].map(x=>x.value);Object.assign(p,{recType:$('pRecType').value,recSize:$('pRecType').value==='Container'?$('pRecSize').value:'',recQty:$('pRecQty').value,recEvery:$('pRecEvery').value,recUnit:$('pRecUnit').value,product:$('pProd').value,scan:$('pProd').value==='Frozen'?$('pScan').value:'',scanPct:$('pProd').value==='Frozen'&&$('pScan').value==='Yes'?$('pScanPct').value:'',blastPct:$('pProd').value==='Blast'?$('pBlastPct').value:'',mix:$('pMix').value,holdN:$('pHoldN').value,holdU:$('pHoldU').value,loEvery:$('pLoEvery').value,loUnit:$('pLoUnit').value,domestic:$('pDomestic').value,exportMarket:$('pExport').value,exportSize:$('pExport').value==='Yes'?[...document.querySelectorAll('#pExportSizeBox input:checked')].map(x=>x.value):[],country:$('pExport').value==='Yes'?$('pCountry').value:'',extras,report:$('pReport').value});}else {let rooms=[...document.querySelectorAll('#pRooms input:checked')].map(x=>x.value);Object.assign(p,{rooms,location:$('pLoc').value,afterHours:$('pAfter').value,parking:$('pParking').value,parkingCount:$('pParking').value==='Yes'?$('pParkingCount').value:'',billsIncluded:$('pBillsIncluded').value,contract:$('pContract').value,area:$('pArea').value});p.rates.RENT=$('pRent').value;p.rates.OUT=$('pBillsIncluded').value==='Yes'?$('pOut').value:'';}st[pkey(selected)]=p;localStorage.setItem('apcs_profiles_v4',JSON.stringify(st));renderRatePage();if(show)appNotice('Profile saved. Rate Card updated.','Profile saved','success')}
 function renderRatePage(){renderRateTable()}
 function contractYear(p){let start=p.commence?new Date(p.commence+'T00:00:00'):null,yrs=Math.max(0,Math.floor(Number(p.contract)||0));if(!start||isNaN(start)||!yrs)return '—';let now=new Date(),year=Math.floor((now-start)/(365.2425*86400000))+1;if(year<1)return `Not started`;if(year>yrs)return `Ended`;return `Year ${year} of ${yrs}`}
 function renderRateTable(){let model=$('rateModel').value,search=($('rateSearch').value||'').toLowerCase(),arr=[...allCustomers(model)].sort((a,b)=>(a.customer+' '+a.account).localeCompare(b.customer+' '+b.account)),st=profiles();$('rateSearchBox').classList.toggle('hide',model==='Tenant');if(model==='Tenant'){$('rateTableWrap').innerHTML=`<table class=tenantMatrix><thead><tr><th>Tenant / Account</th><th>Rent $/m²/year</th><th>Outgoings $/m²/year</th><th>Contract</th><th>Current year</th><th>CPI</th><th>Effective date</th></tr></thead><tbody>${arr.map(x=>{let p=st[pkey(x,model)]||{};return `<tr><td><b>${x.customer}</b><div class=hint>${x.account}</div></td><td>${money(p.rates?.RENT)}</td><td>${money(p.rates?.OUT)}</td><td>${p.contract?`${p.contract} year${Number(p.contract)===1?'':'s'}`:'—'}</td><td><span class=pill>${contractYear(p)}</span></td><td>${p.cpi!==''&&p.cpi!=null?Number(p.cpi).toFixed(1)+'%':'—'}</td><td>${fmtDate(p.effectiveDate)}</td></tr>`}).join('')}</tbody></table>`;return}let customMap={};arr.forEach(x=>{let p=st[pkey(x,model)]||{};(p.customServices||[]).forEach(cs=>customMap[cs.id]=cs)});let all=SERVICES.concat(Object.values(customMap)).filter(x=>(x.code+' '+x.desc+' '+x.type).toLowerCase().includes(search));$('rateTableWrap').innerHTML=`<div class=matrixWrap><table class=matrix><thead><tr><th class=svc>Rate / Service</th>${arr.map(x=>{let p=st[pkey(x,model)]||{};return `<th class=custHead><b>${x.customer}</b><span class=acct>${x.account}</span><small>CPI ${p.cpi!==''&&p.cpi!=null?Number(p.cpi).toFixed(1)+'%':'—'}<br>Effective ${fmtDate(p.effectiveDate)}</small></th>`}).join('')}</tr></thead><tbody>${(()=>{let last='';return all.map(s=>{let sec='';if(s.section!==last){last=s.section;sec=`<tr class=matrixSection><td colspan="${arr.length+1}">${s.section}</td></tr>`}return sec+`<tr><td class=svc><b>${s.code||'—'}</b> — ${s.desc}<div class=hint>${s.type||''}</div></td>${arr.map(x=>`<td>${money((st[pkey(x,model)]||{}).rates?.[s.id])}</td>`).join('')}</tr>`}).join('')})()}</tbody></table></div>`}
@@ -290,7 +356,8 @@ function suggestedRate(code){
   let svc=SERVICES.find(s=>s.code===code || (code==='STOP'&&String(s.code).includes('STOP')));
   if(!svc)return 0;
   let el=document.querySelector(`.sugrate[data-id="${svc.id}"]`);
-  return el&&el.value!=='' ? Number(el.value)||0 : 0;
+  if(el&&el.value!=='')return Number(el.value)||0;
+  return Number(svc.standard)||0;
 }
 function suggestedPatternEconomics(){
   if(qm!=='3PL'||!chosenMatch)return null;
@@ -320,7 +387,7 @@ function suggestedPatternEconomics(){
   let blastPct=p.product==='Blast'?(Number(p.blastPct)||0)/100:0;
   let blastRevenue=weeklyCartons*blastPct*blastRate;
 
-  let scanPct=(p.product==='Frozen'&&p.scan==='Yes')?(Number(p.scanPct)||0)/100:0;
+  let scanPct=(p.product==='Blast'||(p.product==='Frozen'&&p.scan==='Yes'))?(Number(p.scanPct)||0)/100:0;
   let scanRevenue=weeklyCartons*scanPct*scanRate;
 
   // Profile currently stores load-out frequency, but not pallets/cartons per dispatch.
@@ -464,7 +531,7 @@ function acceptSuggestion(){
   quoteFilter='Pending';
   document.querySelectorAll('.qfilter').forEach(b=>b.classList.toggle('on',b.dataset.filter==='Pending'));
   renderQuotes();go('quotes');
-  setTimeout(()=>alert('Quote submitted successfully. It is now Pending. The selected Rate Card has been saved with the quote.'),80)
+  setTimeout(()=>appNotice('Quote submitted successfully. It is now Pending. The selected Rate Card has been saved with the quote.','Quote submitted','success'),80)
 }
 function snapshot(){
   let v={};
@@ -525,11 +592,11 @@ function finishDraftSave(){$('draftSavedModal').classList.remove('on');currentQu
 function autoSave(){if(suppressAutosave)return;clearTimeout(timer);$('saveState').textContent='Autosaving…';timer=setTimeout(()=>{if(!currentQuoteId)return;let a=quoteStore(),existing=a.find(x=>x.id===currentQuoteId);if(existing&&existing.stage==='Draft')saveQuoteRecord('Draft','Draft')},250)}
 function clearQuoteForm(){suppressAutosave=true;clearTimeout(timer);document.querySelectorAll('#quote input,#quote textarea').forEach(e=>{if(e.type==='checkbox')e.checked=false;else e.value=''});document.querySelectorAll('#quote select').forEach(e=>e.selectedIndex=0);$('recRows').innerHTML='';$('roomRows').innerHTML='';addRec();addRoom();qmode('3PL');if($('quoteType'))$('quoteType').value='New Quote';$('draftName').textContent='Untitled draft · 3PL';$('saveState').textContent='Ready for a new quote';prodUI();loadUI();calc();suppressAutosave=false}
 function newQuote(){currentQuoteId=null;localStorage.removeItem('apcs_cm_current_quote_v1');clearQuoteForm();go('quote')}
-function loadQuote(id){let q=quoteStore().find(x=>x.id===id);if(!q){alert('This quote could not be found.');return}if(q.stage!=='Draft'){alert('Submitted quotes are records. Use the status actions in Quote List.');go('quotes');return}go('quote');currentQuoteId=id;localStorage.setItem('apcs_cm_current_quote_v1',id);let s=q.snapshot||{};qmode(s.qm||q.model||'3PL');$('recRows').innerHTML=s.rec||'';$('roomRows').innerHTML=s.rooms||'';if(!$('recRows').children.length)addRec();if(!$('roomRows').children.length)addRoom();restoreSnapshotValues(s);$('draftName').textContent=(q.name||'Untitled quote')+' · '+(q.model||'3PL');$('saveState').textContent='Draft loaded — continue editing';prodUI();loadUI();calc();window.scrollTo({top:0,behavior:'smooth'})}
+function loadQuote(id){let q=quoteStore().find(x=>x.id===id);if(!q){appNotice('This quote could not be found.','Quote not found','warning');return}if(q.stage!=='Draft'){appNotice('Submitted quotes are records. Use the status actions in Quote List.','Submitted quote','info');go('quotes');return}go('quote');currentQuoteId=id;localStorage.setItem('apcs_cm_current_quote_v1',id);let s=q.snapshot||{};qmode(s.qm||q.model||'3PL');$('recRows').innerHTML=s.rec||'';$('roomRows').innerHTML=s.rooms||'';if(!$('recRows').children.length)addRec();if(!$('roomRows').children.length)addRoom();restoreSnapshotValues(s);$('draftName').textContent=(q.name||'Untitled quote')+' · '+(q.model||'3PL');$('saveState').textContent='Draft loaded — continue editing';prodUI();loadUI();calc();window.scrollTo({top:0,behavior:'smooth'})}
 
 function editSubmittedQuote(id){
   let q=quoteStore().find(x=>x.id===id);
-  if(!q){alert('This quote could not be found.');return}
+  if(!q){appNotice('This quote could not be found.','Quote not found','warning');return}
   if(q.stage!=='Submitted'||q.status!=='Pending'){openRecordMenu(id);return}
   go('quote');
   currentQuoteId=id;
@@ -882,8 +949,63 @@ async function confirmRateCardExport(){
   }
 }
 
+
+
+let inputModalCallback=null;
+function closeInputModal(){
+  inputModalCallback=null;
+  const m=document.getElementById('inputModal');
+  if(m){m.classList.remove('on');m.setAttribute('aria-hidden','true')}
+}
+function showInputModal({title='Enter details',label='',value='',placeholder='',confirmText='Confirm',onConfirm=null}={}){
+  const m=document.getElementById('inputModal'),f=document.getElementById('inputModalField');
+  document.getElementById('inputModalTitle').textContent=title;
+  document.getElementById('inputModalLabel').textContent=label;
+  document.getElementById('inputModalError').style.display='none';
+  f.value=value||'';f.placeholder=placeholder||'';
+  inputModalCallback=onConfirm;
+  const b=document.getElementById('inputModalConfirm');
+  b.textContent=confirmText;
+  b.onclick=()=>{const v=f.value.trim();const cb=inputModalCallback;if(cb)cb(v)};
+  m.classList.add('on');m.setAttribute('aria-hidden','false');
+  setTimeout(()=>f.focus(),30);
+}
+
+let systemModalConfirmAction=null;
+function closeSystemModal(){
+  systemModalConfirmAction=null;
+  const m=document.getElementById('systemModal');
+  if(m){m.classList.remove('on');m.setAttribute('aria-hidden','true')}
+}
+function showSystemModal({title='Notification',message='',type='info',confirmText='OK',cancelText='',onConfirm=null}={}){
+  const m=document.getElementById('systemModal'); if(!m)return;
+  document.getElementById('systemModalTitle').textContent=title;
+  document.getElementById('systemModalBody').textContent=String(message??'');
+  const icon=document.getElementById('systemModalIcon');
+  icon.className='sysModalIcon '+(type==='success'?'success':type==='warning'?'warn':type==='danger'?'danger':'');
+  const actions=document.getElementById('systemModalActions');
+  systemModalConfirmAction=typeof onConfirm==='function'?onConfirm:null;
+  actions.innerHTML='';
+  if(cancelText){
+    const c=document.createElement('button'); c.className='btn'; c.textContent=cancelText; c.onclick=closeSystemModal; actions.appendChild(c);
+  }
+  const ok=document.createElement('button');
+  ok.className='btn '+(type==='danger'?'dangerBtn':'primary');
+  ok.textContent=confirmText||'OK';
+  ok.onclick=()=>{const fn=systemModalConfirmAction;closeSystemModal();if(fn)fn();};
+  actions.appendChild(ok);
+  m.classList.add('on');m.setAttribute('aria-hidden','false');
+}
+function appNotice(message,title='Notification',type='info'){showSystemModal({title,message,type,confirmText:'OK'});}
+function appConfirm(message,onConfirm,{title='Confirm action',confirmText='Confirm',cancelText='Cancel',type='warning'}={}){
+  showSystemModal({title,message,type,confirmText,cancelText,onConfirm});
+}
+window.alert=function(message){appNotice(message,'Notification','info')};
+
 function esc(v){return String(v??'').replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
-function deleteQuote(id){let a=quoteStore(),q=a.find(x=>x.id===id);if(!q)return;if(!confirm(`Delete “${q.name}” permanently? This action cannot be undone.`))return;putQuotes(a.filter(x=>x.id!==id));if(currentQuoteId===id){currentQuoteId=null;localStorage.removeItem('apcs_cm_current_quote_v1')}closeRecordMenu();renderQuotes();renderOnboarding()}
+function deleteQuote(id){let a=quoteStore(),q=a.find(x=>x.id===id);if(!q)return;appConfirm(`Delete “${q.name}” permanently?
+
+This action cannot be undone.`,()=>{putQuotes(a.filter(x=>x.id!==id));if(currentQuoteId===id){currentQuoteId=null;localStorage.removeItem('apcs_cm_current_quote_v1')}closeRecordMenu();renderQuotes();renderOnboarding()},{title:'Delete quote',confirmText:'Delete',type:'danger'})}
 function parseAUDate(d){let m=(d||'').trim().match(/^(\d{2})\/(\d{2})\/(\d{4})$/);if(!m)return null;let iso=`${m[3]}-${m[2]}-${m[1]}`,chk=new Date(iso+'T00:00:00');return(!isNaN(chk)&&chk.getFullYear()==+m[3]&&chk.getMonth()+1==+m[2]&&chk.getDate()==+m[1])?iso:null}
 function changeQuoteStatus(id,status,btn){
   let a=quoteStore(),i=a.findIndex(x=>x.id===id);if(i<0)return;
@@ -891,20 +1013,27 @@ function changeQuoteStatus(id,status,btn){
   let qt=q.quoteType||q.snapshot?.v?.quoteType||'New Quote';
 
   if(status==='Lost'){
-    if(!confirm(`Mark ${q.name} as Lost?`))return;
-    let t=nowISO();q.status='Lost';q.lostDate=t;q.updatedAt=t;addHistory(q,'Lost');a[i]=q;putQuotes(a);
-    renderQuotes();
-    alert(`${q.name} is now Lost. Lost date/time has been captured. The record is available in Quotes → Quote List → Lost.`);
+    appConfirm(`Mark ${q.name} as Lost?`,()=>{
+      let t=nowISO();q.status='Lost';q.lostDate=t;q.updatedAt=t;addHistory(q,'Lost');a[i]=q;putQuotes(a);
+      renderQuotes();
+      appNotice(`${q.name} is now Lost. Lost date/time has been captured. The record is available in Quotes → Quote List → Lost.`,'Quote updated','success');
+    },{title:'Mark quote as Lost',confirmText:'Mark Lost',type:'warning'});
     return;
   }
 
   if(status==='Won'){
     let label=qt==='Contract Renewal'?'Renewal Effective Date':'Expected Start Date';
-    let d=prompt(`${label} (dd/mm/yyyy)`);
-    if(!d)return;
-    let iso=parseAUDate(d);
-    if(!iso){alert(`Please enter a valid ${label} as dd/mm/yyyy.`);return}
-    let t=nowISO();
+    showInputModal({title:qt==='Contract Renewal'?'Confirm Contract Renewal':'Mark Quote as Won',label:`${label} (dd/mm/yyyy)`,placeholder:'dd/mm/yyyy',confirmText:'Confirm',onConfirm:(d)=>{
+      if(!d)return;
+      let iso=parseAUDate(d);
+      if(!iso){
+        const err=document.getElementById('inputModalError');
+        err.textContent=`Please enter a valid ${label} as dd/mm/yyyy.`;
+        err.style.display='block';
+        return;
+      }
+      closeInputModal();
+      let t=nowISO();
     q.status='Won';q.wonDate=t;q.expectedStartDate=iso;q.updatedAt=t;
     if(qt==='Contract Renewal'){
       if(q.onboarding&&!q.onboarding.completedAt)delete q.onboarding;
@@ -917,7 +1046,7 @@ function changeQuoteStatus(id,status,btn){
     a[i]=q;putQuotes(a);
 
     let saved=quoteStore().find(x=>x.id===id);
-    if(!saved||saved.status!=='Won'){alert('The Won status could not be saved. Please try again.');return}
+    if(!saved||saved.status!=='Won'){appNotice('The Won status could not be saved. Please try again.','Save failed','danger');return}
 
     quoteFilter='Won';
     document.querySelectorAll('.qfilter').forEach(b=>b.classList.toggle('on',b.dataset.filter==='Won'));
@@ -925,16 +1054,18 @@ function changeQuoteStatus(id,status,btn){
 
     if(qt==='Contract Renewal'){
       go('quotes');
-      setTimeout(()=>alert(`${q.name} contract renewal is now Won. Effective date: ${d}. It has not been added to Onboarding because this is an existing customer renewal.`),50);
+      setTimeout(()=>appNotice(`${q.name} contract renewal is now Won. Effective date: ${d}. It has not been added to Onboarding because this is an existing customer renewal.`,'Contract renewal won','success'),50);
     }else{
       go('onboarding');
-      setTimeout(()=>{renderOnboarding();alert(`${q.name} is now Won. Expected Start: ${d}. The customer is now in Our Customers → Onboarding Customers.`)},50);
+      setTimeout(()=>{renderOnboarding();appNotice(`${q.name} is now Won. Expected Start: ${d}. The customer is now in Our Customers → Onboarding Customers.`,'Quote won','success')},50);
     }
+    });
+    return;
   }
 }
 function openRecordMenu(id){let q=quoteStore().find(x=>x.id===id);if(!q)return;closeRecordMenu();let ov=document.createElement('div');ov.id='recordMenuModal';ov.className='modal on';ov.innerHTML=`<div class=modalbox style="max-width:460px"><h2 style="margin-top:0">Manage ${esc(q.status)} Quote</h2><p><b>${esc(q.name)}</b></p><div class=hint style="margin-bottom:8px">${esc(q.quoteType||q.snapshot?.v?.quoteType||'New Quote')}</div><div class=info>${q.status==='Lost'?`Lost: ${shortDateTime(q.lostDate)}`:`Won: ${shortDateTime(q.wonDate)}`}</div><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:18px"><button class=btn onclick="closeRecordMenu()">Cancel</button><button class=btn onclick="reopenQuote('${q.id}')">Reopen Quote</button><button class="btn dangerBtn" onclick="deleteQuote('${q.id}')">Delete</button></div></div>`;document.body.appendChild(ov)}
 function closeRecordMenu(){document.getElementById('recordMenuModal')?.remove()}
-function reopenQuote(id){let a=quoteStore(),i=a.findIndex(x=>x.id===id);if(i<0)return;let q=a[i];if(!confirm(`Reopen “${q.name}” and move it back to Pending?`))return;let old=q.status,t=nowISO();q.status='Pending';q.reopenedAt=t;q.updatedAt=t;if(old==='Won'&&q.onboarding&&!q.onboarding.completedAt)delete q.onboarding;addHistory(q,'Reopened',`${old} → Pending`);a[i]=q;putQuotes(a);closeRecordMenu();quoteFilter='Pending';document.querySelectorAll('.qfilter').forEach(b=>b.classList.toggle('on',b.dataset.filter==='Pending'));renderQuotes();renderOnboarding();alert(`${q.name} has been reopened and is Pending again. Its previous ${old} history has been retained.`)}
+function reopenQuote(id){let a=quoteStore(),i=a.findIndex(x=>x.id===id);if(i<0)return;let q=a[i];appConfirm(`Reopen “${q.name}” and move it back to Pending?`,()=>{let old=q.status,t=nowISO();q.status='Pending';q.reopenedAt=t;q.updatedAt=t;if(old==='Won'&&q.onboarding&&!q.onboarding.completedAt)delete q.onboarding;addHistory(q,'Reopened',`${old} → Pending`);a[i]=q;putQuotes(a);closeRecordMenu();quoteFilter='Pending';document.querySelectorAll('.qfilter').forEach(b=>b.classList.toggle('on',b.dataset.filter==='Pending'));renderQuotes();renderOnboarding();appNotice(`${q.name} has been reopened and is Pending again. Its previous ${old} history has been retained.`,'Quote reopened','success')},{title:'Reopen quote',confirmText:'Reopen',type:'warning'})}
 function migrateWorkflow(){
   // Clean rebuild: old Rate Builder workflow/test records are intentionally ignored.
   // Customer master data, profiles and rate cards use separate keys and are preserved.
@@ -968,8 +1099,8 @@ function renderOnboarding(){if(!$('onboardingTable'))return;let rows=onboardingR
 function openOnboarding(qid){let q=quoteStore().find(x=>x.id===qid&&x.status==='Won');if(!q)return;let o=ensureOnboarding(q),s=onboardingState(o);$('onboardingDetail').innerHTML=`<div class="card onboardCard"><div class=onboardHead><div><h2 style="margin:0">${esc(q.name)} · ${q.model}</h2><div class=hint>Won ${shortDateTime(q.wonDate)} · Expected Start ${shortDate(q.expectedStartDate)}</div></div><div style="min-width:220px"><b>${s.done} of ${s.total} complete — ${s.pct}%</b><div class=progressTrack><div class=progressFill style="width:${s.pct}%"></div></div></div></div><div style="margin-top:15px"><div class=taskRow style="font-weight:750;color:#50697b"><span></span><span>Task</span><span>Owner(s)</span><span>Due Date</span><span></span></div>${o.tasks.map(t=>`<div class=taskRow><input class=taskCheck type=checkbox ${t.done?'checked':''} onchange="updateTask('${q.id}','${t.id}','done',this.checked)"><div><input type=text value="${esc(t.name)}" onchange="updateTask('${q.id}','${t.id}','name',this.value)"><div class=hint>${esc(t.description||'')}</div></div><input type=text value="${esc(t.owners||'')}" placeholder="Owner(s)" onchange="updateTask('${q.id}','${t.id}','owners',this.value)"><input type=date value="${t.dueDate||''}" onchange="updateTask('${q.id}','${t.id}','dueDate',this.value)"><button class=taskDelete title="Delete task" onclick="deleteTask('${q.id}','${t.id}')">×</button></div>`).join('')}</div><div style="margin-top:12px"><button class=btn onclick="addTask('${q.id}')">+ Add Task</button></div><div class=startBlock><div><b>${s.pct===100?'Checklist complete':'Complete all checklist tasks before starting the customer.'}</b><div class=hint>Mark as Started creates the active Customer Profile and closes onboarding.</div></div><button class="btn primary" ${s.pct===100?'':'disabled'} onclick="markStarted('${q.id}')">Mark as Started</button></div></div>`}
 function updateTask(qid,tid,field,val){let a=quoteStore(),q=a.find(x=>x.id===qid);if(!q)return;let t=ensureOnboarding(q).tasks.find(x=>x.id===tid);if(!t)return;t[field]=val;q.updatedAt=nowISO();putQuotes(a);renderOnboarding();openOnboarding(qid)}
 function addTask(qid){let a=quoteStore(),q=a.find(x=>x.id===qid);if(!q)return;ensureOnboarding(q).tasks.push({id:'T-'+Date.now(),name:'New onboarding task',description:'',owners:'',dueDate:'',done:false,notes:''});q.updatedAt=nowISO();putQuotes(a);renderOnboarding();openOnboarding(qid)}
-function deleteTask(qid,tid){let a=quoteStore(),q=a.find(x=>x.id===qid);if(!q||!confirm('Delete this onboarding task?'))return;q.onboarding.tasks=q.onboarding.tasks.filter(x=>x.id!==tid);q.updatedAt=nowISO();putQuotes(a);renderOnboarding();openOnboarding(qid)}
-function markStarted(qid){let a=quoteStore(),q=a.find(x=>x.id===qid);if(!q)return;let o=ensureOnboarding(q),s=onboardingState(o);if(s.pct!==100){alert('All onboarding tasks must be completed first.');return}if(!confirm(`Mark ${q.name} as Started and move the customer to Active Customers?`))return;let t=nowISO(),today=t.slice(0,10);o.completedAt=t;o.status='Completed';q.actualStartDate=t;q.updatedAt=t;addHistory(q,'Onboarding Completed','Moved to Active Customers');putQuotes(a);let c=customCustomers(),exists=(c[q.model]||[]).some(x=>x.customer===q.name);if(!exists){c[q.model].push({customer:q.name,account:q.name});localStorage.setItem('apcs_customers_v4',JSON.stringify(c))}let st=profiles(),key=q.model+'|'+q.name+'|'+q.name;if(!st[key])st[key]={commence:today,status:'Active',notes:'Created from completed onboarding.',rates:{}};localStorage.setItem('apcs_profiles_v4',JSON.stringify(st));renderOnboarding();$('onboardingDetail').innerHTML='';renderList();renderRatePage();alert(`${q.name} onboarding is complete. View the customer in Our Customers → Active Customers.`);go('profile')}
+function deleteTask(qid,tid){let a=quoteStore(),q=a.find(x=>x.id===qid);if(!q)return;appConfirm('Delete this onboarding task?',()=>{q.onboarding.tasks=q.onboarding.tasks.filter(x=>x.id!==tid);q.updatedAt=nowISO();putQuotes(a);renderOnboarding();openOnboarding(qid)},{title:'Delete task',confirmText:'Delete',type:'danger'})}
+function markStarted(qid){let a=quoteStore(),q=a.find(x=>x.id===qid);if(!q)return;let o=ensureOnboarding(q),s=onboardingState(o);if(s.pct!==100){appNotice('All onboarding tasks must be completed first.','Onboarding incomplete','warning');return}appConfirm(`Mark ${q.name} as Started and move the customer to Active Customers?`,()=>{let t=nowISO(),today=t.slice(0,10);o.completedAt=t;o.status='Completed';q.actualStartDate=t;q.updatedAt=t;addHistory(q,'Onboarding Completed','Moved to Active Customers');putQuotes(a);let c=customCustomers(),exists=(c[q.model]||[]).some(x=>x.customer===q.name);if(!exists){c[q.model].push({customer:q.name,account:q.name});localStorage.setItem('apcs_customers_v4',JSON.stringify(c))}let st=profiles(),key=q.model+'|'+q.name+'|'+q.name;if(!st[key])st[key]={commence:today,status:'Active',notes:'Created from completed onboarding.',rates:{}};localStorage.setItem('apcs_profiles_v4',JSON.stringify(st));renderOnboarding();$('onboardingDetail').innerHTML='';renderList();renderRatePage();appNotice(`${q.name} onboarding is complete. View the customer in Our Customers → Active Customers.`,'Onboarding complete','success');go('profile')},{title:'Complete onboarding',confirmText:'Mark Started',type:'success'})}
 ['Portmark','Label','Shrinkwrap','Handstack','Mix product','Single product','Temp logger'].forEach(x=>$('extras').insertAdjacentHTML('beforeend',`<label><input type=checkbox><span>${x}</span></label>`));
 migrateWorkflow();migrateQuoteTypeAndRateCardV2();if(!restore()){addRec();addRoom()}renderQuotes();renderOnboarding();prodUI();loadUI();calc();requestAnimationFrame(()=>{renderList();renderRatePage()});document.addEventListener('input',e=>{if(e.target.closest('#quote'))calc()});document.addEventListener('change',e=>{if(e.target.closest('#quote'))calc()});
 // v7.1 clean workflow: Draft -> Pending -> Won/Lost; Won derives onboarding directly from quote record
@@ -1021,5 +1152,43 @@ migrateWorkflow();migrateQuoteTypeAndRateCardV2();if(!restore()){addRec();addRoo
     </div>
   </div>
 </div>
+
+
+<div id="systemModal" class="sysModal" aria-hidden="true">
+  <div class="sysModalCard" role="dialog" aria-modal="true" aria-labelledby="systemModalTitle">
+    <div class="sysModalHead">
+      <div id="systemModalIcon" class="sysModalIcon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <circle cx="12" cy="12" r="9"/><path d="M12 8v5"/><path d="M12 16h.01"/>
+        </svg>
+      </div>
+      <div><div id="systemModalTitle" class="sysModalTitle">Notification</div><div class="hint">APCS Commercial Management</div></div>
+    </div>
+    <div id="systemModalBody" class="sysModalBody"></div>
+    <div id="systemModalActions" class="sysModalActions"></div>
+  </div>
+</div>
+
+
+<div id="inputModal" class="sysModal" aria-hidden="true">
+  <div class="sysModalCard" role="dialog" aria-modal="true">
+    <div class="sysModalHead">
+      <div class="sysModalIcon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg>
+      </div>
+      <div><div id="inputModalTitle" class="sysModalTitle">Enter details</div><div class="hint">APCS Commercial Management</div></div>
+    </div>
+    <div class="sysModalBody">
+      <label id="inputModalLabel" class="inputModalLabel"></label>
+      <input id="inputModalField" class="inputModalField">
+      <div id="inputModalError" class="hint" style="color:#b42318;margin-top:7px;display:none"></div>
+    </div>
+    <div class="sysModalActions">
+      <button class="btn" onclick="closeInputModal()">Cancel</button>
+      <button id="inputModalConfirm" class="btn primary">Confirm</button>
+    </div>
+  </div>
+</div>
+<div class="buildTag">Build 10 · 30 Sep</div>
 
 </body></html>
