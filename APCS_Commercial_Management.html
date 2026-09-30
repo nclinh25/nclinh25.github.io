@@ -4,9 +4,11 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <script>
 (async function(){
-  const BUILD='14';
+  const BUILD='15';
   try{
     if('serviceWorker' in navigator){
       const regs=await navigator.serviceWorker.getRegistrations();
@@ -26,7 +28,7 @@
 </script>
 
 <title>APCS Commercial Management</title>
-<!-- BUILD: 14 | fixed JS parse error; buttons restored; pending date logic retained --><style>
+<!-- BUILD: 15 | MASTER Supabase + quote fixes + PDF + modal + scan logic --><style>
 :root{--navy:#073d69;--blue:#0b6ea8;--purple:#7057c8;--teal:#16847a;--bg:#eef5f9;--line:#d6e4ec;--text:#173246;--muted:#6d8494}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,"Segoe UI",Arial;background:linear-gradient(#f8fbfd,#edf4f8);color:var(--text)}
 header{height:72px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 24px;position:sticky;top:0;z-index:30}.brand b{font-size:18px;color:#0b416c}.brand small{display:block;color:var(--muted);font-size:11px}.nav{margin-left:auto;height:100%;display:flex}.nav button{border:0;background:transparent;padding:0 20px;font-weight:650;color:#50697b;cursor:pointer;border-bottom:3px solid transparent}.nav button:hover{color:#075f98;background:#f6fbfe}.nav button:active{background:#e2f1f9}.nav button.on{color:#075f98;border-bottom-color:#0b78b8;background:#eef7fc}.navGroup{position:relative;height:100%;display:flex;align-items:stretch}.navGroup>.navMain{height:100%}.navDrop{display:none;position:absolute;top:68px;right:0;min-width:205px;background:#fff;border:1px solid var(--line);border-radius:0 0 10px 10px;box-shadow:0 10px 25px #12384d24;padding:7px;z-index:60}.navGroup:hover .navDrop,.navGroup:focus-within .navDrop{display:block}.navDrop button{display:block;width:100%;height:42px;padding:0 13px!important;text-align:left;border:0!important;border-radius:7px;background:#fff!important;color:#416278!important}.navDrop button:hover{background:#eef7fc!important;color:#075f98!important}.navDrop button.subon{background:#e5f3fb!important;color:#075f98!important;font-weight:750}.navMain .chev{font-size:10px;margin-left:6px}
@@ -180,6 +182,15 @@ input, textarea, select, [contenteditable="true"] { user-select: text; -webkit-u
 .globalModalActions .btn{min-width:96px}
 .buildBanner{position:fixed;right:12px;bottom:12px;z-index:9999;background:#073d69;color:#fff;border-radius:999px;padding:5px 10px;font-size:10px;font-weight:700;box-shadow:0 4px 18px rgba(7,61,105,.25)}
 
+
+.dbStatus{
+  position:fixed;right:14px;bottom:48px;z-index:10002;
+  padding:7px 11px;border-radius:999px;background:#fff;
+  border:1px solid #d6e4ec;box-shadow:0 4px 18px #17324622;
+  font:700 10px Inter,"Segoe UI",Arial;color:#50697b;
+  transition:opacity .2s;
+}
+
 </style>
 
 </head><body>
@@ -235,6 +246,36 @@ input, textarea, select, [contenteditable="true"] { user-select: text; -webkit-u
 <script>
 const C3=[{"customer": "Australian Beef Trading Centre", "account": "ABTC"}, {"customer": "Antap", "account": "ANTAP"}, {"customer": "Asmarina", "account": "ASM"}, {"customer": "Audlay", "account": "KAR-PX"}, {"customer": "Aurum Poultry", "account": "AP"}, {"customer": "Thomas Food INT", "account": "TFI"}, {"customer": "Australian Lamb Colac", "account": "ALC"}, {"customer": "Colt Transport", "account": "CT"}, {"customer": "Effective Logistics", "account": "EF"}, {"customer": "G&K O'Connors", "account": "OCONN"}, {"customer": "G&K O'Connors", "account": "OCC"}, {"customer": "G&K O'Connors", "account": "GKOA"}, {"customer": "G&V Transport", "account": "GV"}, {"customer": "Harmony Fine Foods", "account": "HAR"}, {"customer": "Harmony Mixed", "account": "HARM"}, {"customer": "John Dee", "account": "JD"}, {"customer": "Australian Beef Company Pty Ltd", "account": "JOC"}, {"customer": "MCG International", "account": "MCG"}, {"customer": "Mort & Co", "account": "MCM"}, {"customer": "Paradigm Foods", "account": "PF"}, {"customer": "Paradigm Foods", "account": "PFC"}, {"customer": "Ravensworth", "account": "RAV"}, {"customer": "RPC Foods", "account": "RPCF"}, {"customer": "Security Foods", "account": "SEC"}, {"customer": "Smiths TMP", "account": "STMP"}, {"customer": "Stone Axe", "account": "SAX"}, {"customer": "Stone Axe", "account": "SAXC"}], CT=[{"customer": "A&D", "account": "A&D"}, {"customer": "A&A", "account": "A&A"}, {"customer": "Farmers Mate 4 Pets", "account": "Farmers Mate 4 Pets"}, {"customer": "French Par Bake", "account": "French Par Bake"}, {"customer": "Melrina", "account": "Melrina"}, {"customer": "Nationwide", "account": "Nationwide"}, {"customer": "Nationwide", "account": "Polar Meatwork"}, {"customer": "Nationwide", "account": "CleosPasta"}], SERVICES=[{"id": "svc000", "section": "Service - Frozen", "type": "Handling", "code": "108", "desc": "Port marking per carton", "standard": null}, {"id": "svc001", "section": "Service - Frozen", "type": "Handling", "code": "108A", "desc": "Port marking per carton (2+ port marks per container USA)", "standard": null}, {"id": "svc002", "section": "Service - Frozen", "type": "Handling", "code": "109", "desc": "Shrink wrapping per pallet", "standard": null}, {"id": "svc003", "section": "Service - Frozen", "type": "Handling", "code": "116", "desc": "Order Picking per carton", "standard": null}, {"id": "svc004", "section": "Service - Frozen", "type": "Handling", "code": "119", "desc": "Temp Logger", "standard": null}, {"id": "svc005", "section": "Service - Frozen", "type": "Handling", "code": "130", "desc": "Print Supplied Labels", "standard": null}, {"id": "svc006", "section": "Service - Frozen", "type": "Handling", "code": "131", "desc": "Carton / Pallet labels per label", "standard": null}, {"id": "svc007", "section": "Service - Frozen", "type": "Handling", "code": "132", "desc": "SSCC Labeling", "standard": null}, {"id": "svc008", "section": "Service - Frozen", "type": "Handling", "code": "320P", "desc": "Pallet Movements", "standard": null}, {"id": "svc009", "section": "Service - Frozen", "type": "Handling", "code": "523", "desc": "Loading 20ft container", "standard": null}, {"id": "svc010", "section": "Service - Frozen", "type": "Handling", "code": "523EU", "desc": "Loading 20ft container (Europe)", "standard": null}, {"id": "svc011", "section": "Service - Frozen", "type": "Handling", "code": "523A", "desc": "Loading/Unloading 20ft container (Primal)", "standard": null}, {"id": "svc012", "section": "Service - Frozen", "type": "Handling", "code": "523D", "desc": "Loading 20ft container (751+ Cartons)", "standard": null}, {"id": "svc013", "section": "Service - Frozen", "type": "Handling", "code": "524", "desc": "Unloading 20ft container", "standard": null}, {"id": "svc014", "section": "Service - Frozen", "type": "Handling", "code": "525", "desc": "Loading 40ft container", "standard": null}, {"id": "svc015", "section": "Service - Frozen", "type": "Handling", "code": "525A", "desc": "Loading/Unloading 40ft container (Primal)", "standard": null}, {"id": "svc016", "section": "Service - Frozen", "type": "Handling", "code": "525EU", "desc": "Loading 40ft container (Europe)", "standard": null}, {"id": "svc017", "section": "Service - Frozen", "type": "Handling", "code": "525D", "desc": "Loading 40ft container (1501+ Cartons)", "standard": null}, {"id": "svc018", "section": "Service - Frozen", "type": "Handling", "code": "526", "desc": "Unloading 40ft container", "standard": null}, {"id": "svc019", "section": "Service - Frozen", "type": "Handling", "code": "526B", "desc": "Unloading 40ft container (1501+ Cartons)", "standard": null}, {"id": "svc020", "section": "Service - Frozen", "type": "Blast", "code": "BREC", "desc": "Blast freezing per carton", "standard": 3.45}, {"id": "svc021", "section": "Service - Frozen", "type": "Blast", "code": "FRPA", "desc": "Adhoc Blast Freezing", "standard": null}, {"id": "svc022", "section": "Service - Frozen", "type": "Storage", "code": "", "desc": "Holding-over rate per month or part thereof per carton", "standard": 0.04}, {"id": "svc023", "section": "Service - Frozen", "type": "Handling", "code": "LLOP", "desc": "Order picking carton order", "standard": null}, {"id": "svc024", "section": "Service - Frozen", "type": "Handling", "code": "PICK", "desc": "Handling out of store per carton", "standard": 0.4}, {"id": "svc026", "section": "Service - Frozen", "type": "Handling", "code": "REC", "desc": "Handling into store per carton", "standard": 0.4}, {"id": "svc028", "section": "Service - Frozen", "type": "Handling", "code": "SCAN", "desc": "Catchweight Scanning per carton", "standard": 0.4}, {"id": "svc030", "section": "Service - Frozen", "type": "Storage", "code": "STOR", "desc": "Storage per week or part thereof per carton", "standard": 0.4}, {"id": "svc031", "section": "Service - Chilled", "type": "Handling", "code": "PICKP", "desc": "Handling out of store per pallet", "standard": 12}, {"id": "svc032", "section": "Service - Chilled", "type": "Handling", "code": "RECP", "desc": "Handling into store per pallet", "standard": 12}, {"id": "svc033", "section": "Service - Chilled", "type": "Storage", "code": "STOPP / STOP", "desc": "Storage per week or part thereof per pallet", "standard": 12}, {"id": "svc034", "section": "Administration Charges", "type": "Handling", "code": "105", "desc": "Export permit", "standard": null}, {"id": "svc035", "section": "Administration Charges", "type": "Handling", "code": "106", "desc": "PRA only", "standard": null}, {"id": "svc036", "section": "Administration Charges", "type": "Handling", "code": "107", "desc": "RFP Additional lines charged per line", "standard": null}, {"id": "svc037", "section": "Administration Charges", "type": "Handling", "code": "110", "desc": "RFP only", "standard": null}, {"id": "svc038", "section": "Administration Charges", "type": "Handling", "code": "111", "desc": "Halal Interim Certificate", "standard": null}, {"id": "svc039", "section": "Administration Charges", "type": "Handling", "code": "120", "desc": "Admin Charge Per Container / Order", "standard": null}, {"id": "svc040", "section": "Administration Charges", "type": "Handling", "code": "121", "desc": "Container Logistics per container", "standard": null}, {"id": "svc041", "section": "Administration Charges", "type": "Handling", "code": "600", "desc": "Meat transfer certificate", "standard": null}, {"id": "svc042", "section": "Administration Charges", "type": "Handling", "code": "621", "desc": "Late Order Advice", "standard": null}, {"id": "svc043", "section": "Administration Charges", "type": "Handling", "code": "625", "desc": "20ft Container Transport per container", "standard": null}, {"id": "svc044", "section": "Administration Charges", "type": "Handling", "code": "626", "desc": "40ft Container Transport per container", "standard": null}, {"id": "svc045", "section": "Overtime – Weekday", "type": "Handling", "code": "", "desc": "Supervisor per hour/person", "standard": null}, {"id": "svc046", "section": "Overtime – Weekday", "type": "Handling", "code": "", "desc": "Labour per hour/person", "standard": null}, {"id": "svc047", "section": "Overtime – Weekday", "type": "Handling", "code": "", "desc": "Forklift operator per hour/person", "standard": null}, {"id": "svc048", "section": "Saturday – Minimum 4 hours Charge", "type": "Handling", "code": "", "desc": "Supervisor per hour/person", "standard": null}, {"id": "svc049", "section": "Saturday – Minimum 4 hours Charge", "type": "Handling", "code": "", "desc": "Labour per hour/person", "standard": null}, {"id": "svc050", "section": "Saturday – Minimum 4 hours Charge", "type": "Handling", "code": "", "desc": "Forklift operator per hour/person", "standard": null}, {"id": "svc051", "section": "Sunday / Public Holiday – Minimum 4 hours Charge", "type": "Handling", "code": "", "desc": "Supervisor per hour/person", "standard": null}, {"id": "svc052", "section": "Sunday / Public Holiday – Minimum 4 hours Charge", "type": "Handling", "code": "", "desc": "Labour per hour/person", "standard": null}, {"id": "svc053", "section": "Sunday / Public Holiday – Minimum 4 hours Charge", "type": "Handling", "code": "", "desc": "Forklift operator per hour/person", "standard": null}], DEFAULT_B=[0, 4000, 8000, 60000, 120000, 143000, 112000, 90000, 100000, 110000, 115000, 120000];
 let qm='3PL',pm='3PL',selected=null,timer,chosenMatch=null;
+/* Supabase persistence bridge: app keeps its current localStorage API, Supabase is the shared source. */
+const APCS_SUPABASE_URL='https://facwyhjemlhmlbqcebqi.supabase.co';
+const APCS_SUPABASE_KEY='sb_publishable_kHFBSykS_QqFGlE3GFHgmA_mTKfXG2j';
+const APCS_DB=window.supabase?window.supabase.createClient(APCS_SUPABASE_URL,APCS_SUPABASE_KEY):null;
+const APCS_NATIVE_SET=Storage.prototype.setItem,APCS_NATIVE_REMOVE=Storage.prototype.removeItem;
+let apcsSyncTimers=new Map(),apcsHydrating=false;
+function dbBadge(msg,ok=true){let e=document.getElementById('apcsDbStatus');if(!e)return;e.textContent=msg;e.style.color=ok?'#14776e':'#a33b32';e.style.opacity=ok?'.65':'1'}
+async function dbPush(k,v){if(!APCS_DB||apcsHydrating||!String(k).startsWith('apcs_'))return;let {error}=await APCS_DB.from('app_state').upsert({state_key:String(k),raw_value:String(v),updated_at:new Date().toISOString()},{onConflict:'state_key'});dbBadge(error?'Database sync error':'Database synced',!error);if(error)console.error(error)}
+async function dbDelete(k){if(!APCS_DB||apcsHydrating||!String(k).startsWith('apcs_'))return;let {error}=await APCS_DB.from('app_state').delete().eq('state_key',String(k));dbBadge(error?'Database sync error':'Database synced',!error);if(error)console.error(error)}
+Storage.prototype.setItem=function(k,v){APCS_NATIVE_SET.call(this,k,v);if(this===localStorage&&String(k).startsWith('apcs_')){clearTimeout(apcsSyncTimers.get(k));apcsSyncTimers.set(k,setTimeout(()=>dbPush(k,v),180))}};
+Storage.prototype.removeItem=function(k){APCS_NATIVE_REMOVE.call(this,k);if(this===localStorage&&String(k).startsWith('apcs_'))dbDelete(k)};
+async function bootstrapDatabase(){
+  if(!APCS_DB){dbBadge('Database unavailable',false);return}
+  dbBadge('Database connecting…');
+  let {data,error}=await APCS_DB.from('app_state').select('state_key,raw_value');
+  if(error){console.error(error);dbBadge('Database not connected',false);return}
+  if(!data||!data.length){
+    let rows=[];for(let i=0;i<localStorage.length;i++){let k=localStorage.key(i);if(k&&k.startsWith('apcs_'))rows.push({state_key:k,raw_value:localStorage.getItem(k)||'',updated_at:new Date().toISOString()})}
+    if(rows.length){let r=await APCS_DB.from('app_state').upsert(rows,{onConflict:'state_key'});if(r.error){console.error(r.error);dbBadge('Database migration error',false);return}}
+    dbBadge('Database connected');return
+  }
+  apcsHydrating=true;let changed=false,remote=new Set(data.map(r=>r.state_key));
+  data.forEach(r=>{if(localStorage.getItem(r.state_key)!==r.raw_value){APCS_NATIVE_SET.call(localStorage,r.state_key,r.raw_value);changed=true}});
+  let localKeys=[];for(let i=0;i<localStorage.length;i++){let k=localStorage.key(i);if(k&&k.startsWith('apcs_'))localKeys.push(k)}
+  localKeys.forEach(k=>{if(!remote.has(k)){APCS_NATIVE_REMOVE.call(localStorage,k);changed=true}});
+  apcsHydrating=false;dbBadge('Database connected');
+  if(changed&&sessionStorage.getItem('apcs_db_reload')!=='1'){sessionStorage.setItem('apcs_db_reload','1');location.reload()}else sessionStorage.removeItem('apcs_db_reload')
+}
+window.addEventListener('load',bootstrapDatabase);
+
 const $=x=>document.getElementById(x), money=n=>n===null||n===undefined||n===''?'—':'$'+Number(n).toLocaleString(undefined,{maximumFractionDigits:2}), days=(n,u)=>+n*(u==='days'?1:u==='weeks'?7:u==='months'?30:0);
 function go(p){
   document.querySelectorAll('.page').forEach(x=>x.classList.remove('on'));
@@ -1302,6 +1343,7 @@ migrateWorkflow();migratePendingStartDatesV13();migrateQuoteTypeAndRateCardV2();
     <div id="globalModalActions" class="globalModalActions"></div>
   </div>
 </div>
-<div class="buildBanner">BUILD 14 · JS FIXED</div>
+<div class="buildBanner">BUILD 15 · SUPABASE MASTER</div>
 
+<div id="apcsDbStatus" class="dbStatus">Database connecting…</div>
 </body></html>
