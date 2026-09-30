@@ -5,7 +5,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>APCS Commercial Management</title>
-<!-- BUILD: 21 | Supabase client restored | zero reload hydration | no flicker --><style>
+<!-- BUILD: 22 | direct Supabase REST | no reload | 4-week long-stay recovery --><style>
 :root{--navy:#073d69;--blue:#0b6ea8;--purple:#7057c8;--teal:#16847a;--bg:#eef5f9;--line:#d6e4ec;--text:#173246;--muted:#6d8494}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,"Segoe UI",Arial;background:linear-gradient(#f8fbfd,#edf4f8);color:var(--text)}
 header{height:72px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 24px;position:sticky;top:0;z-index:30}.brand b{font-size:18px;color:#0b416c}.brand small{display:block;color:var(--muted);font-size:11px}.nav{margin-left:auto;height:100%;display:flex}.nav button{border:0;background:transparent;padding:0 20px;font-weight:650;color:#50697b;cursor:pointer;border-bottom:3px solid transparent}.nav button:hover{color:#075f98;background:#f6fbfe}.nav button:active{background:#e2f1f9}.nav button.on{color:#075f98;border-bottom-color:#0b78b8;background:#eef7fc}.navGroup{position:relative;height:100%;display:flex;align-items:stretch}.navGroup>.navMain{height:100%}.navDrop{display:none;position:absolute;top:68px;right:0;min-width:205px;background:#fff;border:1px solid var(--line);border-radius:0 0 10px 10px;box-shadow:0 10px 25px #12384d24;padding:7px;z-index:60}.navGroup:hover .navDrop,.navGroup:focus-within .navDrop{display:block}.navDrop button{display:block;width:100%;height:42px;padding:0 13px!important;text-align:left;border:0!important;border-radius:7px;background:#fff!important;color:#416278!important}.navDrop button:hover{background:#eef7fc!important;color:#075f98!important}.navDrop button.subon{background:#e5f3fb!important;color:#075f98!important;font-weight:750}.navMain .chev{font-size:10px;margin-left:6px}
@@ -210,11 +210,6 @@ input, textarea, select, [contenteditable="true"] { user-select: text; -webkit-u
 
 </style>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-<script>
-try{sessionStorage.removeItem('apcs_db_reload')}catch(e){}
-</script>
 
 </head><body>
 <header><div class=brand><b>Austco Polar Cold Storage</b><small>Commercial Management</small></div><div class=nav><button id=nrate class=on onclick="go('rate')">Rate Card</button><div class=navGroup><button id=nquotesMain class=navMain onclick="go('quotes')">Quotes <span class=chev>▼</span></button><div class=navDrop><button id=subquote onclick="go('quote')">Create Quote</button><button id=subquotes onclick="go('quotes')">Quote List</button></div></div><div class=navGroup><button id=ncustomersMain class=navMain onclick="go('onboarding')">Our Customers <span class=chev>▼</span></button><div class=navDrop><button id=subonboarding onclick="go('onboarding')">Onboarding Customers</button><button id=subprofile onclick="go('profile')">Active Customers</button></div></div></div></header>
@@ -269,55 +264,108 @@ try{sessionStorage.removeItem('apcs_db_reload')}catch(e){}
 <script>
 const C3=[{"customer": "Australian Beef Trading Centre", "account": "ABTC"}, {"customer": "Antap", "account": "ANTAP"}, {"customer": "Asmarina", "account": "ASM"}, {"customer": "Audlay", "account": "KAR-PX"}, {"customer": "Aurum Poultry", "account": "AP"}, {"customer": "Thomas Food INT", "account": "TFI"}, {"customer": "Australian Lamb Colac", "account": "ALC"}, {"customer": "Colt Transport", "account": "CT"}, {"customer": "Effective Logistics", "account": "EF"}, {"customer": "G&K O'Connors", "account": "OCONN"}, {"customer": "G&K O'Connors", "account": "OCC"}, {"customer": "G&K O'Connors", "account": "GKOA"}, {"customer": "G&V Transport", "account": "GV"}, {"customer": "Harmony Fine Foods", "account": "HAR"}, {"customer": "Harmony Mixed", "account": "HARM"}, {"customer": "John Dee", "account": "JD"}, {"customer": "Australian Beef Company Pty Ltd", "account": "JOC"}, {"customer": "MCG International", "account": "MCG"}, {"customer": "Mort & Co", "account": "MCM"}, {"customer": "Paradigm Foods", "account": "PF"}, {"customer": "Paradigm Foods", "account": "PFC"}, {"customer": "Ravensworth", "account": "RAV"}, {"customer": "RPC Foods", "account": "RPCF"}, {"customer": "Security Foods", "account": "SEC"}, {"customer": "Smiths TMP", "account": "STMP"}, {"customer": "Stone Axe", "account": "SAX"}, {"customer": "Stone Axe", "account": "SAXC"}], CT=[{"customer": "A&D", "account": "A&D"}, {"customer": "A&A", "account": "A&A"}, {"customer": "Farmers Mate 4 Pets", "account": "Farmers Mate 4 Pets"}, {"customer": "French Par Bake", "account": "French Par Bake"}, {"customer": "Melrina", "account": "Melrina"}, {"customer": "Nationwide", "account": "Nationwide"}, {"customer": "Nationwide", "account": "Polar Meatwork"}, {"customer": "Nationwide", "account": "CleosPasta"}], SERVICES=[{"id": "svc000", "section": "Service - Frozen", "type": "Handling", "code": "108", "desc": "Port marking per carton", "standard": null}, {"id": "svc001", "section": "Service - Frozen", "type": "Handling", "code": "108A", "desc": "Port marking per carton (2+ port marks per container USA)", "standard": null}, {"id": "svc002", "section": "Service - Frozen", "type": "Handling", "code": "109", "desc": "Shrink wrapping per pallet", "standard": null}, {"id": "svc003", "section": "Service - Frozen", "type": "Handling", "code": "116", "desc": "Order Picking per carton", "standard": null}, {"id": "svc004", "section": "Service - Frozen", "type": "Handling", "code": "119", "desc": "Temp Logger", "standard": null}, {"id": "svc005", "section": "Service - Frozen", "type": "Handling", "code": "130", "desc": "Print Supplied Labels", "standard": null}, {"id": "svc006", "section": "Service - Frozen", "type": "Handling", "code": "131", "desc": "Carton / Pallet labels per label", "standard": null}, {"id": "svc007", "section": "Service - Frozen", "type": "Handling", "code": "132", "desc": "SSCC Labeling", "standard": null}, {"id": "svc008", "section": "Service - Frozen", "type": "Handling", "code": "320P", "desc": "Pallet Movements", "standard": null}, {"id": "svc009", "section": "Service - Frozen", "type": "Handling", "code": "523", "desc": "Loading 20ft container", "standard": null}, {"id": "svc010", "section": "Service - Frozen", "type": "Handling", "code": "523EU", "desc": "Loading 20ft container (Europe)", "standard": null}, {"id": "svc011", "section": "Service - Frozen", "type": "Handling", "code": "523A", "desc": "Loading/Unloading 20ft container (Primal)", "standard": null}, {"id": "svc012", "section": "Service - Frozen", "type": "Handling", "code": "523D", "desc": "Loading 20ft container (751+ Cartons)", "standard": null}, {"id": "svc013", "section": "Service - Frozen", "type": "Handling", "code": "524", "desc": "Unloading 20ft container", "standard": null}, {"id": "svc014", "section": "Service - Frozen", "type": "Handling", "code": "525", "desc": "Loading 40ft container", "standard": null}, {"id": "svc015", "section": "Service - Frozen", "type": "Handling", "code": "525A", "desc": "Loading/Unloading 40ft container (Primal)", "standard": null}, {"id": "svc016", "section": "Service - Frozen", "type": "Handling", "code": "525EU", "desc": "Loading 40ft container (Europe)", "standard": null}, {"id": "svc017", "section": "Service - Frozen", "type": "Handling", "code": "525D", "desc": "Loading 40ft container (1501+ Cartons)", "standard": null}, {"id": "svc018", "section": "Service - Frozen", "type": "Handling", "code": "526", "desc": "Unloading 40ft container", "standard": null}, {"id": "svc019", "section": "Service - Frozen", "type": "Handling", "code": "526B", "desc": "Unloading 40ft container (1501+ Cartons)", "standard": null}, {"id": "svc020", "section": "Service - Frozen", "type": "Blast", "code": "BREC", "desc": "Blast freezing per carton", "standard": 3.45}, {"id": "svc021", "section": "Service - Frozen", "type": "Blast", "code": "FRPA", "desc": "Adhoc Blast Freezing", "standard": null}, {"id": "svc023", "section": "Service - Frozen", "type": "Handling", "code": "LLOP", "desc": "Order picking carton order", "standard": null}, {"id": "svc024", "section": "Service - Frozen", "type": "Handling", "code": "PICK", "desc": "Handling out of store per carton", "standard": 0.4}, {"id": "svc026", "section": "Service - Frozen", "type": "Handling", "code": "REC", "desc": "Handling into store per carton", "standard": 0.4}, {"id": "svc028", "section": "Service - Frozen", "type": "Handling", "code": "SCAN", "desc": "Catchweight Scanning per carton", "standard": 0.4}, {"id": "svc030", "section": "Service - Frozen", "type": "Storage", "code": "STOR", "desc": "Storage per week or part thereof per carton", "standard": 0.44}, {"id": "svc031", "section": "Service - Chilled", "type": "Handling", "code": "PICKP", "desc": "Handling out of store per pallet", "standard": 12}, {"id": "svc032", "section": "Service - Chilled", "type": "Handling", "code": "RECP", "desc": "Handling into store per pallet", "standard": 12}, {"id": "svc033", "section": "Service - Chilled", "type": "Storage", "code": "STOPP / STOP", "desc": "Storage per week or part thereof per pallet", "standard": 13.44}, {"id": "svc034", "section": "Administration Charges", "type": "Handling", "code": "105", "desc": "Export permit", "standard": null}, {"id": "svc035", "section": "Administration Charges", "type": "Handling", "code": "106", "desc": "PRA only", "standard": null}, {"id": "svc036", "section": "Administration Charges", "type": "Handling", "code": "107", "desc": "RFP Additional lines charged per line", "standard": null}, {"id": "svc037", "section": "Administration Charges", "type": "Handling", "code": "110", "desc": "RFP only", "standard": null}, {"id": "svc038", "section": "Administration Charges", "type": "Handling", "code": "111", "desc": "Halal Interim Certificate", "standard": null}, {"id": "svc039", "section": "Administration Charges", "type": "Handling", "code": "120", "desc": "Admin Charge Per Container / Order", "standard": null}, {"id": "svc040", "section": "Administration Charges", "type": "Handling", "code": "121", "desc": "Container Logistics per container", "standard": null}, {"id": "svc041", "section": "Administration Charges", "type": "Handling", "code": "600", "desc": "Meat transfer certificate", "standard": null}, {"id": "svc042", "section": "Administration Charges", "type": "Handling", "code": "621", "desc": "Late Order Advice", "standard": null}, {"id": "svc043", "section": "Administration Charges", "type": "Handling", "code": "625", "desc": "20ft Container Transport per container", "standard": null}, {"id": "svc044", "section": "Administration Charges", "type": "Handling", "code": "626", "desc": "40ft Container Transport per container", "standard": null}, {"id": "svc045", "section": "Overtime – Weekday", "type": "Handling", "code": "", "desc": "Supervisor per hour/person", "standard": null}, {"id": "svc046", "section": "Overtime – Weekday", "type": "Handling", "code": "", "desc": "Labour per hour/person", "standard": null}, {"id": "svc047", "section": "Overtime – Weekday", "type": "Handling", "code": "", "desc": "Forklift operator per hour/person", "standard": null}, {"id": "svc048", "section": "Saturday – Minimum 4 hours Charge", "type": "Handling", "code": "", "desc": "Supervisor per hour/person", "standard": null}, {"id": "svc049", "section": "Saturday – Minimum 4 hours Charge", "type": "Handling", "code": "", "desc": "Labour per hour/person", "standard": null}, {"id": "svc050", "section": "Saturday – Minimum 4 hours Charge", "type": "Handling", "code": "", "desc": "Forklift operator per hour/person", "standard": null}, {"id": "svc051", "section": "Sunday / Public Holiday – Minimum 4 hours Charge", "type": "Handling", "code": "", "desc": "Supervisor per hour/person", "standard": null}, {"id": "svc052", "section": "Sunday / Public Holiday – Minimum 4 hours Charge", "type": "Handling", "code": "", "desc": "Labour per hour/person", "standard": null}, {"id": "svc053", "section": "Sunday / Public Holiday – Minimum 4 hours Charge", "type": "Handling", "code": "", "desc": "Forklift operator per hour/person", "standard": null}], DEFAULT_B=[0, 4000, 8000, 60000, 120000, 143000, 112000, 90000, 100000, 110000, 115000, 120000];
 let qm='3PL',pm='3PL',selected=null,timer,chosenMatch=null;
-/* Supabase persistence bridge: app keeps its current localStorage API, Supabase is the shared source. */
+const LONG_STAY_RECOVERY_WEEKS=4;
+/* Supabase persistence bridge: direct REST API, no external JS library required. */
 const APCS_SUPABASE_URL='https://facwyhjemlhmlbqcebqi.supabase.co';
 const APCS_SUPABASE_KEY='sb_publishable_kHFBSykS_QqFGlE3GFHgmA_mTKfXG2j';
-let APCS_DB=null;
-function initSupabaseClient(){
-  if(APCS_DB)return APCS_DB;
-  if(window.supabase?.createClient){
-    APCS_DB=window.supabase.createClient(APCS_SUPABASE_URL,APCS_SUPABASE_KEY);
-  }
-  return APCS_DB;
-}
+const APCS_REST=APCS_SUPABASE_URL+'/rest/v1/app_state';
 const APCS_NATIVE_SET=Storage.prototype.setItem,APCS_NATIVE_REMOVE=Storage.prototype.removeItem;
 let apcsSyncTimers=new Map(),apcsHydrating=false;
-function dbBadge(msg,ok=true){let e=document.getElementById('apcsDbStatus');if(!e)return;e.textContent=msg;e.style.color=ok?'#14776e':'#a33b32';e.style.opacity=ok?'.65':'1'}
-async function dbPush(k,v){initSupabaseClient();if(!APCS_DB||apcsHydrating||!String(k).startsWith('apcs_'))return;let {error}=await APCS_DB.from('app_state').upsert({state_key:String(k),raw_value:String(v),updated_at:new Date().toISOString()},{onConflict:'state_key'});dbBadge(error?'Database sync error':'Database synced',!error);if(error)console.error(error)}
-async function dbDelete(k){initSupabaseClient();if(!APCS_DB||apcsHydrating||!String(k).startsWith('apcs_'))return;let {error}=await APCS_DB.from('app_state').delete().eq('state_key',String(k));dbBadge(error?'Database sync error':'Database synced',!error);if(error)console.error(error)}
-Storage.prototype.setItem=function(k,v){APCS_NATIVE_SET.call(this,k,v);if(this===localStorage&&String(k).startsWith('apcs_')){clearTimeout(apcsSyncTimers.get(k));apcsSyncTimers.set(k,setTimeout(()=>dbPush(k,v),180))}};
-Storage.prototype.removeItem=function(k){APCS_NATIVE_REMOVE.call(this,k);if(this===localStorage&&String(k).startsWith('apcs_'))dbDelete(k)};
+
+function dbBadge(msg,ok=true){
+  let e=document.getElementById('apcsDbStatus');if(!e)return;
+  e.textContent=msg;e.style.color=ok?'#14776e':'#a33b32';e.style.opacity=ok?'.65':'1'
+}
+function dbHeaders(extra={}){
+  return {
+    'apikey':APCS_SUPABASE_KEY,
+    'Authorization':'Bearer '+APCS_SUPABASE_KEY,
+    'Content-Type':'application/json',
+    ...extra
+  };
+}
+async function dbRequest(url,opts={}){
+  const res=await fetch(url,{...opts,headers:dbHeaders(opts.headers||{})});
+  if(!res.ok){
+    const txt=await res.text().catch(()=>res.statusText);
+    throw new Error(`Supabase ${res.status}: ${txt}`);
+  }
+  if(res.status===204)return null;
+  const txt=await res.text();
+  return txt?JSON.parse(txt):null;
+}
+async function dbPush(k,v){
+  if(apcsHydrating||!String(k).startsWith('apcs_'))return;
+  try{
+    await dbRequest(APCS_REST+'?on_conflict=state_key',{
+      method:'POST',
+      headers:{'Prefer':'resolution=merge-duplicates,return=minimal'},
+      body:JSON.stringify([{state_key:String(k),raw_value:String(v),updated_at:new Date().toISOString()}])
+    });
+    dbBadge('Database synced');
+  }catch(error){console.error(error);dbBadge('Database sync error',false)}
+}
+async function dbDelete(k){
+  if(apcsHydrating||!String(k).startsWith('apcs_'))return;
+  try{
+    await dbRequest(APCS_REST+'?state_key=eq.'+encodeURIComponent(String(k)),{method:'DELETE',headers:{'Prefer':'return=minimal'}});
+    dbBadge('Database synced');
+  }catch(error){console.error(error);dbBadge('Database sync error',false)}
+}
+Storage.prototype.setItem=function(k,v){
+  APCS_NATIVE_SET.call(this,k,v);
+  if(this===localStorage&&String(k).startsWith('apcs_')){
+    clearTimeout(apcsSyncTimers.get(k));
+    apcsSyncTimers.set(k,setTimeout(()=>dbPush(k,v),180));
+  }
+};
+Storage.prototype.removeItem=function(k){
+  APCS_NATIVE_REMOVE.call(this,k);
+  if(this===localStorage&&String(k).startsWith('apcs_'))dbDelete(k)
+};
 async function bootstrapDatabase(){
   dbBadge('Database connecting…');
-  for(let i=0;i<20;i++){
-    if(initSupabaseClient())break;
-    await new Promise(r=>setTimeout(r,150));
-  }
-  if(!APCS_DB){dbBadge('Database unavailable',false);console.error('Supabase client library did not load');return}
-
-  let {data,error}=await APCS_DB.from('app_state').select('state_key,raw_value');
-  if(error){console.error(error);dbBadge('Database not connected',false);return}
-  if(!data||!data.length){
-    let rows=[];for(let i=0;i<localStorage.length;i++){let k=localStorage.key(i);if(k&&k.startsWith('apcs_'))rows.push({state_key:k,raw_value:localStorage.getItem(k)||'',updated_at:new Date().toISOString()})}
-    if(rows.length){let r=await APCS_DB.from('app_state').upsert(rows,{onConflict:'state_key'});if(r.error){console.error(r.error);dbBadge('Database migration error',false);return}}
-    dbBadge('Database synced');return
-  }
-  apcsHydrating=true;let changed=false,remote=new Set(data.map(r=>r.state_key));
-  data.forEach(r=>{if(localStorage.getItem(r.state_key)!==r.raw_value){APCS_NATIVE_SET.call(localStorage,r.state_key,r.raw_value);changed=true}});
-  let localKeys=[];for(let i=0;i<localStorage.length;i++){let k=localStorage.key(i);if(k&&k.startsWith('apcs_'))localKeys.push(k)}
-  localKeys.forEach(k=>{if(!remote.has(k)){APCS_NATIVE_REMOVE.call(localStorage,k);changed=true}});
-  apcsHydrating=false;dbBadge('Database synced');
-  // Do not reload after hydration. Re-render in place so the page never flickers or loops.
   try{
-    renderQuotes();
-    renderOnboarding();
-    renderList();
-    renderRatePage();
-    if(currentQuoteId){
-      const q=quoteStore().find(x=>x.id===currentQuoteId);
-      if(q&&q.stage==='Draft'){}
+    let data=await dbRequest(APCS_REST+'?select=state_key,raw_value&order=state_key.asc');
+    if(!data||!data.length){
+      let rows=[];
+      for(let i=0;i<localStorage.length;i++){
+        let k=localStorage.key(i);
+        if(k&&k.startsWith('apcs_'))rows.push({state_key:k,raw_value:localStorage.getItem(k)||'',updated_at:new Date().toISOString()});
+      }
+      if(rows.length){
+        await dbRequest(APCS_REST+'?on_conflict=state_key',{
+          method:'POST',
+          headers:{'Prefer':'resolution=merge-duplicates,return=minimal'},
+          body:JSON.stringify(rows)
+        });
+      }
+      dbBadge('Database synced');
+      return;
     }
-  }catch(e){console.warn('Post-sync render warning',e)}
+
+    apcsHydrating=true;
+    let remote=new Set(data.map(r=>r.state_key));
+    data.forEach(r=>{
+      if(localStorage.getItem(r.state_key)!==r.raw_value){
+        APCS_NATIVE_SET.call(localStorage,r.state_key,r.raw_value);
+      }
+    });
+    let localKeys=[];
+    for(let i=0;i<localStorage.length;i++){
+      let k=localStorage.key(i);if(k&&k.startsWith('apcs_'))localKeys.push(k)
+    }
+    localKeys.forEach(k=>{if(!remote.has(k))APCS_NATIVE_REMOVE.call(localStorage,k)});
+    apcsHydrating=false;
+    dbBadge('Database synced');
+
+    // Re-render without reloading the page, preventing flicker/reload loops.
+    try{renderQuotes();renderOnboarding();renderList();renderRatePage()}catch(e){console.warn('Post-sync render warning',e)}
+  }catch(error){
+    apcsHydrating=false;
+    console.error(error);
+    dbBadge('Database unavailable',false);
+  }
 }
 window.addEventListener('load',bootstrapDatabase);
 
@@ -760,11 +808,12 @@ function buildCommercialScenarios(){
     const cycles=Math.max(horizonDays/days,1);
     const total=one.total*cycles;
     const opportunity=Math.max(0,total-proposal.total);
-    const recoveryWeeks=days/7;
+    const recoveryWeeks=LONG_STAY_RECOVERY_WEEKS;
     const units=one.storRateCarton?proposal.cartons:proposal.batchPallets;
     const baseRate=one.storRateCarton||one.storRatePallet||0;
-    const recommended=units&&recoveryWeeks?baseRate+(opportunity/(units*recoveryWeeks)):baseRate;
-    return {label,days,cycles,total,opportunity,recommended,baseRate,basis:one.storRateCarton?'carton':'pallet'};
+    const uplift=units&&recoveryWeeks?opportunity/(units*recoveryWeeks):0;
+    const recommended=baseRate+uplift;
+    return {label,days,cycles,total,opportunity,recommended,baseRate,uplift,recoveryWeeks,basis:one.storRateCarton?'carton':'pallet'};
   }
 
   const non=benchmark(nonDays,'Non-Ongoing');
@@ -778,6 +827,7 @@ function buildCommercialScenarios(){
     non,
     ongoing,
     recommendedType:cls.type,
+    recoveryWeeks:LONG_STAY_RECOVERY_WEEKS,
     reason:cls.reason
   };
 }
@@ -799,7 +849,7 @@ function renderScenarioAnalysis(){
         <b class=big>3-month turnover</b>
         <div>Potential revenue: <b>${money(s.non.total)}</b></div>
         <div>Opportunity lost vs proposal: <b>${money(s.non.opportunity)}</b></div>
-        <div style="margin-top:7px">Suggested long-stay rate: <b>${money(s.non.recommended)}/${s.non.basis}/week</b></div>
+        <div style="margin-top:7px">Suggested long-stay rate: <b>${money(s.non.recommended)}/${s.non.basis}/week</b></div><div class=hint style="margin-top:4px">${money(s.non.baseRate)} base + ${money(s.non.uplift)} recovery uplift over ${s.non.recoveryWeeks} weeks</div>
         ${s.recommendedType==='non-ongoing'?'<div class=recommendPill style="margin-top:8px">Closest profile match</div>':''}
       </div>
       <div class="scenarioCard ${s.recommendedType==='ongoing'?'recommended':''}">
@@ -807,7 +857,7 @@ function renderScenarioAnalysis(){
         <b class=big>1-month turnover</b>
         <div>Potential revenue: <b>${money(s.ongoing.total)}</b></div>
         <div>Opportunity lost vs proposal: <b>${money(s.ongoing.opportunity)}</b></div>
-        <div style="margin-top:7px">Suggested long-stay rate: <b>${money(s.ongoing.recommended)}/${s.ongoing.basis}/week</b></div>
+        <div style="margin-top:7px">Suggested long-stay rate: <b>${money(s.ongoing.recommended)}/${s.ongoing.basis}/week</b></div><div class=hint style="margin-top:4px">${money(s.ongoing.baseRate)} base + ${money(s.ongoing.uplift)} recovery uplift over ${s.ongoing.recoveryWeeks} weeks</div>
         ${s.recommendedType==='ongoing'?'<div class=recommendPill style="margin-top:8px">Closest profile match</div>':''}
       </div>
       <div class=scenarioCard>
@@ -829,14 +879,16 @@ function renderScenarioAnalysis(){
     </table>
 
     <div class=longStayProposal>
-      <b>Proposed long-stay rate after ${Math.round(s.requestedDays)} days + 2 weeks (${Math.round(s.thresholdDays)} days total):</b><br>
+      <b>Proposed long-stay storage rate from day ${Math.round(s.thresholdDays)+1}:</b><br>
       ${s.recommendedType==='ongoing'
         ?`${money(s.ongoing.recommended)} per ${s.ongoing.basis} per week`
         :`${money(s.non.recommended)} per ${s.non.basis} per week`}.
-      This proposed rate is based on the <b>${s.recommendedType==='ongoing'?'1-month ongoing':'3-month non-ongoing'} benchmark</b>, which is the closest fit to this customer's requested operating pattern.
+      This <b>replaces</b> the normal storage rate once the customer exceeds the agreed ${Math.round(s.requestedDays)}-day dwell period plus 2 weeks.
+      <br><br>
+      <b>Calculation:</b> normal storage rate + opportunity-loss recovery uplift spread over <b>${LONG_STAY_RECOVERY_WEEKS} weeks</b>.
       ${currentBillingBasis()==='Pallet'
-        ?` The quote is pallet-based, so the recommended long-stay storage charge is calculated for the whole pallet (1 pallet = 36 cartons).`
-        :` The quote is carton-based, so the recommended long-stay storage charge is calculated per carton.`}
+        ?` Because this quote is pallet-based, the recovery is calculated per whole pallet (1 pallet = 36 cartons).`
+        :` Because this quote is carton-based, the recovery is calculated per carton.`}
     </div>
     <div class=scenarioExplanation><b>Benchmark rationale:</b> ${esc(s.reason)} The alternative benchmark remains visible for comparison.</div>
   </div>`;
