@@ -5,7 +5,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>APCS Commercial Management</title>
-<!-- BUILD: 40 FINAL | Tenant CPI recovery + editable final pricing + reliable draft resume --><style>
+<!-- BUILD: 42 FINAL | resubmit keeps comparison/pricing + selected extras auto-added to rate card --><style>
 :root{--navy:#073d69;--blue:#0b6ea8;--purple:#7057c8;--teal:#16847a;--bg:#eef5f9;--line:#d6e4ec;--text:#173246;--muted:#6d8494}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,"Segoe UI",Arial;background:linear-gradient(#f8fbfd,#edf4f8);color:var(--text)}
 header{height:72px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 24px;position:sticky;top:0;z-index:30}.brand b{font-size:18px;color:#0b416c}.brand small{display:block;color:var(--muted);font-size:11px}.nav{margin-left:auto;height:100%;display:flex}.nav button{border:0;background:transparent;padding:0 20px;font-weight:650;color:#50697b;cursor:pointer;border-bottom:3px solid transparent}.nav button:hover{color:#075f98;background:#f6fbfe}.nav button:active{background:#e2f1f9}.nav button.on{color:#075f98;border-bottom-color:#0b78b8;background:#eef7fc}.navGroup{position:relative;height:100%;display:flex;align-items:stretch}.navGroup>.navMain{height:100%}.navDrop{display:none;position:absolute;top:68px;right:0;min-width:205px;background:#fff;border:1px solid var(--line);border-radius:0 0 10px 10px;box-shadow:0 10px 25px #12384d24;padding:7px;z-index:60}.navGroup:hover .navDrop,.navGroup:focus-within .navDrop{display:block}.navDrop button{display:block;width:100%;height:42px;padding:0 13px!important;text-align:left;border:0!important;border-radius:7px;background:#fff!important;color:#416278!important}.navDrop button:hover{background:#eef7fc!important;color:#075f98!important}.navDrop button.subon{background:#e5f3fb!important;color:#075f98!important;font-weight:750}.navMain .chev{font-size:10px;margin-left:6px}
@@ -611,7 +611,7 @@ textarea{
 <div id=profile class=page><div class=hero><div><h1>Active Customers</h1><p>Active customer profiles, operational patterns and rate cards. Save Profile updates the main Rate Card page.</p></div><button class="btn white" onclick=saveCurrentProfile()>Save Profile</button></div><div class=card><div class=mode><button id=pm3 class="m3 on" onclick="pmode('3PL')">3PL</button><button id=pmt class=mt onclick="pmode('Tenant')">Tenant</button></div></div><div class=profileLayout><div class="card list"><input id=searchCust placeholder="Search customer / account…" oninput=renderList()><button class=btn style="width:100%;margin-top:8px" onclick=addCustomer()>+ Add customer</button><div id=custList></div></div><div class=card id=profileDetail></div></div></div>
 
 <div class=modal id=budgetModal><div class=modalbox><div style="display:flex;justify-content:space-between"><h2 style="margin:0;color:#075985">3PL Pipeline Budget</h2><button class=x onclick="budgetModal.classList.remove('on')">×</button></div><div class=budget id=budgetGrid style="margin-top:12px"></div></div></div>
-<div class=modal id=matchModal><div class=modalbox><div style="display:flex;justify-content:space-between"><div><h2 style="margin:0;color:#075985">Choose comparison customer</h2><p class=hint id=matchHint></p></div><button class=x onclick="matchModal.classList.remove('on')">×</button></div><div id=matchCards class=matches></div><div id=matchRates style="margin-top:14px"></div></div></div>
+<div class=modal id=matchModal><div class=modalbox><div style="display:flex;justify-content:space-between"><div><h2 id=matchTitle style="margin:0;color:#075985">Choose comparison customer</h2><p class=hint id=matchHint></p></div><button class=x onclick="matchModal.classList.remove('on')">×</button></div><div id=matchCards class=matches></div><div id=matchRates style="margin-top:14px"></div></div></div>
 <div class=modal id=draftSavedModal><div class=modalbox style="width:min(470px,92vw)"><div style="display:flex;gap:12px;align-items:flex-start"><div style="width:42px;height:42px;border-radius:50%;background:#e6f5ed;color:#18764b;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;flex:0 0 42px">✓</div><div><h2 style="margin:0;color:#075985">Draft saved</h2><p id=draftSavedMessage style="margin:7px 0 0;line-height:1.55;color:#50697b"></p></div></div><div style="text-align:right;margin-top:18px"><button class="btn primary" onclick=finishDraftSave()>OK</button></div></div></div>
 <div class=modal id=historyModal><div class="modalbox historyModalBox"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div class=historyTitle><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></svg><h2 style="margin:0;color:#075985">Rate History</h2></div><p class=hint id=historySubtitle></p></div><button class=x onclick="historyModal.classList.remove('on')">×</button></div><div id=historyContent></div></div></div>
 
@@ -2453,7 +2453,42 @@ function quoteName(){return ($('qname').value||'').trim()||'Untitled quote'}
 function addHistory(q,event,detail=''){q.history=Array.isArray(q.history)?q.history:[];q.history.push({event,detail,at:nowISO()})}
 function defaultOnboarding(q){return{quoteId:q.id,status:'In Progress',createdAt:nowISO(),tasks:(DEFAULT_ONBOARDING[q.model]||[]).map((t,i)=>({...t,id:'T-'+Date.now()+'-'+i,done:false,dueDate:'',notes:''}))}}
 function ensureOnboarding(q){if(!q.onboarding)q.onboarding=defaultOnboarding(q);if(!Array.isArray(q.onboarding.tasks))q.onboarding.tasks=defaultOnboarding(q).tasks;return q.onboarding}
-function saveQuoteRecord(stage='Draft',status=''){let a=quoteStore(),now=nowISO(),snap=snapshot();if(!currentQuoteId)currentQuoteId='Q-'+Date.now();let i=a.findIndex(x=>x.id===currentQuoteId),old=i>=0?a[i]:{};let rec={...old,id:currentQuoteId,name:quoteName(),model:qm,quoteType:$('quoteType')?.value||old.quoteType||'New Quote',quoteNotes:fieldText('qNotes'),attachments:JSON.parse(JSON.stringify(quotePhotos||[])),stage,status:status||(stage==='Draft'?'Draft':old.status||'Pending'),snapshot:snap,updatedAt:now,createdAt:old.createdAt||now,submittedAt:stage==='Submitted'?(old.submittedAt||now):old.submittedAt};if(!old.id)addHistory(rec,stage==='Draft'?'Draft Created':'Submitted');if(stage==='Submitted'&&old.stage!=='Submitted')addHistory(rec,'Submitted','Status set to Pending');if(rec.status!=='Won'){delete rec.expectedStartDate;delete rec.renewalEffectiveDate}if(i>=0)a[i]=rec;else a.push(rec);putQuotes(a);localStorage.setItem('apcs_cm_current_quote_v1',currentQuoteId);$('draftName').textContent=rec.name;$('saveState').textContent=stage==='Draft'?'Draft saved':'Submitted';return rec}
+function saveQuoteRecord(stage='Draft',status=''){
+  let a=quoteStore(),now=nowISO(),snap=snapshot();
+  if(!currentQuoteId)currentQuoteId='Q-'+Date.now();
+  let i=a.findIndex(x=>x.id===currentQuoteId),old=i>=0?a[i]:{};
+
+  // Keep dynamic rows redundantly at quote level as well as inside snapshot.
+  // This makes Receivable / Tenant room data resilient to future form-layout changes,
+  // older snapshots and remote/local quote merges.
+  const recRows=JSON.parse(JSON.stringify(snap.receivableRows||[]));
+  const tenantRows=JSON.parse(JSON.stringify(snap.tenantRoomRows||[]));
+  let rec={...old,
+    id:currentQuoteId,
+    name:quoteName(),
+    model:qm,
+    quoteType:$('quoteType')?.value||old.quoteType||'New Quote',
+    quoteNotes:fieldText('qNotes'),
+    attachments:JSON.parse(JSON.stringify(quotePhotos||[])),
+    receivableRows:recRows,
+    tenantRoomRows:tenantRows,
+    stage,
+    status:status||(stage==='Draft'?'Draft':old.status||'Pending'),
+    snapshot:snap,
+    updatedAt:now,
+    createdAt:old.createdAt||now,
+    submittedAt:stage==='Submitted'?(old.submittedAt||now):old.submittedAt
+  };
+  if(!old.id)addHistory(rec,stage==='Draft'?'Draft Created':'Submitted');
+  if(stage==='Submitted'&&old.stage!=='Submitted')addHistory(rec,'Submitted','Status set to Pending');
+  if(rec.status!=='Won'){delete rec.expectedStartDate;delete rec.renewalEffectiveDate}
+  if(i>=0)a[i]=rec;else a.push(rec);
+  putQuotes(a);
+  localStorage.setItem('apcs_cm_current_quote_v1',currentQuoteId);
+  $('draftName').textContent=rec.name;
+  $('saveState').textContent=stage==='Draft'?'Draft saved':'Submitted';
+  return rec
+}
 function saveDraft(){let rec=saveQuoteRecord('Draft','Draft');renderQuotes();let when=new Date(rec.updatedAt).toLocaleString('en-AU',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true});$('draftSavedMessage').innerHTML=`<b>${esc(rec.name||'Untitled draft')}</b> has been saved to Quotes on <b>${when}</b>.<br><span class=hint>Continue will restore the saved fields and return you to the same place in the quote.</span>`;$('draftSavedModal').classList.add('on')}
 function finishDraftSave(){$('draftSavedModal').classList.remove('on');currentQuoteId=null;localStorage.removeItem('apcs_cm_current_quote_v1');clearQuoteForm()}
 function autoSave(){if(suppressAutosave)return;clearTimeout(timer);$('saveState').textContent='Autosaving…';timer=setTimeout(()=>{if(!currentQuoteId)return;let a=quoteStore(),existing=a.find(x=>x.id===currentQuoteId);if(existing&&existing.stage==='Draft')saveQuoteRecord('Draft','Draft')},250)}
@@ -2482,7 +2517,11 @@ function loadQuote(id){
   quotePhotos=JSON.parse(JSON.stringify(q.attachments||[]));
   localStorage.setItem('apcs_cm_current_quote_v1',id);
 
-  const s=q.snapshot||{};
+  const s={...(q.snapshot||{})};
+  // Build 41 fallback: if a snapshot came from an older build or lost its dynamic
+  // row block during a sync merge, recover the rows from the quote-level copy.
+  if(!Array.isArray(s.receivableRows)&&Array.isArray(q.receivableRows))s.receivableRows=JSON.parse(JSON.stringify(q.receivableRows));
+  if(!Array.isArray(s.tenantRoomRows)&&Array.isArray(q.tenantRoomRows))s.tenantRoomRows=JSON.parse(JSON.stringify(q.tenantRoomRows));
   qmode(s.qm||q.model||'3PL');
   restoreSnapshotValues(s);
   if($('quoteType'))$('quoteType').value=q.quoteType||s.v?.quoteType||'New Quote';
@@ -2505,7 +2544,9 @@ function editSubmittedQuote(id){
   quotePhotos=JSON.parse(JSON.stringify(q.attachments||[]));
   currentQuoteId=id;
   localStorage.setItem('apcs_cm_current_quote_v1',id);
-  let s=q.snapshot||{};
+  let s={...(q.snapshot||{})};
+  if(!Array.isArray(s.receivableRows)&&Array.isArray(q.receivableRows))s.receivableRows=JSON.parse(JSON.stringify(q.receivableRows));
+  if(!Array.isArray(s.tenantRoomRows)&&Array.isArray(q.tenantRoomRows))s.tenantRoomRows=JSON.parse(JSON.stringify(q.tenantRoomRows));
   suppressAutosave=true;
   qmode(s.qm||q.model||'3PL');
   restoreSnapshotValues(s);
@@ -3125,7 +3166,174 @@ function markStarted(qid){let a=quoteStore(),q=a.find(x=>x.id===qid);if(!q)retur
 }localStorage.setItem('apcs_profiles_v4',JSON.stringify(st));renderOnboarding();$('onboardingDetail').innerHTML='';renderList();renderRatePage();appNotice(`${q.name} onboarding is complete. View the customer in Our Customers → Active Customers.`,'Onboarding complete','success');go('profile')},{title:'Complete onboarding',confirmText:'Mark Started',type:'success'})}
 ['Portmark','Label','Shrinkwrap','Handstack','Mix product','Single product','Temp logger'].forEach(x=>$('extras').insertAdjacentHTML('beforeend',`<label><input type=checkbox><span>${x}</span></label>`));
 migrateNationwideTenantProfile();migrateWorkflow();migratePendingStartDatesV13();migrateQuoteTypeAndRateCardV2();if(!restore()){addRec();addRoom()}renderQuotes();renderOnboarding();prodUI();loadUI();calc();requestAnimationFrame(()=>{renderList();renderRatePage()});document.addEventListener('input',e=>{if(e.target.closest('#quote')){calc();if(e.target.id==='qNotes')autoSave()}});document.addEventListener('change',e=>{if(e.target.closest('#quote'))calc()});
+window.addEventListener('pagehide',()=>{
+  try{
+    if(!currentQuoteId)return;
+    const existing=quoteStore().find(x=>x.id===currentQuoteId);
+    if(existing&&existing.stage==='Draft')saveQuoteRecord('Draft','Draft');
+  }catch(e){console.warn('Draft pagehide save warning',e)}
+});
 // v7.1 clean workflow: Draft -> Pending -> Won/Lost; Won derives onboarding directly from quote record
+
+
+/* BUILD 42 — submitted quote resubmission + quote extra-service persistence */
+function selectedQuoteExtras(){
+  return [...document.querySelectorAll('#extras input:checked')]
+    .map(x=>(x.value||x.nextElementSibling?.textContent||'').trim())
+    .filter(Boolean);
+}
+function extraServiceDefinition(name){
+  const key=String(name||'').trim().toLowerCase();
+  const byName={
+    'portmark':'svc000',
+    'label':'svc006',
+    'shrinkwrap':'svc002',
+    'temp logger':'svc004',
+    'temp logger':'svc004'
+  };
+  const id=byName[key];
+  if(id){
+    const svc=SERVICES.find(s=>s.id===id);
+    return svc?{...svc}:null;
+  }
+  if(key==='handstack')return {id:'quote_auto_handstack',code:'',desc:'Handstack / manual handling',section:'Custom Service Charges',type:'Handling',custom:true,standard:''};
+  if(key==='mix product')return {id:'quote_auto_mixed_product',code:'',desc:'Mixed product handling',section:'Custom Service Charges',type:'Handling',custom:true,standard:''};
+  return null;
+}
+function ensureSelectedExtraServices(){
+  if(qm!=='3PL')return;
+  const extras=selectedQuoteExtras();
+  extras.forEach(name=>{
+    const def=extraServiceDefinition(name);
+    if(!def || quoteRateServices.some(x=>x.id===def.id))return;
+    const saved=currentQuoteRecord()?.selectedRateCard?.find(x=>x.id===def.id);
+    const matchedRate=chosenMatch?.p?.rates?.[def.id];
+    quoteRateServices.push({...def,_rate:saved?.rate??matchedRate??def.standard??''});
+    quoteRemovedServices=quoteRemovedServices.filter(x=>x.id!==def.id);
+  });
+}
+function findSavedComparison(q){
+  const src=q?.rateCardSource;
+  if(!src)return null;
+  if(src.account==='STANDARD')return {x:null,p:{rates:{},customServices:[]},score:0,noMatch:true};
+  const st=profiles();
+  const x=allCustomers(q.model||qm).find(c=>c.customer===src.customer && c.account===src.account)
+    || allCustomers(q.model||qm).find(c=>c.customer===src.customer);
+  if(!x)return {x:{customer:src.customer,account:src.account||''},p:{rates:{},customServices:[]},score:0,savedOnly:true};
+  return {x,p:resolvedCustomerProfile(x,q.model||qm,st),score:100,saved:true};
+}
+function prepareSaved3PLRateCard(q){
+  chosenMatch=findSavedComparison(q)||{x:null,p:{rates:{},customServices:[]},score:0,noMatch:true};
+  quoteRateServices=(Array.isArray(q.selectedRateCard)?q.selectedRateCard:[])
+    .filter(r=>r && serviceAllowedForBasis(r))
+    .map(r=>{
+      const base=SERVICES.find(s=>s.id===r.id) || chosenMatch?.p?.customServices?.find?.(s=>s.id===r.id) || r;
+      return {...base,...r,_rate:r.rate??q.suggestedRates?.[r.id]??''};
+    });
+  quoteRemovedServices=[];
+  ensureSelectedExtraServices();
+  $('matchTitle').textContent='Review saved rate card';
+  $('matchHint').textContent=chosenMatch?.x
+    ?`Previous comparison retained: ${chosenMatch.x.customer}${chosenMatch.x.account?` (${chosenMatch.x.account})`:''}. Your saved prices are kept; review only what changed.`
+    :'Previous APCS standard-rate selection retained. Your saved prices are kept; review only what changed.';
+  $('matchCards').style.display='none';
+  $('matchRates').innerHTML=`
+    <h3>${rateCardHeading()}</h3>
+    <div class=hint style="margin:-4px 0 10px">Existing submitted rates have been restored. Any Extra Service currently selected in the quote is automatically included below.</div>
+    <div class=rateWrap><div id=quoteRateRows></div></div>
+    <div class=quoteRateToolbar>
+      <button class="btn addServiceBtn" onclick=openQuoteServiceModal()>+ Add Service</button>
+      <span class=hint>You can adjust a rate, remove a service, or add another service before resubmitting.</span>
+    </div>
+    <div id=rateEconomics></div>
+    <div class=nextBar>
+      <span class=hint>No need to choose the comparison customer again.</span>
+      <button class="btn primary" onclick=acceptSuggestion()>Save & Resubmit →</button>
+    </div>`;
+  renderQuoteRateRows();
+  updateSuggestedEconomics();
+  matchModal.classList.add('on');
+}
+function prepareSavedTenantPricing(q){
+  chosenMatch=findSavedComparison(q)||{x:null,p:{rates:{},customServices:[]},score:0,noMatch:true};
+  $('matchTitle').textContent='Review saved Tenant pricing';
+  $('matchHint').textContent=chosenMatch?.x
+    ?`Previous comparison retained: ${chosenMatch.x.customer}${chosenMatch.x.account?` (${chosenMatch.x.account})`:''}. Final Rent, Outgoings and CPI are restored below.`
+    :'Previous Tenant pricing reference retained. Final Rent, Outgoings and CPI are restored below.';
+  $('matchCards').style.display='none';
+  $('matchRates').innerHTML=tenantScenarioHtml(chosenMatch);
+  let idx=Number(q.tenantPricingScenario?.selectedIndex);
+  if(!Number.isInteger(idx)||idx<0||idx>=tenantScenarioData.scenarios.length)idx=0;
+  selectTenantScenario(idx);
+  const final=q.tenantPricingScenario?.final||{};
+  const rent=final.rent??q.selectedRateCard?.find(x=>x.code==='RENT')?.rate;
+  const out=final.out??q.selectedRateCard?.find(x=>x.code==='OUT')?.rate;
+  const cpi=final.cpi??q.cpi??q.tenantPricingScenario?.cpi;
+  if(rent!==undefined&&$('tenantFinalRent'))$('tenantFinalRent').value=rent;
+  if(out!==undefined&&$('tenantFinalOut'))$('tenantFinalOut').value=out;
+  if(cpi!==undefined&&$('tenantFinalCpi'))$('tenantFinalCpi').value=cpi;
+  updateTenantFinalPricing();
+  matchModal.classList.add('on');
+}
+function openSavedPricingForResubmit(q){
+  if(q.model==='Tenant')prepareSavedTenantPricing(q);else prepareSaved3PLRateCard(q);
+}
+
+// Normal first submit still uses matching. Re-submitting a Pending quote keeps the
+// original billing basis, comparison customer and previously entered final prices.
+const APCS_BUILD41_submitQuote=submitQuote;
+submitQuote=function(){
+  const q=currentQuoteRecord();
+  if(q?.stage==='Submitted' && q?.status==='Pending' && Array.isArray(q.selectedRateCard) && q.selectedRateCard.length){
+    if(qm==='3PL')return proceedSubmitQuote(q.billingBasis||q.snapshot?.v?.billingBasis||'Carton');
+    return proceedSubmitQuote('');
+  }
+  return APCS_BUILD41_submitQuote();
+};
+const APCS_BUILD41_proceedSubmitQuote=proceedSubmitQuote;
+proceedSubmitQuote=function(basis){
+  const before=currentQuoteRecord();
+  const isResubmit=before?.stage==='Submitted' && before?.status==='Pending' && Array.isArray(before.selectedRateCard) && before.selectedRateCard.length;
+  if(!isResubmit){
+    if($('matchTitle'))$('matchTitle').textContent='Choose comparison customer';
+    if($('matchCards'))$('matchCards').style.display='grid';
+    return APCS_BUILD41_proceedSubmitQuote(basis);
+  }
+  let rec=saveQuoteRecord('Submitted','Pending');
+  if(basis){
+    let a=quoteStore(),i=a.findIndex(x=>x.id===rec.id);
+    if(i>=0){
+      a[i].billingBasis=basis;
+      a[i].snapshot=a[i].snapshot||{};
+      a[i].snapshot.v=a[i].snapshot.v||{};
+      a[i].snapshot.v.billingBasis=basis;
+      putQuotes(a);rec=a[i];
+    }
+  }
+  openSavedPricingForResubmit(rec);
+};
+
+// On a first-time match/no-match, selected Extra Services must already be part of
+// the Suggested Rate Card rather than merely appearing as a commercial note.
+const APCS_BUILD41_chooseMatch=chooseMatch;
+chooseMatch=function(i){
+  APCS_BUILD41_chooseMatch(i);
+  if(qm==='3PL'){
+    ensureSelectedExtraServices();
+    renderQuoteRateRows();
+    updateSuggestedEconomics();
+  }
+};
+const APCS_BUILD41_chooseNoMatch=chooseNoMatch;
+chooseNoMatch=function(){
+  APCS_BUILD41_chooseNoMatch();
+  if(qm==='3PL'){
+    ensureSelectedExtraServices();
+    renderQuoteRateRows();
+    updateSuggestedEconomics();
+  }
+};
+
 </script>
 <div id="rateCardExportModal" class="appModal" aria-hidden="true">
   <div class="appModalCard" role="dialog" aria-modal="true" aria-labelledby="rateCardExportTitle">
