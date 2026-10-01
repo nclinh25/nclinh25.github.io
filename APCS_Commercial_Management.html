@@ -5,7 +5,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>APCS Commercial Management</title>
-<!-- BUILD: 42 FINAL | resubmit keeps comparison/pricing + selected extras auto-added to rate card --><style>
+<!-- BUILD: 43 | Cost-to-serve recovery allocated into Storage --><style>
 :root{--navy:#073d69;--blue:#0b6ea8;--purple:#7057c8;--teal:#16847a;--bg:#eef5f9;--line:#d6e4ec;--text:#173246;--muted:#6d8494}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,"Segoe UI",Arial;background:linear-gradient(#f8fbfd,#edf4f8);color:var(--text)}
 header{height:72px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 24px;position:sticky;top:0;z-index:30}.brand b{font-size:18px;color:#0b416c}.brand small{display:block;color:var(--muted);font-size:11px}.nav{margin-left:auto;height:100%;display:flex}.nav button{border:0;background:transparent;padding:0 20px;font-weight:650;color:#50697b;cursor:pointer;border-bottom:3px solid transparent}.nav button:hover{color:#075f98;background:#f6fbfe}.nav button:active{background:#e2f1f9}.nav button.on{color:#075f98;border-bottom-color:#0b78b8;background:#eef7fc}.navGroup{position:relative;height:100%;display:flex;align-items:stretch}.navGroup>.navMain{height:100%}.navDrop{display:none;position:absolute;top:68px;right:0;min-width:205px;background:#fff;border:1px solid var(--line);border-radius:0 0 10px 10px;box-shadow:0 10px 25px #12384d24;padding:7px;z-index:60}.navGroup:hover .navDrop,.navGroup:focus-within .navDrop{display:block}.navDrop button{display:block;width:100%;height:42px;padding:0 13px!important;text-align:left;border:0!important;border-radius:7px;background:#fff!important;color:#416278!important}.navDrop button:hover{background:#eef7fc!important;color:#075f98!important}.navDrop button.subon{background:#e5f3fb!important;color:#075f98!important;font-weight:750}.navMain .chev{font-size:10px;margin-left:6px}
@@ -575,7 +575,20 @@ textarea{
 <div id=q3>
 <div class=card><h2>1. Receivable</h2><div class=info>Each receivable line is an <b>AND</b> condition. Add another line only when there is another receivable pattern.</div><div id=recRows></div><button class=btn style="margin-top:10px" onclick=addRec()>+ Add receivable condition</button><div id=recSummary class=summary></div>
 <h3>Product handling</h3><div class=grid><div><label>Product type</label><select id=prod onchange=prodUI()><option value="">Select…</option><option>Frozen</option><option>Blast</option><option>Chilled</option></select></div><div id=blastBox class=hide><label>Blast % of total receive</label><input id=blastPct type=number min=0 max=100 placeholder="%"></div><div id=scanBox class=hide><label>Scan?</label><select id=scan onchange=prodUI()><option value="">Select…</option><option>Yes</option><option>No</option></select></div><div id=scanPctBox class=hide><label id=scanPctLabel>Scan % of total receive</label><input id=scanPct type=number min=0 max=100 placeholder="%"></div><div><label>Product</label><select id=mix><option value="">Select…</option><option>Single product</option><option>Mixed products</option></select></div></div></div>
-<div class=card><h2>2. Storage</h2><div class=g3><div><label>Expected holding</label><input id=holdN type=number placeholder="e.g. 21"></div><div><label>Unit</label><select id=holdU><option value="">Select…</option><option>days</option><option>weeks</option><option>months</option></select><div id=holdConv class=hint></div></div><div><label>Rate basis</label><select id=storBasis><option value="">Select…</option><option>Carton</option><option>Pallet</option></select></div></div></div>
+<div class=card><h2>2. Storage</h2><div class=g3><div><label>Expected holding</label><input id=holdN type=number placeholder="e.g. 21"></div><div><label>Unit</label><select id=holdU><option value="">Select…</option><option>days</option><option>weeks</option><option>months</option></select><div id=holdConv class=hint></div></div><div><label>Rate basis</label><select id=storBasis><option value="">Select…</option><option>Carton</option><option>Pallet</option></select></div></div>
+<div style="margin-top:14px;padding-top:14px;border-top:1px solid #d8e7f1">
+  <div class=g2>
+    <div>
+      <label>APCS spend per carton movement / storage activity ($)</label>
+      <input id=costPerCartonActivity type=number min=0 step=.0001 value="0.1785" oninput="saveCostBase();autoSave()" placeholder="e.g. 0.1785">
+      <div class=hint>Cost per activity across Receivable + Load Out + Storage. The quote recovers this cost through the Storage rate only.</div>
+    </div>
+    <div>
+      <label>Storage cost recovery</label>
+      <div id=costRecoveryHint class=info>Enter the receivable pattern and expected holding period to calculate the Storage cost floor.</div>
+    </div>
+  </div>
+</div></div>
 <div class=card><h2>3. Load Out</h2><div class=g3><div><label>Every</label><input id=loFreq type=number placeholder="e.g. 1"></div><div><label>Frequency unit</label><select id=loUnit><option value="">Select…</option><option>days</option><option>weeks</option><option>months</option></select></div><div><label>Market</label><div class=checks><label><input id=dom type=checkbox onchange=loadUI()><span>Domestic</span></label><label><input id=exp type=checkbox onchange=loadUI()><span>Export</span></label></div></div></div><div id=domBox class=hide style="margin-top:10px"><label>Domestic pallets per batch</label><input id=domPal type=number placeholder="Pallets"></div><div id=expBox class=hide style="margin-top:10px"><div class=g3><div><label>Export container</label><div class=checks><label><input id=exp20 type=checkbox onchange=calc()><span>20ft</span></label><label><input id=exp40 type=checkbox onchange=calc()><span>40ft</span></label></div></div><div><label>Containers per batch</label><input id=expQty type=number></div><div><label>Export country</label><input id=country></div></div><div class=hint>20ft = 22 pallets · 40ft = 44 pallets · select one or both</div></div><h3>Extra Services</h3><div class=checks id=extras></div></div>
 <div class=card><h2>4. Reporting</h2><div class=g2><div><label>Report frequency</label><select id=reportFreq><option value="">Select…</option><option>Daily</option><option>Weekly</option><option>Monthly</option></select></div><div><label>Report includes</label><textarea id=reportNotes placeholder="Manual notes…"></textarea></div></div></div></div>
 
@@ -3333,6 +3346,137 @@ chooseNoMatch=function(){
     updateSuggestedEconomics();
   }
 };
+
+
+/* ===== BUILD 43: COST-TO-SERVE RECOVERY IN STORAGE ===== */
+const APCS_DEFAULT_COST_PER_CARTON_ACTIVITY=0.1785;
+const APCS_HISTORIC_STORAGE_ONLY_RECOVERY=0.2254261931760087;
+function storedCostBase(){
+  const n=Number(localStorage.getItem('apcs_cost_per_carton_activity_v1'));
+  return Number.isFinite(n)&&n>0?n:APCS_DEFAULT_COST_PER_CARTON_ACTIVITY;
+}
+function saveCostBase(){
+  const e=$('costPerCartonActivity');
+  if(!e)return;
+  const n=Number(e.value);
+  if(Number.isFinite(n)&&n>=0)localStorage.setItem('apcs_cost_per_carton_activity_v1',String(n));
+}
+function quoteCostPerActivity(){
+  const e=$('costPerCartonActivity');
+  if(e && e.value!==''){
+    const n=Number(e.value);if(Number.isFinite(n)&&n>=0)return n;
+  }
+  const q=currentQuoteRecord(),sv=q?.snapshot?.v?.costPerCartonActivity;
+  if(sv!==undefined&&sv!==''){
+    const n=Number(sv);if(Number.isFinite(n)&&n>=0)return n;
+  }
+  return storedCostBase();
+}
+function storageCostRecovery(){
+  if(qm!=='3PL')return {cost:0,receiveCartons:0,loadCartons:0,storageCartons:0,totalActivities:0,totalSpend:0,carton:0,pallet:0};
+  const p=quoteOperationalPattern();
+  const cost=quoteCostPerActivity();
+  const receiveCartons=Math.max(0,Number(p.weeklyCartons)||0);
+  // Existing scenario logic assumes steady-state outbound ~= inbound.
+  const loadCartons=receiveCartons;
+  const storageCartons=p.dwellDays>0?receiveCartons*(p.dwellDays/7):0;
+  const totalActivities=receiveCartons+loadCartons+storageCartons;
+  const totalSpend=cost*totalActivities;
+  const carton=storageCartons>0?totalSpend/storageCartons:0;
+  return {cost,receiveCartons,loadCartons,storageCartons,totalActivities,totalSpend,carton,pallet:carton*36};
+}
+function ceil2(n){return Math.ceil((Number(n)||0)*100-1e-9)/100}
+function updateCostRecoveryHint(){
+  const host=$('costRecoveryHint');if(!host||qm!=='3PL')return;
+  const f=storageCostRecovery();
+  if(!(f.receiveCartons>0&&f.storageCartons>0)){
+    host.innerHTML=`APCS baseline: <b>$${f.cost.toFixed(4)}</b> per carton activity. Enter Receivable + holding period to calculate the customer-specific Storage floor.<br><span class=hint>Using your historical volumes, recovering the full $489,450.31 spend through Storage alone is ≈ <b>$${APCS_HISTORIC_STORAGE_ONLY_RECOVERY.toFixed(4)}</b> per storage-carton activity.</span>`;
+    return;
+  }
+  host.innerHTML=`Customer-specific Storage cost floor: <b>${money(ceil2(f.carton))}/carton/week</b> · <b>${money(ceil2(f.pallet))}/pallet/week</b><br><span class=hint>This allocates ${Math.round(f.totalActivities).toLocaleString()} weekly carton activities × $${f.cost.toFixed(4)} into Storage only.</span>`;
+}
+function applyStorageCostFloorToSuggestedRates(){
+  if(qm!=='3PL')return;
+  const f=storageCostRecovery();if(!(f.carton>0))return;
+  const cartonFloor=ceil2(f.carton),palletFloor=ceil2(f.pallet);
+  quoteRateServices.forEach(s=>{
+    const c=String(s.code||'').trim().toUpperCase();
+    const floor=c==='STOR'?cartonFloor:(c==='STOP'||c==='STOPP'||c.includes('STOP'))?palletFloor:0;
+    if(!floor)return;
+    const current=s._rate===''||s._rate==null?0:Number(s._rate)||0;
+    if(current<floor)s._rate=floor;
+  });
+}
+function appendCostRecoveryEconomics(){
+  const host=$('rateEconomics');if(!host||qm!=='3PL')return;
+  host.querySelector('#costRecoveryEconomics')?.remove();
+  const f=storageCostRecovery();if(!(f.carton>0))return;
+  const basis=currentBillingBasis();
+  const floor=basis==='Pallet'?ceil2(f.pallet):ceil2(f.carton);
+  const storageInput=[...document.querySelectorAll('.sugrate')].find(el=>{
+    const c=String(el.dataset.code||'').toUpperCase();
+    return basis==='Pallet'?(c==='STOP'||c==='STOPP'||c.includes('STOP')):c==='STOR';
+  });
+  const rate=Number(storageInput?.value)||0;
+  const ok=rate+1e-9>=floor;
+  const div=document.createElement('div');
+  div.id='costRecoveryEconomics';
+  div.className='econBox';
+  div.style.marginTop='12px';
+  div.innerHTML=`<b>Cost-to-serve recovery</b><br>
+    APCS spend assumption: <b>$${f.cost.toFixed(4)} / carton activity</b><br>
+    Allocated Storage floor: <b>${money(floor)} / ${basis==='Pallet'?'pallet':'carton'} / week</b><br>
+    Current Storage rate: <b>${rate?money(rate):'—'}</b><br>
+    <span style="font-weight:800;color:${ok?'#18794e':'#b42318'}">${ok?'✓ Storage rate covers the modelled movement + storage spend.':'⚠ Storage rate is below the modelled cost-recovery floor.'}</span>`;
+  host.appendChild(div);
+}
+
+// Keep the cost assumption visible and persistent on new / legacy quotes.
+const APCS_BUILD42_clearQuoteForm=clearQuoteForm;
+clearQuoteForm=function(){
+  APCS_BUILD42_clearQuoteForm();
+  const e=$('costPerCartonActivity');if(e)e.value=storedCostBase().toFixed(4);
+  calc();
+};
+const APCS_BUILD42_loadQuote=loadQuote;
+loadQuote=function(id){
+  APCS_BUILD42_loadQuote(id);
+  const q=currentQuoteRecord(),e=$('costPerCartonActivity');
+  if(e && (q?.snapshot?.v?.costPerCartonActivity===undefined || q?.snapshot?.v?.costPerCartonActivity===''))e.value=storedCostBase().toFixed(4);
+  updateCostRecoveryHint();
+};
+const APCS_BUILD42_calc=calc;
+calc=function(){APCS_BUILD42_calc();updateCostRecoveryHint()};
+const APCS_BUILD42_updateSuggestedEconomics=updateSuggestedEconomics;
+updateSuggestedEconomics=function(){APCS_BUILD42_updateSuggestedEconomics();appendCostRecoveryEconomics()};
+
+// First submit: matched/standard Storage cannot start below the full cost-recovery floor.
+// Resubmitted quotes keep the user's already-saved final prices and only show the coverage check.
+const APCS_BUILD42_chooseMatch_cost=chooseMatch;
+chooseMatch=function(i){
+  APCS_BUILD42_chooseMatch_cost(i);
+  if(qm==='3PL'){
+    applyStorageCostFloorToSuggestedRates();
+    renderQuoteRateRows();
+    updateSuggestedEconomics();
+  }
+};
+const APCS_BUILD42_chooseNoMatch_cost=chooseNoMatch;
+chooseNoMatch=function(){
+  APCS_BUILD42_chooseNoMatch_cost();
+  if(qm==='3PL'){
+    applyStorageCostFloorToSuggestedRates();
+    renderQuoteRateRows();
+    updateSuggestedEconomics();
+  }
+};
+
+// Initialise the persistent assumption without overwriting a restored quote value.
+try{
+  const ce=$('costPerCartonActivity');
+  if(ce && !ce.value)ce.value=storedCostBase().toFixed(4);
+  updateCostRecoveryHint();
+}catch(e){console.warn('Build 43 cost recovery init',e)}
 
 </script>
 <div id="rateCardExportModal" class="appModal" aria-hidden="true">
