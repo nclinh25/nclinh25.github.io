@@ -576,19 +576,7 @@ textarea{
 <div class=card><h2>1. Receivable</h2><div class=info>Each receivable line is an <b>AND</b> condition. Add another line only when there is another receivable pattern.</div><div id=recRows></div><button class=btn style="margin-top:10px" onclick=addRec()>+ Add receivable condition</button><div id=recSummary class=summary></div>
 <h3>Product handling</h3><div class=grid><div><label>Product type</label><select id=prod onchange=prodUI()><option value="">Select…</option><option>Frozen</option><option>Blast</option><option>Chilled</option></select></div><div id=blastBox class=hide><label>Blast % of total receive</label><input id=blastPct type=number min=0 max=100 placeholder="%"></div><div id=scanBox class=hide><label>Scan?</label><select id=scan onchange=prodUI()><option value="">Select…</option><option>Yes</option><option>No</option></select></div><div id=scanPctBox class=hide><label id=scanPctLabel>Scan % of total receive</label><input id=scanPct type=number min=0 max=100 placeholder="%"></div><div><label>Product</label><select id=mix><option value="">Select…</option><option>Single product</option><option>Mixed products</option></select></div></div></div>
 <div class=card><h2>2. Storage</h2><div class=g3><div><label>Expected holding</label><input id=holdN type=number placeholder="e.g. 21"></div><div><label>Unit</label><select id=holdU><option value="">Select…</option><option>days</option><option>weeks</option><option>months</option></select><div id=holdConv class=hint></div></div><div><label>Rate basis</label><select id=storBasis><option value="">Select…</option><option>Carton</option><option>Pallet</option></select></div></div>
-<div style="margin-top:14px;padding-top:14px;border-top:1px solid #d8e7f1">
-  <div class=g2>
-    <div>
-      <label>APCS spend per carton movement / storage activity ($)</label>
-      <input id=costPerCartonActivity type=number min=0 step=.0001 value="0.1785" oninput="saveCostBase();autoSave()" placeholder="e.g. 0.1785">
-      <div class=hint>Cost per activity across Receivable + Load Out + Storage. The quote recovers this cost through the Storage rate only.</div>
-    </div>
-    <div>
-      <label>Storage cost recovery</label>
-      <div id=costRecoveryHint class=info>Enter the receivable pattern and expected holding period to calculate the Storage cost floor.</div>
-    </div>
-  </div>
-</div></div>
+</div>
 <div class=card><h2>3. Load Out</h2><div class=g3><div><label>Every</label><input id=loFreq type=number placeholder="e.g. 1"></div><div><label>Frequency unit</label><select id=loUnit><option value="">Select…</option><option>days</option><option>weeks</option><option>months</option></select></div><div><label>Market</label><div class=checks><label><input id=dom type=checkbox onchange=loadUI()><span>Domestic</span></label><label><input id=exp type=checkbox onchange=loadUI()><span>Export</span></label></div></div></div><div id=domBox class=hide style="margin-top:10px"><label>Domestic pallets per batch</label><input id=domPal type=number placeholder="Pallets"></div><div id=expBox class=hide style="margin-top:10px"><div class=g3><div><label>Export container</label><div class=checks><label><input id=exp20 type=checkbox onchange=calc()><span>20ft</span></label><label><input id=exp40 type=checkbox onchange=calc()><span>40ft</span></label></div></div><div><label>Containers per batch</label><input id=expQty type=number></div><div><label>Export country</label><input id=country></div></div><div class=hint>20ft = 22 pallets · 40ft = 44 pallets · select one or both</div></div><h3>Extra Services</h3><div class=checks id=extras></div></div>
 <div class=card><h2>4. Reporting</h2><div class=g2><div><label>Report frequency</label><select id=reportFreq><option value="">Select…</option><option>Daily</option><option>Weekly</option><option>Monthly</option></select></div><div><label>Report includes</label><textarea id=reportNotes placeholder="Manual notes…"></textarea></div></div></div></div>
 
@@ -614,7 +602,17 @@ textarea{
 </div>
 </div>
 
-<div class=card><h2>Quote summary</h2><div class=kpis><div class=kpi><small>Monthly revenue</small><b id=monthly>—</b></div><div class=kpi><small>Annual revenue</small><b id=annual>—</b></div><div class=kpi><small id=thirdLabel>Top revenue area</small><b id=thirdKpi>—</b></div><div class=kpi><small id=coverLabel>Pipeline budget coverage</small><b id=coverage>—</b></div></div><div class=insights><div class=insight><div class=insightHead><svg class=bulb viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 18h6M10 22h4M8.2 14.8C6.8 13.7 6 12 6 10a6 6 0 1 1 12 0c0 2-.8 3.7-2.2 4.8-.8.7-1.3 1.5-1.5 2.2H9.7c-.2-.7-.7-1.5-1.5-2.2Z"/></svg><span>Commercial insights</span></div><ul><li id=ins1>Complete the quote to assess ad-hoc vs ongoing.</li><li id=ins2>Complete the quote to identify the highest-revenue area.</li><li id=ins3>Complete the quote to identify extra revenue opportunities and operational complexity.</li></ul></div></div></div>
+<div class=card><h2>Quote summary</h2>
+<div id=costToServeBlock class="info" style="margin-bottom:14px;background:#f7fbfe;border-color:#cfe3f1">
+  <div style="font-weight:800;color:#075985;margin-bottom:9px">3PL Cost to Serve</div>
+  <div class=g4>
+    <div><label>Total Receivable Volume (cartons)</label><input id=costRecVol type=number min=0 step=1 placeholder="e.g. 289415" oninput="saveCostBase();calc();autoSave()"></div>
+    <div><label>Total Load Out Volume (cartons)</label><input id=costLoadVol type=number min=0 step=1 placeholder="e.g. 281858" oninput="saveCostBase();calc();autoSave()"></div>
+    <div><label>Total Storage Volume (carton-storage)</label><input id=costStorVol type=number min=0 step=1 placeholder="e.g. 2171222" oninput="saveCostBase();calc();autoSave()"></div>
+    <div><label>Total Spend ($)</label><input id=costSpend type=number min=0 step=.01 placeholder="e.g. 489450.31" oninput="saveCostBase();calc();autoSave()"></div>
+  </div>
+  <div id=costRecoveryHint class=summary style="margin-top:10px"></div>
+</div><div class=kpis><div class=kpi><small>Monthly revenue</small><b id=monthly>—</b></div><div class=kpi><small>Annual revenue</small><b id=annual>—</b></div><div class=kpi><small id=thirdLabel>Top revenue area</small><b id=thirdKpi>—</b></div><div class=kpi><small id=coverLabel>Pipeline budget coverage</small><b id=coverage>—</b></div></div><div class=insights><div class=insight><div class=insightHead><svg class=bulb viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 18h6M10 22h4M8.2 14.8C6.8 13.7 6 12 6 10a6 6 0 1 1 12 0c0 2-.8 3.7-2.2 4.8-.8.7-1.3 1.5-1.5 2.2H9.7c-.2-.7-.7-1.5-1.5-2.2Z"/></svg><span>Commercial insights</span></div><ul><li id=ins1>Complete the quote to assess ad-hoc vs ongoing.</li><li id=ins2>Complete the quote to identify the highest-revenue area.</li><li id=ins3>Complete the quote to identify extra revenue opportunities and operational complexity.</li></ul></div></div></div>
 <div class=bar><div><b id=draftName>Untitled draft</b><div class=hint>Autosaves in this browser.</div></div><div><button class="btn primary" onclick=submitQuote()>Submit</button> <button class=btn onclick=saveDraft()>Save Draft</button></div></div></div>
 
 <div id=quotes class=page><div class=hero><div><h1>Quotes</h1><p>Manage unfinished drafts and submitted opportunities from one place.</p></div><button class="btn primary" onclick="newQuote()">+ New Quote</button></div><div class=card><div class=quoteFilters><button class="btn qfilter on" data-filter="All" onclick="setQuoteFilter(this,'All')">All</button><button class="btn qfilter" data-filter="Draft" onclick="setQuoteFilter(this,'Draft')">Drafts</button><button class="btn qfilter" data-filter="Pending" onclick="setQuoteFilter(this,'Pending')">Pending</button><button class="btn qfilter" data-filter="Won" onclick="setQuoteFilter(this,'Won')">Won</button><button class="btn qfilter" data-filter="Lost" onclick="setQuoteFilter(this,'Lost')">Lost</button></div><div id=quotesTable></div></div></div>
@@ -2098,7 +2096,7 @@ function acceptSuggestion(){
   }else{
     quoteRateServices.forEach(s=>{
       q.suggestedRates[s.id]=s._rate??'';
-      q.selectedRateCard.push({id:s.id,code:s.code||'',desc:s.desc||'',type:s.type||'',section:s.section||'',rate:s._rate??''});
+      q.selectedRateCard.push({id:s.id,code:s.code||'',desc:s.desc||'',type:s.type||'',section:s.section||'',rate:s._rate??'',autoExtra:s._autoExtra||s.autoExtra||''});
     });
     q.commercialScenarios=buildCommercialScenarios();
     if(!(q.history||[]).some(h=>h.event==='Submitted'))addHistory(q,'Submitted','Status set to Pending');
@@ -2305,7 +2303,8 @@ function snapshot(){
     rooms:$('roomRows').innerHTML,
     receivableRows:collectReceivableRows(),
     tenantRoomRows:collectTenantRoomRows(),
-    snapshotVersion:3,
+    selectedExtras:(typeof selectedQuoteExtras==='function'?selectedQuoteExtras():[...document.querySelectorAll('#extras input:checked')].map(x=>(x.nextElementSibling?.textContent||'').trim()).filter(Boolean)),
+    snapshotVersion:4,
     scrollY:window.scrollY||0
   }
 }
@@ -2373,6 +2372,16 @@ function restoreSnapshotValues(s){
     }
   });
   setFieldText('qNotes',v.qNotes||'');
+
+  // Build 44: restore Extra Services by their visible names, not anonymous DOM indexes.
+  if(Array.isArray(s?.selectedExtras)){
+    const selected=new Set(s.selectedExtras.map(x=>String(x).trim().toLowerCase()));
+    document.querySelectorAll('#extras label').forEach(label=>{
+      const input=label.querySelector('input[type=checkbox]');
+      const name=(label.querySelector('span')?.textContent||input?.value||'').trim().toLowerCase();
+      if(input)input.checked=selected.has(name);
+    });
+  }
 
   // Version 2+ uses stable named data. HTML layout changes can no longer
   // shift receivable values into the wrong field.
@@ -2830,7 +2839,7 @@ async function buildStandaloneRateCardPdf(q,rows){
   c.fillText(`Prepared: ${new Date().toLocaleDateString('en-AU')}`,1135,430);
   c.fillStyle='#173246';
   c.font='700 21px Arial, sans-serif';
-  c.fillText(`Annual CPI: ${pdfCpi!==null?pdfCpi.toFixed(1)+'%':'TBC'}`,1135,470);
+  c.fillText('Annual CPI: Review annually',1135,470);
   c.textAlign='left';
 
   // Rate table, positioned clear of the watermark/footer.
@@ -3209,8 +3218,9 @@ function extraServiceDefinition(name){
     const svc=SERVICES.find(s=>s.id===id);
     return svc?{...svc}:null;
   }
-  if(key==='handstack')return {id:'quote_auto_handstack',code:'',desc:'Handstack / manual handling',section:'Custom Service Charges',type:'Handling',custom:true,standard:''};
-  if(key==='mix product')return {id:'quote_auto_mixed_product',code:'',desc:'Mixed product handling',section:'Custom Service Charges',type:'Handling',custom:true,standard:''};
+  if(key==='handstack')return {id:'quote_auto_handstack',code:'',desc:'Handstack / manual handling',section:'Extra Services',type:'Handling',custom:true,standard:''};
+  if(key==='mix product')return {id:'quote_auto_mixed_product',code:'',desc:'Mixed product handling',section:'Extra Services',type:'Handling',custom:true,standard:''};
+  if(key==='single product')return {id:'quote_auto_single_product',code:'',desc:'Single product handling',section:'Extra Services',type:'Handling',custom:true,standard:''};
   return null;
 }
 function ensureSelectedExtraServices(){
@@ -3221,7 +3231,7 @@ function ensureSelectedExtraServices(){
     if(!def || quoteRateServices.some(x=>x.id===def.id))return;
     const saved=currentQuoteRecord()?.selectedRateCard?.find(x=>x.id===def.id);
     const matchedRate=chosenMatch?.p?.rates?.[def.id];
-    quoteRateServices.push({...def,_rate:saved?.rate??matchedRate??def.standard??''});
+    quoteRateServices.push({...def,_autoExtra:name,_rate:saved?.rate??matchedRate??def.standard??''});
     quoteRemovedServices=quoteRemovedServices.filter(x=>x.id!==def.id);
   });
 }
@@ -3331,22 +3341,24 @@ proceedSubmitQuote=function(basis){
 const APCS_BUILD41_chooseMatch=chooseMatch;
 chooseMatch=function(i){
   APCS_BUILD41_chooseMatch(i);
-  if(qm==='3PL'){
-    ensureSelectedExtraServices();
-    renderQuoteRateRows();
-    updateSuggestedEconomics();
-  }
+  if(qm==='3PL')syncSelectedExtrasIntoSuggestedRateCard();
 };
 const APCS_BUILD41_chooseNoMatch=chooseNoMatch;
 chooseNoMatch=function(){
   APCS_BUILD41_chooseNoMatch();
-  if(qm==='3PL'){
-    ensureSelectedExtraServices();
-    renderQuoteRateRows();
-    updateSuggestedEconomics();
-  }
+  if(qm==='3PL')syncSelectedExtrasIntoSuggestedRateCard();
 };
 
+
+/* ===== BUILD 44: STABLE EXTRA-SERVICE RATE-CARD INCLUSION ===== */
+function syncSelectedExtrasIntoSuggestedRateCard(){
+  if(qm!=='3PL')return;
+  ensureSelectedExtraServices();
+  // Keep the selected extra services visible immediately in the Suggested Rate Card.
+  // Rates come from the matched customer where available; otherwise the field stays editable.
+  renderQuoteRateRows();
+  updateSuggestedEconomics();
+}
 
 /* ===== BUILD 43: COST-TO-SERVE RECOVERY IN STORAGE ===== */
 const APCS_DEFAULT_COST_PER_CARTON_ACTIVITY=0.1785;
@@ -3644,5 +3656,321 @@ try{
     </div>
   </div>
 </div>
+
+
+<script>
+/* ===== BUILD 45 FINAL COMMERCIAL LOGIC ===== */
+const APCS_BUILD45_RATE_IMPORT = {"Antap":{"svc000":0.46,"svc001":0.67,"svc002":6.75,"svc003":0.85,"svc006":0.55,"svc009":575,"svc013":575,"svc014":856.35,"svc018":856.35,"svc020":2.83,"svc023":0.85,"svc024":0.43,"svc026":0.62,"svc030":0.44,"svc028":0.43,"svc031":12.02,"svc032":12.02,"svc033":11.21,"svc034":157.5,"svc035":68.25,"svc037":136.5,"svc038":157.5,"svc039":36.75,"svc040":84,"svc041":42,"svc045":140.13,"svc046":103.8,"svc047":103.8,"svc048":176.46,"svc049":134.94,"svc050":134.94,"svc051":202.41,"svc052":160.89,"svc053":160.89},"Aurum Poultry":{"svc000":0.46,"svc001":0.67,"svc002":6.48,"svc003":0.64,"svc005":1.87,"svc006":1.93,"svc009":635.26,"svc013":635.26,"svc014":856.35,"svc018":856.35,"svc020":2.83,"svc021":2.33,"svc024":0.62,"svc026":0.62,"svc030":0.44,"svc034":155.7,"svc035":67.47,"svc037":134.94,"svc038":155.7,"svc039":36.33,"svc040":83.04,"svc041":40.48,"svc042":62.28,"svc045":140.13,"svc046":103.8,"svc047":103.8,"svc048":176.46,"svc049":134.94,"svc050":134.94,"svc051":202.41,"svc052":160.89,"svc053":160.89},"G&K O'Connors":{"svc000":0.45,"svc001":0.65,"svc002":6.25,"svc003":0.6,"svc005":1.8,"svc006":1.8,"svc009":600,"svc013":600,"svc014":825,"svc018":825,"svc020":3.45,"svc024":0.4,"svc026":0.6,"svc030":0.34,"svc028":0.4,"svc031":11,"svc032":11,"svc033":11,"svc034":150,"svc035":65,"svc036":20,"svc037":130,"svc038":150,"svc039":35,"svc040":80,"svc041":40,"svc042":60,"svc045":135,"svc046":100,"svc047":100,"svc048":170,"svc049":130,"svc050":130,"svc051":195,"svc052":155,"svc053":155},"Harmony Fine Foods":{"svc000":0.46,"svc002":6.48,"svc003":0.64,"svc006":1.93,"svc009":635.26,"svc013":635.26,"svc014":856.35,"svc018":856.35,"svc020":3.63,"svc024":0.43,"svc026":0.62,"svc030":0.37,"svc028":0.43,"svc031":12.02,"svc032":12.02,"svc033":12.02,"svc034":155.7,"svc035":67.47,"svc036":20.76,"svc038":155.7,"svc039":36.33,"svc040":83.04,"svc041":40.48,"svc042":62.28,"svc045":140.13,"svc046":103.8,"svc047":103.8,"svc048":176.46,"svc049":134.94,"svc050":134.94,"svc051":202.41,"svc052":160.89,"svc053":160.89},"Harmony Mixed":{"svc000":0.46,"svc002":6.48,"svc003":0.64,"svc006":1.93,"svc009":635.26,"svc013":635.26,"svc014":856.35,"svc018":856.35,"svc020":3.63,"svc024":0.43,"svc026":0.62,"svc030":0.37,"svc028":0.43,"svc031":12.02,"svc032":12.02,"svc033":12.02,"svc034":155.7,"svc035":67.47,"svc036":20.76,"svc038":155.7,"svc039":36.33,"svc040":83.04,"svc041":40.48,"svc042":62.28,"svc045":140.13,"svc046":103.8,"svc047":103.8,"svc048":176.46,"svc049":134.94,"svc050":134.94,"svc051":202.41,"svc052":160.89,"svc053":160.89},"John Dee":{"svc000":0.57,"svc001":0.67,"svc002":6.75,"svc003":0.64,"svc006":1.92,"svc009":882.3,"svc013":882.3,"svc014":1141.8,"svc018":1141.8,"svc020":3.63,"svc023":0.85,"svc024":0.43,"svc026":0.62,"svc030":0.37,"svc028":0.43,"svc034":155.7,"svc035":69.88,"svc036":21,"svc037":139.75,"svc038":161.25,"svc039":37.63,"svc040":86,"svc041":64.5,"svc042":64.5,"svc045":140.13,"svc046":103.8,"svc047":103.8,"svc048":176.46,"svc049":134.94,"svc050":134.94,"svc051":202.41,"svc052":160.89,"svc053":160.89},"MCG International":{"svc000":0.39,"svc001":0.48,"svc002":6.75,"svc003":0.64,"svc006":1.93,"svc009":544.68,"svc013":544.68,"svc014":822.36,"svc018":822.36,"svc020":2.83,"svc024":0.32,"svc026":0.62,"svc030":0.32,"svc028":0.35,"svc031":12.77,"svc032":12.77,"svc033":12.77,"svc034":155.7,"svc038":155.7,"svc039":37.63,"svc040":86,"svc041":40.48,"svc042":64.5,"svc045":140.13,"svc046":103.8,"svc047":103.8,"svc048":176.46,"svc049":134.94,"svc050":134.94,"svc051":202.41,"svc052":160.89,"svc053":160.89},"Mort & Co":{"svc000":0.46,"svc001":0.67,"svc002":6.48,"svc003":0.64,"svc005":1.87,"svc006":2.36,"svc009":635.26,"svc013":635.26,"svc014":856.35,"svc018":856.35,"svc020":3.63,"svc024":0.43,"svc026":0.62,"svc030":0.37,"svc028":0.43,"svc031":12.02,"svc032":12.02,"svc033":12.02,"svc034":155.7,"svc035":67.47,"svc036":20.76,"svc038":155.7,"svc039":36.33,"svc040":83.04,"svc041":40.48,"svc042":62.28,"svc045":140.13,"svc046":103.8,"svc047":103.8,"svc048":176.46,"svc049":134.94,"svc050":134.94,"svc051":202.41,"svc052":160.89,"svc053":160.89},"Paradigm Foods":{"svc000":0.46,"svc001":0.67,"svc002":6.48,"svc003":0.64,"svc006":1.93,"svc009":635.26,"svc013":635.26,"svc014":856.35,"svc018":856.35,"svc020":3.63,"svc023":0.53,"svc024":0.43,"svc026":0.62,"svc030":0.37,"svc028":0.43,"svc031":12.02,"svc032":12.02,"svc033":12.02,"svc034":155.7,"svc035":67.47,"svc036":20.76,"svc038":155.7,"svc039":36.33,"svc040":83.04,"svc041":40.48,"svc042":62.28,"svc045":140.13,"svc046":103.8,"svc047":103.8,"svc048":176.46,"svc049":134.94,"svc050":134.94,"svc051":202.41,"svc052":160.89,"svc053":160.89},"Ravensworth":{"svc000":0.57,"svc002":6.75,"svc006":3.58,"svc009":882.3,"svc013":882.3,"svc014":1141.8,"svc018":1141.8,"svc020":3.63,"svc024":0.62,"svc026":0.62,"svc030":0.44,"svc028":0.52,"svc035":69.88,"svc038":161.25,"svc039":37.63,"svc040":86,"svc041":64.5,"svc042":64.5,"svc045":140.13,"svc046":103.8,"svc047":103.8,"svc048":176.46,"svc049":134.94,"svc050":134.94,"svc051":202.41,"svc052":160.89,"svc053":160.89},"Security Foods":{"svc000":0.46,"svc001":0.67,"svc002":6.48,"svc003":0.64,"svc005":1.87,"svc006":1.93,"svc009":635.26,"svc013":635.26,"svc014":856.35,"svc018":856.35,"svc020":3.73,"svc023":0.64,"svc024":0.43,"svc026":0.62,"svc030":0.37,"svc028":0.43,"svc034":155.7,"svc035":67.47,"svc036":20.76,"svc037":134.94,"svc038":155.7,"svc039":36.33,"svc040":83.04,"svc041":40.48,"svc042":62.28,"svc045":140.13,"svc046":103.8,"svc047":103.8,"svc048":176.46,"svc049":134.94,"svc050":134.94,"svc051":202.41,"svc052":160.89,"svc053":160.89},"Stone Axe":{"svc000":0.46,"svc002":6.48,"svc003":0.64,"svc006":1.93,"svc009":635.26,"svc010":1099.06,"svc013":635.26,"svc014":856.35,"svc016":1761.15,"svc018":856.35,"svc020":3.63,"svc023":0.64,"svc024":0.43,"svc026":0.62,"svc030":0.37,"svc028":0.43,"svc031":12.02,"svc032":12.02,"svc033":12.02,"svc034":155.7,"svc035":67.47,"svc038":155.7,"svc039":36.33,"svc040":83.04,"svc041":40.48,"svc042":62.28,"svc045":140.13,"svc046":103.8,"svc047":103.8,"svc048":176.46,"svc049":134.94,"svc050":134.94,"svc051":202.41,"svc052":160.89,"svc053":160.89},"Thomas Food INT":{"svc000":0.45,"svc001":0.65,"svc002":6.25,"svc003":0.6,"svc005":1.8,"svc006":1.8,"svc009":600,"svc013":600,"svc014":825,"svc018":825,"svc020":3.45,"svc023":0.41,"svc024":0.4,"svc026":0.6,"svc030":0.34,"svc028":0.4,"svc034":150,"svc035":65,"svc037":130,"svc038":150,"svc039":35,"svc040":80,"svc041":40,"svc042":60,"svc045":135,"svc046":100,"svc047":100,"svc048":170,"svc049":130,"svc050":130,"svc051":195,"svc052":155,"svc053":155},"Asmarina":{"svc002":6.75,"svc003":0.85,"svc006":2.36,"svc020":4,"svc023":0.56,"svc028":0.52,"svc031":15.57,"svc032":15.57,"svc033":15.57,"svc038":157.5,"svc039":36.75,"svc041":42,"svc042":62.28,"svc045":140.13,"svc046":103.8,"svc047":103.8,"svc048":176.46,"svc049":134.94,"svc050":134.94,"svc051":202.41,"svc052":160.89,"svc053":160.89},"Audlay":{"svc002":6.48,"svc006":2.36,"svc028":0.52,"svc031":15.57,"svc032":15.57,"svc033":15.57,"svc039":21.07,"svc041":43.18,"svc045":140.13,"svc046":103.8,"svc047":103.8,"svc048":176.46,"svc049":134.94,"svc050":134.94,"svc051":202.41,"svc052":160.89,"svc053":160.89},"Colt Transport":{"svc002":6.48,"svc006":1.93,"svc020":2.25,"svc024":0.43,"svc026":0.62,"svc030":0.41,"svc028":0.52,"svc031":11.21,"svc032":11.21,"svc033":11.21,"svc039":36.33,"svc041":40.48,"svc042":62.28,"svc045":140.13,"svc046":103.8,"svc047":103.8,"svc048":176.46,"svc049":134.94,"svc050":134.94,"svc051":202.41,"svc052":160.89,"svc053":160.89},"G&V Transport":{"svc002":6.48,"svc006":1.93,"svc031":9,"svc032":9,"svc033":9,"svc039":36.33,"svc041":43.6,"svc042":62.28,"svc045":140.13,"svc046":103.8,"svc047":103.8,"svc048":176.46,"svc049":134.94,"svc050":134.94,"svc051":202.41,"svc052":160.89,"svc053":160.89}};
+const APCS_BUILD45_COST_DEFAULTS={rec:289415,load:281858,stor:2171222,spend:489450.31};
+
+function apcsBuild45CostInputs(){
+  const stored=(()=>{
+    try{return JSON.parse(localStorage.getItem('apcs_cost_base_v2')||'null')||{}}catch(e){return {}}
+  })();
+  return {
+    rec:Number($('costRecVol')?.value || stored.rec || APCS_BUILD45_COST_DEFAULTS.rec)||0,
+    load:Number($('costLoadVol')?.value || stored.load || APCS_BUILD45_COST_DEFAULTS.load)||0,
+    stor:Number($('costStorVol')?.value || stored.stor || APCS_BUILD45_COST_DEFAULTS.stor)||0,
+    spend:Number($('costSpend')?.value || stored.spend || APCS_BUILD45_COST_DEFAULTS.spend)||0
+  };
+}
+function saveCostBase(){
+  const x=apcsBuild45CostInputs();
+  localStorage.setItem('apcs_cost_base_v2',JSON.stringify(x));
+}
+function quoteCostPerActivity(){
+  const x=apcsBuild45CostInputs(),d=x.rec+x.load+x.stor;
+  return d>0?x.spend/d:0;
+}
+function storedCostBase(){return quoteCostPerActivity()||0}
+function storageCostRecovery(){
+  const x=apcsBuild45CostInputs(),cost=quoteCostPerActivity();
+  return {cost,receiveCartons:x.rec,loadCartons:x.load,storageCartons:x.stor,totalActivities:x.rec+x.load+x.stor,totalSpend:x.spend,carton:cost,pallet:cost*36};
+}
+function apcsBuild45PopulateCostInputs(){
+  const s=(()=>{try{return JSON.parse(localStorage.getItem('apcs_cost_base_v2')||'null')}catch(e){return null}})()||APCS_BUILD45_COST_DEFAULTS;
+  [['costRecVol','rec'],['costLoadVol','load'],['costStorVol','stor'],['costSpend','spend']].forEach(([id,k])=>{
+    const e=$(id); if(e && (e.value===''||e.value==null)) e.value=s[k]??'';
+  });
+}
+function updateCostRecoveryHint(){
+  const host=$('costRecoveryHint');if(!host)return;
+  if(qm!=='3PL'){host.innerHTML='';return}
+  const x=apcsBuild45CostInputs(),d=x.rec+x.load+x.stor,cost=d>0?x.spend/d:0;
+  if(!(d>0&&x.spend>0)){
+    host.innerHTML='<span class=hint>Enter Receivable, Load Out, Storage and total spend to calculate the cost per carton activity.</span>';
+    return;
+  }
+  host.innerHTML=`<b>Spend per carton activity: $${cost.toFixed(4)}</b> = ${money(x.spend)} ÷ ${Math.round(d).toLocaleString('en-AU')} activities.<br>
+  <span class=hint>This <b>$${cost.toFixed(4)}</b> is passed directly into the <b>original Storage charge</b> before matched-customer comparison, dwell scenario or opportunity-lost analysis. Carton storage adds $${cost.toFixed(4)}; pallet storage adds $${(cost*36).toFixed(4)}.</span>`;
+}
+function applyStorageCostFloorToSuggestedRates(){
+  if(qm!=='3PL')return;
+  const pass=quoteCostPerActivity(); if(!(pass>=0))return;
+  quoteRateServices.forEach(s=>{
+    const c=String(s.code||'').trim().toUpperCase();
+    const isCarton=c==='STOR',isPallet=(c==='STOP'||c==='STOPP'||c.includes('STOP'));
+    if(!isCarton&&!isPallet)return;
+    let base;
+    if(chosenMatch?.x) base=chosenMatch?.p?.rates?.[s.id];
+    if(base===undefined||base===null||base==='') base=s.standard;
+    if(base===undefined||base===null||base==='') return;
+    const addition=isPallet?pass*36:pass;
+    s._originalStorageRate=Number(base)||0;
+    s._costPassThrough=addition;
+    s._rate=+((Number(base)||0)+addition).toFixed(4);
+  });
+}
+function appendCostRecoveryEconomics(){
+  const host=$('rateEconomics');if(!host||qm!=='3PL')return;
+  host.querySelector('#costRecoveryEconomics')?.remove();
+  const pass=quoteCostPerActivity();if(!(pass>0))return;
+  const basis=currentBillingBasis();
+  const storage=quoteRateServices.find(s=>{
+    const c=String(s.code||'').toUpperCase();
+    return basis==='Pallet'?(c.includes('STOP')):c==='STOR';
+  });
+  const base=Number(storage?._originalStorageRate);
+  const adjusted=Number(storage?._rate);
+  const div=document.createElement('div');
+  div.id='costRecoveryEconomics';div.className='econBox';div.style.marginTop='12px';
+  div.innerHTML=`<b>Cost-to-serve pass-through</b><br>
+    Spend per carton activity: <b>$${pass.toFixed(4)}</b><br>
+    Original Storage rate: <b>${Number.isFinite(base)?money(base):'—'}</b><br>
+    Cost passed into Storage: <b>${money(basis==='Pallet'?pass*36:pass)}</b> / ${basis==='Pallet'?'pallet':'carton'}<br>
+    Adjusted original Storage charge used for all scenario analysis: <b>${Number.isFinite(adjusted)?money(adjusted):'—'}</b>`;
+  host.appendChild(div);
+}
+
+/* Current-rate import from Book1.xlsx. Positive cells only; blanks/zero values are untouched. */
+function importBook1CurrentRates(){
+  const marker='apcs_rate_import_book1_20261002_v1';
+  if(localStorage.getItem(marker)==='done')return;
+  const st=profiles(),customers=allCustomers('3PL');
+  Object.entries(APCS_BUILD45_RATE_IMPORT).forEach(([customer,rates])=>{
+    customers.filter(x=>x.customer===customer).forEach(x=>{
+      const k=pkey(x,'3PL'),p=st[k]||{};
+      p.rates={...(p.rates||{})};
+      Object.entries(rates).forEach(([id,val])=>{ if(Number(val)>0)p.rates[id]=Number(val); });
+      st[k]=p;
+    });
+  });
+  localStorage.setItem('apcs_profiles_v4',JSON.stringify(st));
+  localStorage.setItem(marker,'done');
+  try{renderList();renderRatePage()}catch(e){}
+}
+
+/* Revenue profile: one-off first inbound, true weekly recurring, and expected annual recurring based on actual cadence. */
+function apcsRateByCode(q,code){
+  const rows=Array.isArray(q?.selectedRateCard)?q.selectedRateCard:[];
+  const hit=rows.find(r=>{
+    const c=String(r.code||'').toUpperCase();
+    return code==='STOP'?c.includes('STOP'):c===code;
+  });
+  return Number(hit?.rate)||0;
+}
+function apcsPalletsForRecRow(r){
+  const q=Number(r?.quantity)||0,t=String(r?.receiveType||'');
+  if(t==='Truck')return q*22;
+  if(t==='Container')return q*(r?.containerSize==='20ft'?22:r?.containerSize==='40ft'?44:0);
+  if(t==='Pallet')return q;
+  return q;
+}
+function apcsFreqDays(n,u){
+  n=Number(n)||0;if(!n)return 0;
+  return u==='days'?n:u==='weeks'?n*7:u==='months'?n*30:0;
+}
+function computeRevenueProfileForQuote(q){
+  if(!q||q.model!=='3PL')return null;
+  const v=q.snapshot?.v||{},rows=q.receivableRows||q.snapshot?.receivableRows||[];
+  const basis=q.billingBasis||v.billingBasis||'Carton';
+  const recCode=basis==='Pallet'?'RECP':'REC',pickCode=basis==='Pallet'?'PICKP':'PICK',storCode=basis==='Pallet'?'STOP':'STOR';
+  const recRate=apcsRateByCode(q,recCode),pickRate=apcsRateByCode(q,pickCode),storRate=apcsRateByCode(q,storCode);
+  const blastRate=apcsRateByCode(q,'BREC'),scanRate=apcsRateByCode(q,'SCAN');
+  const product=v.prod||'',blastPct=product==='Blast'?(Number(v.blastPct)||0)/100:0;
+  const scanPct=(product==='Blast'||(product==='Frozen'&&v.scan==='Yes'))?(Number(v.scanPct)||0)/100:0;
+
+  let firstInbound=0,futureInboundAnnual=0,weeklyInbound=0,totalBatchPallets=0;
+  rows.forEach(r=>{
+    const pallets=apcsPalletsForRecRow(r),cartons=pallets*36;totalBatchPallets+=pallets;
+    const evt=(basis==='Pallet'?pallets*recRate:cartons*recRate)+cartons*blastPct*blastRate+cartons*scanPct*scanRate;
+    firstInbound+=evt;
+    const d=apcsFreqDays(r.frequency,r.frequencyUnit);
+    if(d){
+      const annualEvents=365/d;
+      futureInboundAnnual+=Math.max(annualEvents-1,0)*evt;
+      if(d<=7)weeklyInbound+=evt*(7/d);
+    }
+  });
+
+  const cartons=totalBatchPallets*36;
+  const holdDays=apcsFreqDays(v.holdN,v.holdU);
+  const storagePerWeek=basis==='Pallet'?totalBatchPallets*storRate:cartons*storRate;
+  let annualStorage=storagePerWeek*(holdDays?Math.min(holdDays/7,52):52);
+  // If inbound repeats, apply storage for every cycle, capped at a full-year equivalent.
+  const firstRec=rows[0],recDays=apcsFreqDays(firstRec?.frequency,firstRec?.frequencyUnit);
+  if(recDays&&holdDays){
+    annualStorage=Math.min(storagePerWeek*(holdDays/7)*(365/recDays),storagePerWeek*52);
+  }
+
+  let loadPallets=Number(v.domPal)||0;
+  if(v.exp){
+    const perCont=(v.exp20?22:0)+(v.exp40?44:0);
+    loadPallets+=(Number(v.expQty)||0)*perCont;
+  }
+  if(!loadPallets)loadPallets=totalBatchPallets;
+  const loadCartons=loadPallets*36,loadEvent=basis==='Pallet'?loadPallets*pickRate:loadCartons*pickRate;
+  const loadDays=apcsFreqDays(v.loFreq,v.loUnit);
+  const annualLoad=loadDays?loadEvent*(365/loadDays):loadEvent;
+  const weeklyLoad=loadDays&&loadDays<=7?loadEvent*(7/loadDays):0;
+
+  // Explicit Extra Services selected by the user and calculable from known volume.
+  const extras=new Set((q.snapshot?.selectedExtras||[]).map(x=>String(x).toLowerCase()));
+  let extraOneOff=0;
+  if(extras.has('portmark'))extraOneOff+=cartons*apcsRateByCode(q,'108');
+  if(extras.has('shrinkwrap'))extraOneOff+=totalBatchPallets*apcsRateByCode(q,'109');
+
+  const oneOff=firstInbound+extraOneOff;
+  const weeklyRecurring=storagePerWeek+weeklyInbound+weeklyLoad;
+  const expectedRecurringAnnual=annualStorage+futureInboundAnnual+annualLoad;
+  const recClass=(recDays&&recDays<=45)||(loadDays&&loadDays<=45)?'Ongoing':'Ad-hoc / low-frequency';
+  return {oneOff,weeklyRecurring,expectedRecurringAnnual,classification:recClass,calculatedAt:nowISO()};
+}
+function apcsRevenueSummaryHtml(q){
+  const r=computeRevenueProfileForQuote(q);if(!r)return '';
+  return `<div class=econBox style="margin-top:12px"><b>Revenue profile · ${esc(r.classification)}</b>
+    <div class=econGrid style="margin-top:9px">
+      <div class=econKpi><small>One-off / initial event</small><b>${money(r.oneOff)}</b></div>
+      <div class=econKpi><small>Weekly recurring</small><b>${money(r.weeklyRecurring)}/wk</b></div>
+      <div class=econKpi><small>Expected recurring</small><b>${money(r.expectedRecurringAnnual)}/yr</b></div>
+    </div>
+    <div class=hint style="margin-top:7px">Expected recurring follows the actual Receivable / Load Out cadence entered in this quote; an inbound every 4 months is not treated as weekly revenue.</div>
+  </div>`;
+}
+const APCS_BUILD45_updateSuggestedEconomics_base=updateSuggestedEconomics;
+updateSuggestedEconomics=function(){
+  APCS_BUILD45_updateSuggestedEconomics_base();
+  const host=$('rateEconomics'),q=currentQuoteRecord();
+  if(host&&qm==='3PL'&&q){
+    host.querySelector('#build45RevenueProfile')?.remove();
+    const d=document.createElement('div');d.id='build45RevenueProfile';d.innerHTML=apcsRevenueSummaryHtml(q);host.appendChild(d);
+  }
+  appendCostRecoveryEconomics();
+};
+
+/* Persist revenue profile every time final 3PL rates are saved. */
+const APCS_BUILD45_acceptSuggestion_base=acceptSuggestion;
+acceptSuggestion=function(){
+  const id=currentQuoteId;
+  // Base function saves the current final rate card and clears currentQuoteId.
+  APCS_BUILD45_acceptSuggestion_base();
+  if(!id)return;
+  const a=quoteStore(),i=a.findIndex(x=>x.id===id);
+  if(i>=0&&a[i].model==='3PL'){
+    a[i].revenueProfile=computeRevenueProfileForQuote(a[i]);
+    a[i].updatedAt=nowISO();
+    putQuotes(a);
+    renderQuotes();
+  }
+};
+
+/* Quote-list total: Pending 3PL only. */
+function apcsPending3PLTotals(){
+  return quoteStore().filter(q=>q.model==='3PL'&&q.stage==='Submitted'&&q.status==='Pending').reduce((t,q)=>{
+    const r=q.revenueProfile||computeRevenueProfileForQuote(q)||{};
+    t.oneOff+=Number(r.oneOff)||0;t.weekly+=Number(r.weeklyRecurring)||0;t.expected+=Number(r.expectedRecurringAnnual)||0;t.count++;
+    return t;
+  },{oneOff:0,weekly:0,expected:0,count:0});
+}
+const APCS_BUILD45_renderQuotes_base=renderQuotes;
+renderQuotes=function(){
+  APCS_BUILD45_renderQuotes_base();
+  if(!$('quotesTable')||!['All','Pending'].includes(quoteFilter))return;
+  const table=$('quotesTable').querySelector('table');if(!table)return;
+  const t=apcsPending3PLTotals();
+  const tr=document.createElement('tr');tr.className='pending3plTotalRow';
+  tr.innerHTML=`<td colspan="7"><div style="display:flex;flex-wrap:wrap;gap:20px;align-items:center;padding:3px 2px">
+    <b style="color:#075985">3PL Pending Total (${t.count})</b>
+    <span>One-off Revenue: <b>${money(t.oneOff)}</b></span>
+    <span>Weekly Recurring: <b>${money(t.weekly)}/wk</b></span>
+    <span>Expected Recurring: <b>${money(t.expected)}/yr</b></span>
+  </div></td>`;
+  table.querySelector('tbody')?.appendChild(tr);
+};
+
+/* Keep Cost-to-Serve visible for 3PL only and restore saved/global values. */
+const APCS_BUILD45_qmode_base=qmode;
+qmode=function(v){
+  APCS_BUILD45_qmode_base(v);
+  $('costToServeBlock')?.classList.toggle('hide',v!=='3PL');
+  if(v==='3PL'){apcsBuild45PopulateCostInputs();updateCostRecoveryHint()}
+};
+const APCS_BUILD45_calc_base=calc;
+calc=function(){APCS_BUILD45_calc_base();updateCostRecoveryHint()};
+const APCS_BUILD45_clear_base=clearQuoteForm;
+clearQuoteForm=function(){APCS_BUILD45_clear_base();apcsBuild45PopulateCostInputs();updateCostRecoveryHint()};
+
+/* PDF: include every selected rate and preserve section names for weekday OT / Saturday / Sunday-PH. */
+buildStandaloneRateCardPdf=async function(q,rows){
+  const letterhead=await loadPdfImage(APCS_TEMPLATE_PAGE);
+  const canvas=document.createElement('canvas');canvas.width=1240;canvas.height=1754;
+  const c=canvas.getContext('2d');c.drawImage(letterhead,0,0,canvas.width,canvas.height);
+  const quoteType=q.quoteType||q.snapshot?.v?.quoteType||'New Quote';
+  const title=quoteType==='Contract Renewal'?`${q.name} - Contract Renewal Rate Card`:`${q.name} - Rate Card`;
+  c.fillStyle='#0b4f7d';c.font='700 46px Arial, sans-serif';c.fillText(title,105,355);
+  c.strokeStyle='#b9cfde';c.lineWidth=2;c.beginPath();c.moveTo(105,385);c.lineTo(1135,385);c.stroke();
+  c.fillStyle='#536f82';c.font='21px Arial, sans-serif';
+  c.fillText(`Quote ID: ${q.id}`,105,430);c.fillText(`Commercial model: ${q.model||'-'}`,105,466);c.fillText(`Quote type: ${quoteType}`,105,502);
+  c.textAlign='right';c.fillText(`Prepared: ${new Date().toLocaleDateString('en-AU')}`,1135,430);
+  c.fillStyle='#173246';c.font='700 21px Arial, sans-serif';c.fillText('Annual CPI: Review annually',1135,470);c.textAlign='left';
+
+  const x=105,y0=545,tableW=1030,col1=145,col2=705,col3=180;
+  const sorted=[...rows].sort((a,b)=>sectionRank(a.section)-sectionRank(b.section)||(a.section||'').localeCompare(b.section||'')||(a.code||'').localeCompare(b.code||''));
+  const sections=[];let last=null;
+  sorted.forEach(r=>{const s=r.section||'Other Services';if(s!==last){sections.push({heading:s});last=s}sections.push({row:r})});
+  const available=900;
+  const rowH=Math.max(30,Math.min(44,Math.floor(available/Math.max(sections.length+1,1))));
+  const font=Math.max(14,Math.min(19,rowH-13)),headH=42,secH=Math.max(26,rowH-4);
+  c.fillStyle='#0b4f7d';c.fillRect(x,y0,tableW,headH);c.fillStyle='#fff';c.font='700 18px Arial, sans-serif';
+  c.fillText('Code',x+14,y0+28);c.fillText('Service',x+col1+14,y0+28);c.fillText('Rate',x+col1+col2+14,y0+28);
+  let y=y0+headH,idx=0;
+  for(const item of sections){
+    if(y>1510)break;
+    if(item.heading){
+      c.fillStyle='#e6f2f9';c.fillRect(x,y,tableW,secH);c.fillStyle='#075985';c.font=`700 ${Math.max(14,font-1)}px Arial, sans-serif`;
+      c.fillText(String(item.heading).slice(0,75),x+14,y+Math.floor(secH*.7));y+=secH;continue;
+    }
+    const r=item.row;
+    c.fillStyle=idx%2?'rgba(245,249,251,.96)':'rgba(255,255,255,.94)';c.fillRect(x,y,tableW,rowH);
+    c.strokeStyle='#d6e4ec';c.lineWidth=1;c.strokeRect(x,y,tableW,rowH);
+    c.beginPath();c.moveTo(x+col1,y);c.lineTo(x+col1,y+rowH);c.stroke();
+    c.beginPath();c.moveTo(x+col1+col2,y);c.lineTo(x+col1+col2,y+rowH);c.stroke();
+    c.fillStyle='#173246';c.font=`${font}px Arial, sans-serif`;
+    c.fillText(String(r.code||'-').slice(0,14),x+14,y+Math.floor(rowH*.68));
+    c.fillText(String(r.desc||'-').slice(0,58),x+col1+14,y+Math.floor(rowH*.68));
+    c.font=`700 ${font}px Arial, sans-serif`;c.fillText(rateDisplay(r.rate),x+col1+col2+14,y+Math.floor(rowH*.68));
+    y+=rowH;idx++;
+  }
+  const jpeg=canvas.toDataURL('image/jpeg',0.97);
+  return canvasJpegToSinglePagePdf(jpeg,canvas.width,canvas.height);
+};
+
+/* Init after local + remote state settle. */
+function apcsBuild45Init(){
+  apcsBuild45PopulateCostInputs();
+  updateCostRecoveryHint();
+  $('costToServeBlock')?.classList.toggle('hide',qm!=='3PL');
+  importBook1CurrentRates();
+  renderQuotes();
+}
+setTimeout(apcsBuild45Init,300);
+setTimeout(apcsBuild45Init,2800);
+</script>
+<style>
+.pending3plTotalRow td{background:#f4f9fc!important;border-top:2px solid #b9d9eb!important;font-size:12px}
+#costToServeBlock .g4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+@media(max-width:900px){#costToServeBlock .g4{grid-template-columns:1fr 1fr}}
+@media(max-width:560px){#costToServeBlock .g4{grid-template-columns:1fr}}
+</style>
 
 </body></html>
