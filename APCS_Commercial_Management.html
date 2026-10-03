@@ -5,7 +5,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>APCS Commercial Management</title>
-<!-- BUILD: 43 | Cost-to-serve recovery allocated into Storage --><style>
+<!-- BUILD: 46 FINAL | Confirmed commercial logic + persistent pricing + exact current rates --><style>
 :root{--navy:#073d69;--blue:#0b6ea8;--purple:#7057c8;--teal:#16847a;--bg:#eef5f9;--line:#d6e4ec;--text:#173246;--muted:#6d8494}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,"Segoe UI",Arial;background:linear-gradient(#f8fbfd,#edf4f8);color:var(--text)}
 header{height:72px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 24px;position:sticky;top:0;z-index:30}.brand b{font-size:18px;color:#0b416c}.brand small{display:block;color:var(--muted);font-size:11px}.nav{margin-left:auto;height:100%;display:flex}.nav button{border:0;background:transparent;padding:0 20px;font-weight:650;color:#50697b;cursor:pointer;border-bottom:3px solid transparent}.nav button:hover{color:#075f98;background:#f6fbfe}.nav button:active{background:#e2f1f9}.nav button.on{color:#075f98;border-bottom-color:#0b78b8;background:#eef7fc}.navGroup{position:relative;height:100%;display:flex;align-items:stretch}.navGroup>.navMain{height:100%}.navDrop{display:none;position:absolute;top:68px;right:0;min-width:205px;background:#fff;border:1px solid var(--line);border-radius:0 0 10px 10px;box-shadow:0 10px 25px #12384d24;padding:7px;z-index:60}.navGroup:hover .navDrop,.navGroup:focus-within .navDrop{display:block}.navDrop button{display:block;width:100%;height:42px;padding:0 13px!important;text-align:left;border:0!important;border-radius:7px;background:#fff!important;color:#416278!important}.navDrop button:hover{background:#eef7fc!important;color:#075f98!important}.navDrop button.subon{background:#e5f3fb!important;color:#075f98!important;font-weight:750}.navMain .chev{font-size:10px;margin-left:6px}
@@ -1677,7 +1677,7 @@ let quoteRateServices=[];
 let quoteRemovedServices=[];
 
 function sectionRank(s){
-  const order=['Service - Frozen','Service - Chilled','Administration Charges','Overtime – Weekday','Saturday – Minimum 4 hours Charge','Sunday / Public Holiday – Minimum 4 hours Charge','Custom Service Charges'];
+  const order=['Service - Frozen','Service - Chilled','Administration Charges','Overtime – Weekday','Saturday – Minimum 4 hours Charge','Sunday / Public Holiday – Minimum 4 hours Charge','Extra Services','Custom Service Charges'];
   let i=order.indexOf(s);return i<0?999:i;
 }
 function renderQuoteRateRows(){
@@ -3186,7 +3186,7 @@ function markStarted(qid){let a=quoteStore(),q=a.find(x=>x.id===qid);if(!q)retur
     st[key].notes=existingNote&&existingNote!==incomingNote?existingNote+' | '+incomingNote:incomingNote;
   }
 }localStorage.setItem('apcs_profiles_v4',JSON.stringify(st));renderOnboarding();$('onboardingDetail').innerHTML='';renderList();renderRatePage();appNotice(`${q.name} onboarding is complete. View the customer in Our Customers → Active Customers.`,'Onboarding complete','success');go('profile')},{title:'Complete onboarding',confirmText:'Mark Started',type:'success'})}
-['Portmark','Label','Shrinkwrap','Handstack','Mix product','Single product','Temp logger'].forEach(x=>$('extras').insertAdjacentHTML('beforeend',`<label><input type=checkbox><span>${x}</span></label>`));
+['Portmark','Label','Shrinkwrap','Handstack','Mix product','Single product','Temp logger'].forEach(x=>$('extras').insertAdjacentHTML('beforeend',`<label><input type=checkbox value="${x}" onchange="calc();autoSave()"><span>${x}</span></label>`));
 migrateNationwideTenantProfile();migrateWorkflow();migratePendingStartDatesV13();migrateQuoteTypeAndRateCardV2();if(!restore()){addRec();addRoom()}renderQuotes();renderOnboarding();prodUI();loadUI();calc();requestAnimationFrame(()=>{renderList();renderRatePage()});document.addEventListener('input',e=>{if(e.target.closest('#quote')){calc();if(e.target.id==='qNotes')autoSave()}});document.addEventListener('change',e=>{if(e.target.closest('#quote'))calc()});
 window.addEventListener('pagehide',()=>{
   try{
@@ -3201,7 +3201,10 @@ window.addEventListener('pagehide',()=>{
 /* BUILD 42 — submitted quote resubmission + quote extra-service persistence */
 function selectedQuoteExtras(){
   return [...document.querySelectorAll('#extras input:checked')]
-    .map(x=>(x.value||x.nextElementSibling?.textContent||'').trim())
+    .map(x=>{
+      const raw=(x.value||'').trim();
+      return (raw && raw.toLowerCase()!=='on' ? raw : (x.nextElementSibling?.textContent||'').trim());
+    })
     .filter(Boolean);
 }
 function extraServiceDefinition(name){
@@ -3955,12 +3958,67 @@ buildStandaloneRateCardPdf=async function(q,rows){
   return canvasJpegToSinglePagePdf(jpeg,canvas.width,canvas.height);
 };
 
+
+/* ===== BUILD 46: EXACT BOOK1 SOURCE + EXTRA-SERVICE/PERSISTENCE VERIFICATION =====
+   Book1 is the source of truth for the supported current-rate rows below.
+   Positive values are stored. Zero / blank cells are removed so they remain blank.
+   Services not represented in Book1 and customers not matched from Book1 are untouched. */
+const APCS_BUILD46_RATE_SOURCE={"Antap":{"svc000":0.46,"svc001":0.67,"svc002":6.75,"svc003":0.85,"svc004":0,"svc005":0,"svc006":0.55,"svc009":575,"svc010":0,"svc013":575,"svc014":856.35,"svc016":0,"svc018":856.35,"svc020":2.83,"svc021":0,"svc023":0.85,"svc024":0.43,"svc026":0.62,"svc030":0.44,"svc028":0.43,"svc031":12.02,"svc032":12.02,"svc033":11.21,"svc034":157.5,"svc035":68.25,"svc036":0,"svc037":136.5,"svc038":157.5,"svc039":36.75,"svc040":84,"svc041":42,"svc042":0,"svc045":140.13,"svc046":103.8,"svc047":103.8,"svc048":176.46,"svc049":134.94,"svc050":134.94,"svc051":202.41,"svc052":160.89,"svc053":160.89},"Asmarina":{"svc000":0,"svc001":0,"svc002":6.75,"svc003":0.85,"svc004":0,"svc005":0,"svc006":2.36,"svc009":0,"svc010":0,"svc013":0,"svc014":0,"svc016":0,"svc018":0,"svc020":4,"svc021":0,"svc023":0.56,"svc024":0,"svc026":0,"svc030":0,"svc028":0.52,"svc031":15.57,"svc032":15.57,"svc033":15.57,"svc034":0,"svc035":0,"svc036":0,"svc037":0,"svc038":157.5,"svc039":36.75,"svc040":0,"svc041":42,"svc042":62.28,"svc045":140.13,"svc046":103.8,"svc047":103.8,"svc048":176.46,"svc049":134.94,"svc050":134.94,"svc051":202.41,"svc052":160.89,"svc053":160.89},"Audlay":{"svc000":0,"svc001":0,"svc002":6.48,"svc003":0,"svc004":0,"svc005":0,"svc006":2.36,"svc009":0,"svc010":0,"svc013":0,"svc014":0,"svc016":0,"svc018":0,"svc020":0,"svc021":0,"svc023":0,"svc024":0,"svc026":0,"svc030":0,"svc028":0.52,"svc031":15.57,"svc032":15.57,"svc033":15.57,"svc034":0,"svc035":0,"svc036":0,"svc037":0,"svc038":0,"svc039":21.07,"svc040":0,"svc041":43.18,"svc042":0,"svc045":140.13,"svc046":103.8,"svc047":103.8,"svc048":176.46,"svc049":134.94,"svc050":134.94,"svc051":202.41,"svc052":160.89,"svc053":160.89},"Aurum Poultry":{"svc000":0.46,"svc001":0.67,"svc002":6.48,"svc003":0.64,"svc004":0,"svc005":1.87,"svc006":1.93,"svc009":635.26,"svc010":0,"svc013":635.26,"svc014":856.35,"svc016":0,"svc018":856.35,"svc020":2.83,"svc021":2.33,"svc023":0,"svc024":0.62,"svc026":0.62,"svc030":0.44,"svc028":0,"svc031":0,"svc032":0,"svc033":0,"svc034":155.7,"svc035":67.47,"svc036":0,"svc037":134.94,"svc038":155.7,"svc039":36.33,"svc040":83.04,"svc041":40.48,"svc042":62.28,"svc045":140.13,"svc046":103.8,"svc047":103.8,"svc048":176.46,"svc049":134.94,"svc050":134.94,"svc051":202.41,"svc052":160.89,"svc053":160.89},"Colt Transport":{"svc000":0,"svc001":0,"svc002":6.48,"svc003":0,"svc004":0,"svc005":0,"svc006":1.93,"svc009":0,"svc010":0,"svc013":0,"svc014":0,"svc016":0,"svc018":0,"svc020":2.25,"svc021":0,"svc023":0,"svc024":0.43,"svc026":0.62,"svc030":0.41,"svc028":0.52,"svc031":11.21,"svc032":11.21,"svc033":11.21,"svc034":0,"svc035":0,"svc036":0,"svc037":0,"svc038":0,"svc039":36.33,"svc040":0,"svc041":40.48,"svc042":62.28,"svc045":140.13,"svc046":103.8,"svc047":103.8,"svc048":176.46,"svc049":134.94,"svc050":134.94,"svc051":202.41,"svc052":160.89,"svc053":160.89},"G&K O'Connors":{"svc000":0.45,"svc001":0.65,"svc002":6.25,"svc003":0.6,"svc004":0,"svc005":1.8,"svc006":1.8,"svc009":600,"svc010":0,"svc013":600,"svc014":825,"svc016":0,"svc018":825,"svc020":3.45,"svc021":0,"svc023":0,"svc024":0.4,"svc026":0.6,"svc030":0.34,"svc028":0.4,"svc031":11,"svc032":11,"svc033":11,"svc034":150,"svc035":65,"svc036":20,"svc037":130,"svc038":150,"svc039":35,"svc040":80,"svc041":40,"svc042":60,"svc045":135,"svc046":100,"svc047":100,"svc048":170,"svc049":130,"svc050":130,"svc051":195,"svc052":155,"svc053":155},"G&V Transport":{"svc000":0,"svc001":0,"svc002":6.48,"svc003":0,"svc004":0,"svc005":0,"svc006":1.93,"svc009":0,"svc010":0,"svc013":0,"svc014":0,"svc016":0,"svc018":0,"svc020":0,"svc021":0,"svc023":0,"svc024":0,"svc026":0,"svc030":0,"svc028":0,"svc031":9,"svc032":9,"svc033":9,"svc034":0,"svc035":0,"svc036":0,"svc037":0,"svc038":0,"svc039":36.33,"svc040":0,"svc041":43.6,"svc042":62.28,"svc045":140.13,"svc046":103.8,"svc047":103.8,"svc048":176.46,"svc049":134.94,"svc050":134.94,"svc051":202.41,"svc052":160.89,"svc053":160.89},"Harmony Fine Foods":{"svc000":0.46,"svc001":0,"svc002":6.48,"svc003":0.64,"svc004":0,"svc005":0,"svc006":1.93,"svc009":635.26,"svc010":0,"svc013":635.26,"svc014":856.35,"svc016":0,"svc018":856.35,"svc020":3.63,"svc021":0,"svc023":0,"svc024":0.43,"svc026":0.62,"svc030":0.37,"svc028":0.43,"svc031":12.02,"svc032":12.02,"svc033":12.02,"svc034":155.7,"svc035":67.47,"svc036":20.76,"svc037":0,"svc038":155.7,"svc039":36.33,"svc040":83.04,"svc041":40.48,"svc042":62.28,"svc045":140.13,"svc046":103.8,"svc047":103.8,"svc048":176.46,"svc049":134.94,"svc050":134.94,"svc051":202.41,"svc052":160.89,"svc053":160.89},"Harmony Mixed":{"svc000":0.46,"svc001":0,"svc002":6.48,"svc003":0.64,"svc004":0,"svc005":0,"svc006":1.93,"svc009":635.26,"svc010":0,"svc013":635.26,"svc014":856.35,"svc016":0,"svc018":856.35,"svc020":3.63,"svc021":0,"svc023":0,"svc024":0.43,"svc026":0.62,"svc030":0.37,"svc028":0.43,"svc031":12.02,"svc032":12.02,"svc033":12.02,"svc034":155.7,"svc035":67.47,"svc036":20.76,"svc037":0,"svc038":155.7,"svc039":36.33,"svc040":83.04,"svc041":40.48,"svc042":62.28,"svc045":140.13,"svc046":103.8,"svc047":103.8,"svc048":176.46,"svc049":134.94,"svc050":134.94,"svc051":202.41,"svc052":160.89,"svc053":160.89},"John Dee":{"svc000":0.57,"svc001":0.67,"svc002":6.75,"svc003":0.64,"svc004":0,"svc005":0,"svc006":1.92,"svc009":882.3,"svc010":0,"svc013":882.3,"svc014":1141.8,"svc016":0,"svc018":1141.8,"svc020":3.63,"svc021":0,"svc023":0.85,"svc024":0.43,"svc026":0.62,"svc030":0.37,"svc028":0.43,"svc031":0,"svc032":0,"svc033":0,"svc034":155.7,"svc035":69.88,"svc036":21,"svc037":139.75,"svc038":161.25,"svc039":37.63,"svc040":86,"svc041":64.5,"svc042":64.5,"svc045":140.13,"svc046":103.8,"svc047":103.8,"svc048":176.46,"svc049":134.94,"svc050":134.94,"svc051":202.41,"svc052":160.89,"svc053":160.89},"MCG International":{"svc000":0.39,"svc001":0.48,"svc002":6.75,"svc003":0.64,"svc004":0,"svc005":0,"svc006":1.93,"svc009":544.68,"svc010":0,"svc013":544.68,"svc014":822.36,"svc016":0,"svc018":822.36,"svc020":2.83,"svc021":0,"svc023":0,"svc024":0.32,"svc026":0.62,"svc030":0.32,"svc028":0.35,"svc031":12.77,"svc032":12.77,"svc033":12.77,"svc034":155.7,"svc035":0,"svc036":0,"svc037":0,"svc038":155.7,"svc039":37.63,"svc040":86,"svc041":40.48,"svc042":64.5,"svc045":140.13,"svc046":103.8,"svc047":103.8,"svc048":176.46,"svc049":134.94,"svc050":134.94,"svc051":202.41,"svc052":160.89,"svc053":160.89},"Mort & Co":{"svc000":0.46,"svc001":0.67,"svc002":6.48,"svc003":0.64,"svc004":0,"svc005":1.87,"svc006":2.36,"svc009":635.26,"svc010":0,"svc013":635.26,"svc014":856.35,"svc016":0,"svc018":856.35,"svc020":3.63,"svc021":0,"svc023":0,"svc024":0.43,"svc026":0.62,"svc030":0.37,"svc028":0.43,"svc031":12.02,"svc032":12.02,"svc033":12.02,"svc034":155.7,"svc035":67.47,"svc036":20.76,"svc037":0,"svc038":155.7,"svc039":36.33,"svc040":83.04,"svc041":40.48,"svc042":62.28,"svc045":140.13,"svc046":103.8,"svc047":103.8,"svc048":176.46,"svc049":134.94,"svc050":134.94,"svc051":202.41,"svc052":160.89,"svc053":160.89},"Paradigm Foods":{"svc000":0.46,"svc001":0.67,"svc002":6.48,"svc003":0.64,"svc004":0,"svc005":0,"svc006":1.93,"svc009":635.26,"svc010":0,"svc013":635.26,"svc014":856.35,"svc016":0,"svc018":856.35,"svc020":3.63,"svc021":0,"svc023":0.53,"svc024":0.43,"svc026":0.62,"svc030":0.37,"svc028":0.43,"svc031":12.02,"svc032":12.02,"svc033":12.02,"svc034":155.7,"svc035":67.47,"svc036":20.76,"svc037":0,"svc038":155.7,"svc039":36.33,"svc040":83.04,"svc041":40.48,"svc042":62.28,"svc045":140.13,"svc046":103.8,"svc047":103.8,"svc048":176.46,"svc049":134.94,"svc050":134.94,"svc051":202.41,"svc052":160.89,"svc053":160.89},"Ravensworth":{"svc000":0.57,"svc001":0,"svc002":6.75,"svc003":0,"svc004":0,"svc005":0,"svc006":3.58,"svc009":882.3,"svc010":0,"svc013":882.3,"svc014":1141.8,"svc016":0,"svc018":1141.8,"svc020":3.63,"svc021":0,"svc023":0,"svc024":0.62,"svc026":0.62,"svc030":0.44,"svc028":0.52,"svc031":0,"svc032":0,"svc033":0,"svc034":0,"svc035":69.88,"svc036":0,"svc037":0,"svc038":161.25,"svc039":37.63,"svc040":86,"svc041":64.5,"svc042":64.5,"svc045":140.13,"svc046":103.8,"svc047":103.8,"svc048":176.46,"svc049":134.94,"svc050":134.94,"svc051":202.41,"svc052":160.89,"svc053":160.89},"Security Foods":{"svc000":0.46,"svc001":0.67,"svc002":6.48,"svc003":0.64,"svc004":0,"svc005":1.87,"svc006":1.93,"svc009":635.26,"svc010":0,"svc013":635.26,"svc014":856.35,"svc016":0,"svc018":856.35,"svc020":3.73,"svc021":0,"svc023":0.64,"svc024":0.43,"svc026":0.62,"svc030":0.37,"svc028":0.43,"svc031":0,"svc032":0,"svc033":0,"svc034":155.7,"svc035":67.47,"svc036":20.76,"svc037":134.94,"svc038":155.7,"svc039":36.33,"svc040":83.04,"svc041":40.48,"svc042":62.28,"svc045":140.13,"svc046":103.8,"svc047":103.8,"svc048":176.46,"svc049":134.94,"svc050":134.94,"svc051":202.41,"svc052":160.89,"svc053":160.89},"Stone Axe":{"svc000":0.46,"svc001":0,"svc002":6.48,"svc003":0.64,"svc004":0,"svc005":0,"svc006":1.93,"svc009":635.26,"svc010":1099.06,"svc013":635.26,"svc014":856.35,"svc016":1761.15,"svc018":856.35,"svc020":3.63,"svc021":0,"svc023":0.64,"svc024":0.43,"svc026":0.62,"svc030":0.37,"svc028":0.43,"svc031":12.02,"svc032":12.02,"svc033":12.02,"svc034":155.7,"svc035":67.47,"svc036":0,"svc037":0,"svc038":155.7,"svc039":36.33,"svc040":83.04,"svc041":40.48,"svc042":62.28,"svc045":140.13,"svc046":103.8,"svc047":103.8,"svc048":176.46,"svc049":134.94,"svc050":134.94,"svc051":202.41,"svc052":160.89,"svc053":160.89},"Thomas Food INT":{"svc000":0.45,"svc001":0.65,"svc002":6.25,"svc003":0.6,"svc004":0,"svc005":1.8,"svc006":1.8,"svc009":600,"svc010":0,"svc013":600,"svc014":825,"svc016":0,"svc018":825,"svc020":3.45,"svc021":0,"svc023":0.41,"svc024":0.4,"svc026":0.6,"svc030":0.34,"svc028":0.4,"svc031":0,"svc032":0,"svc033":0,"svc034":150,"svc035":65,"svc036":0,"svc037":130,"svc038":150,"svc039":35,"svc040":80,"svc041":40,"svc042":60,"svc045":135,"svc046":100,"svc047":100,"svc048":170,"svc049":130,"svc050":130,"svc051":195,"svc052":155,"svc053":155}};
+function importBook1CurrentRatesExact(){
+  const marker='apcs_rate_import_book1_20261004_v2';
+  if(localStorage.getItem(marker)==='done')return;
+  const st=profiles(),customers=allCustomers('3PL');
+  Object.entries(APCS_BUILD46_RATE_SOURCE).forEach(([customer,rates])=>{
+    customers.filter(x=>x.customer===customer).forEach(x=>{
+      const k=pkey(x,'3PL'),p=st[k]||{};
+      p.rates={...(p.rates||{})};
+      Object.entries(rates).forEach(([id,val])=>{
+        const n=Number(val);
+        if(Number.isFinite(n)&&n>0)p.rates[id]=n;
+        else delete p.rates[id];
+      });
+      st[k]=p;
+    });
+  });
+  localStorage.setItem('apcs_profiles_v4',JSON.stringify(st));
+  localStorage.setItem(marker,'done');
+  try{renderList();renderRatePage()}catch(e){}
+}
+
+/* When resubmitting a previously priced Pending quote, never regenerate or reset
+   its saved rate card. Newly selected Extra Services are the only rows added. */
+const APCS_BUILD46_prepareSaved3PLRateCard_base=prepareSaved3PLRateCard;
+prepareSaved3PLRateCard=function(q){
+  APCS_BUILD46_prepareSaved3PLRateCard_base(q);
+  // ensureSelectedExtraServices is intentionally called again after restore:
+  // it only adds missing selected extras and does not overwrite any saved _rate.
+  ensureSelectedExtraServices();
+  renderQuoteRateRows();
+  updateSuggestedEconomics();
+};
+
+/* Revenue profile is persisted on every resubmission as well as the first final save. */
+const APCS_BUILD46_proceedSubmitQuote_base=proceedSubmitQuote;
+proceedSubmitQuote=function(basis){
+  const before=currentQuoteRecord();
+  const wasPending=before?.model==='3PL'&&before?.stage==='Submitted'&&before?.status==='Pending';
+  const result=APCS_BUILD46_proceedSubmitQuote_base(basis);
+  if(wasPending){
+    const q=currentQuoteRecord();
+    // The modal remains open while pricing is reviewed; final revenue is recalculated
+    // again in acceptSuggestion after the user saves the rate card.
+    if(q)q.revenueProfile=computeRevenueProfileForQuote(q);
+  }
+  return result;
+};
+
 /* Init after local + remote state settle. */
 function apcsBuild45Init(){
   apcsBuild45PopulateCostInputs();
   updateCostRecoveryHint();
   $('costToServeBlock')?.classList.toggle('hide',qm!=='3PL');
   importBook1CurrentRates();
+  importBook1CurrentRatesExact();
   renderQuotes();
 }
 setTimeout(apcsBuild45Init,300);
