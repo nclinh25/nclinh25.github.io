@@ -4950,3 +4950,112 @@ const APCS53_renderRateTable_base=renderRateTable;
 renderRateTable=function(){apcs53NormalizeDomesticTransport();return APCS53_renderRateTable_base.apply(this,arguments)};
 setTimeout(()=>{try{apcs53NormalizeDomesticTransport();apcs53UpgradeActiveAddService()}catch(e){}},250);
 </script>
+<!-- BUILD: 54 | Canonical Domestic Transport matrix enforcement -->
+<script>
+/* BUILD 54
+   Fixes a real display/migration gap from Build 53:
+   - Domestic Transport is canonicalised at render time, not only via stored customServices migration.
+   - Legacy transport rows can no longer fall back under Customer-specific services.
+   - Canonical rows are: Header=Domestic Transport, Type=Transport,
+     Code 12/34/58/912/1322/2334 with range-specific Melbourne Metro descriptions.
+   - Existing per-customer stored rates are preserved by resolving all legacy IDs that map to each canonical code.
+*/
+function apcs54TransportCodeAny(s){
+  if(!s)return '';
+  const raw=String(s.code||'').trim().replace(/[–—]/g,'-');
+  const compact=raw.replace(/\s+/g,'');
+  const direct={
+    '1-2':'12','12':'12','3-4':'34','34':'34','5-8':'58','58':'58',
+    '9-12':'912','912':'912','13-22':'1322','1322':'1322','23-34':'2334','2334':'2334'
+  };
+  if(direct[compact])return direct[compact];
+  const d=String(s.desc||'').toLowerCase().replace(/[–—]/g,'-');
+  if(/\b1\s*-\s*2\b/.test(d))return '12';
+  if(/\b3\s*-\s*4\b/.test(d))return '34';
+  if(/\b5\s*-\s*8\b/.test(d))return '58';
+  if(/\b9\s*-\s*12\b/.test(d))return '912';
+  if(/\b13\s*-\s*22\b/.test(d))return '1322';
+  if(/\b23\s*-\s*34\b/.test(d))return '2334';
+  return '';
+}
+function apcs54IsTransport(s){
+  if(!s)return false;
+  const txt=[s.section,s.type,s.desc].map(v=>String(v||'').toLowerCase()).join(' ');
+  const code=apcs54TransportCodeAny(s);
+  return !!code && (txt.includes('domestic transport')||txt.includes('melbourne metro')||String(s.type||'').toLowerCase()==='transport');
+}
+const APCS54_TRANSPORT_META={
+  '12':{code:'12',desc:'1-2 Pallets Melbourne Metro'},
+  '34':{code:'34',desc:'3-4 Pallets Melbourne Metro'},
+  '58':{code:'58',desc:'5-8 Pallets Melbourne Metro'},
+  '912':{code:'912',desc:'9-12 Pallets Melbourne Metro'},
+  '1322':{code:'1322',desc:'13-22 Pallets Melbourne Metro'},
+  '2334':{code:'2334',desc:'23-34 Pallets Melbourne Metro'}
+};
+function apcs54CanonicaliseStoredTransport(){
+  let st;try{st=profiles()}catch(e){return false}
+  let changed=false;
+  Object.keys(st||{}).forEach(k=>{
+    const p=st[k];if(!p||!Array.isArray(p.customServices))return;
+    p.rates=p.rates||{};p.rateNotes=p.rateNotes||{};
+    const regular=[];const buckets={};
+    p.customServices.forEach(s=>{
+      if(!apcs54IsTransport(s)){regular.push(s);return}
+      const code=apcs54TransportCodeAny(s);(buckets[code]||(buckets[code]=[])).push(s);
+    });
+    Object.keys(buckets).forEach(code=>{
+      const meta=APCS54_TRANSPORT_META[code];if(!meta)return;
+      const items=buckets[code];
+      const id='custom_domestic_transport_'+code;
+      let rate='',note='';
+      for(const s of items){
+        const rv=p.rates[s.id];
+        if((rate===''||rate==null)&&rv!==undefined&&rv!==null&&rv!=='')rate=rv;
+        if(!note&&p.rateNotes[s.id])note=p.rateNotes[s.id];
+      }
+      items.forEach(s=>{if(s.id!==id){delete p.rates[s.id];delete p.rateNotes[s.id]}});
+      if(rate!==''&&rate!=null)p.rates[id]=rate;
+      if(note)p.rateNotes[id]=note;
+      regular.push({id,section:'Domestic Transport',type:'Transport',code:meta.code,desc:meta.desc,standard:null,custom:true});
+      changed=true;
+    });
+    const seen=new Set();
+    p.customServices=regular.filter(s=>{const key=[s.section,s.type,s.code,s.desc].map(v=>String(v||'').trim().toLowerCase()).join('|');if(seen.has(key))return false;seen.add(key);return true});
+  });
+  if(changed)localStorage.setItem('apcs_profiles_v4',JSON.stringify(st));
+  return changed;
+}
+function apcs54RateForTransportProfile(p,code){
+  if(!p)return null;
+  const canonical='custom_domestic_transport_'+code;
+  if(p.rates&&p.rates[canonical]!==undefined&&p.rates[canonical]!==null&&p.rates[canonical]!=='')return p.rates[canonical];
+  for(const s of (p.customServices||[])){
+    if(apcs54IsTransport(s)&&apcs54TransportCodeAny(s)===code){
+      const v=p.rates?.[s.id];if(v!==undefined&&v!==null&&v!=='')return v;
+    }
+  }
+  return null;
+}
+const APCS54_renderRateTable_prev=renderRateTable;
+renderRateTable=function(){
+  apcs54CanonicaliseStoredTransport();
+  const model=$('rateModel')?.value;
+  if(model!=='3PL')return APCS54_renderRateTable_prev.apply(this,arguments);
+  const search=($('rateSearch')?.value||'').toLowerCase();
+  const arr=[...allCustomers('3PL')].sort((a,b)=>(a.customer+' '+a.account).localeCompare(b.customer+' '+b.account));
+  const st=profiles();
+  $('rateSearchBox')?.classList.remove('hide');
+  const customMap={};
+  arr.forEach(x=>{const p=st[pkey(x,'3PL')]||{};(p.customServices||[]).forEach(cs=>{if(!apcs54IsTransport(cs))customMap[cs.id]=cs})});
+  let all=SERVICES.concat(Object.values(customMap));
+  // Domestic Transport is injected once, canonically, after standard services.
+  Object.values(APCS54_TRANSPORT_META).forEach(meta=>all.push({id:'custom_domestic_transport_'+meta.code,section:'Domestic Transport',type:'Transport',code:meta.code,desc:meta.desc,custom:true,apcs54Transport:true}));
+  all=all.filter(x=>(String(x.code||'')+' '+String(x.desc||'')+' '+String(x.type||'')+' '+String(x.section||'')).toLowerCase().includes(search));
+  $('rateTableWrap').innerHTML=`<div class=matrixWrap><table class=matrix><thead><tr><th class=svc>Rate / Service</th>${arr.map(x=>{let p=st[pkey(x,'3PL')]||{};return `<th class=custHead><b>${x.customer}</b><span class=acct>${x.account}</span><small>CPI ${p.cpi!==''&&p.cpi!=null?Number(p.cpi).toFixed(1)+'%':'—'}<br>Effective ${fmtDate(p.effectiveDate)}</small></th>`}).join('')}</tr></thead><tbody>${(()=>{let last='';return all.map(s=>{let sec='';if(s.section!==last){last=s.section;sec=`<tr class=matrixSection><td colspan="${arr.length+1}">${s.section}</td></tr>`}return sec+`<tr><td class=svc><b>${s.code||'—'}</b> — ${s.desc}<div class=hint>${s.type||''}</div></td>${arr.map(x=>{const p=st[pkey(x,'3PL')]||{};const v=s.apcs54Transport?apcs54RateForTransportProfile(p,s.code):p.rates?.[s.id];return `<td>${money(v)}</td>`}).join('')}</tr>`}).join('')})()}</tbody></table></div>`;
+};
+
+/* Apply after Supabase hydration too, then re-render the rate page. */
+window.addEventListener('load',()=>setTimeout(()=>{
+  try{apcs54CanonicaliseStoredTransport();renderRatePage();if(pm==='3PL'&&selected)renderProfile()}catch(e){console.warn('Build 54 transport migration warning',e)}
+},1200));
+</script>
