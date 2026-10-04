@@ -4804,6 +4804,87 @@ buildStandaloneRateCardPdf=async function(q,rows){
 setTimeout(()=>{try{apcs52UpgradeActiveAddService();apcs52UpgradeQuoteAddService()}catch(e){}},0);
 </script>
 
+
+<!-- BUILD: 55 | Safe Domestic Transport rate recovery -->
+<script>
+/* BUILD 55
+   Repair for Build 54 transport migration:
+   - Never delete legacy transport rate keys while canonicalising.
+   - Carry every non-blank legacy transport rate to the canonical code.
+   - Recover the six Melbourne Metro rates that were visibly present before the
+     Build 54 migration when the affected profile is recognisable by its 1–2 rate.
+   - Do not populate transport rates for unrelated customers that have no prior signal.
+*/
+const APCS55_TRANSPORT_DEFAULT_RECOVERY={
+  '12':66,'34':60,'58':54,'912':48,'1322':504,'2334':756
+};
+function apcs55NonBlank(v){return v!==undefined&&v!==null&&String(v).trim()!==''}
+function apcs55TransportSnapshot(p){
+  const out={};
+  if(!p)return out;
+  p.rates=p.rates||{};
+  for(const s of (p.customServices||[])){
+    const code=apcs54TransportCodeAny(s);
+    if(!code)continue;
+    const v=p.rates[s.id];
+    if(apcs55NonBlank(v)&&!apcs55NonBlank(out[code]))out[code]=v;
+  }
+  for(const code of Object.keys(APCS54_TRANSPORT_META)){
+    const id='custom_domestic_transport_'+code;
+    const v=p.rates[id];
+    if(apcs55NonBlank(v)&&!apcs55NonBlank(out[code]))out[code]=v;
+  }
+  return out;
+}
+function apcs55CanonicaliseStoredTransport(){
+  let st;try{st=profiles()}catch(e){return false}
+  let changed=false;
+  Object.keys(st||{}).forEach(k=>{
+    const p=st[k];if(!p)return;
+    p.rates=p.rates||{};p.rateNotes=p.rateNotes||{};p.customServices=Array.isArray(p.customServices)?p.customServices:[];
+    const before=apcs55TransportSnapshot(p);
+    const regular=p.customServices.filter(s=>!apcs54IsTransport(s));
+    // Recognise the exact profile whose transport set was previously shown as
+    // 66/60/54/48/504/756. Only use this fallback when there is already a real
+    // 1–2 transport rate of 66 and most of the set is missing after migration.
+    const missing=Object.keys(APCS54_TRANSPORT_META).filter(c=>!apcs55NonBlank(before[c]));
+    const recoverKnown=Number(before['12'])===66 && missing.length>=3;
+    Object.keys(APCS54_TRANSPORT_META).forEach(code=>{
+      const meta=APCS54_TRANSPORT_META[code], id='custom_domestic_transport_'+code;
+      let v=before[code];
+      if(!apcs55NonBlank(v) && recoverKnown)v=APCS55_TRANSPORT_DEFAULT_RECOVERY[code];
+      if(apcs55NonBlank(v) && p.rates[id]!==v){p.rates[id]=v;changed=true}
+      // Important: keep all orphan/legacy p.rates keys untouched. They are a safety
+      // net and must not be deleted by migration.
+      regular.push({id,section:'Domestic Transport',type:'Transport',code:meta.code,desc:meta.desc,standard:null,custom:true});
+    });
+    const seen=new Set();
+    p.customServices=regular.filter(s=>{const key=String(s.id||'');if(seen.has(key))return false;seen.add(key);return true});
+    changed=true;
+  });
+  if(changed)localStorage.setItem('apcs_profiles_v4',JSON.stringify(st));
+  return changed;
+}
+
+// Replace the destructive Build 54 migration with the safe version everywhere.
+apcs54CanonicaliseStoredTransport=apcs55CanonicaliseStoredTransport;
+
+// Resolve transport rates without ever preferring a blank canonical value.
+apcs54RateForTransportProfile=function(p,code){
+  if(!p)return null;
+  const canonical='custom_domestic_transport_'+code;
+  const cv=p.rates?.[canonical];
+  if(apcs55NonBlank(cv))return cv;
+  const snap=apcs55TransportSnapshot(p);
+  if(apcs55NonBlank(snap[code]))return snap[code];
+  if(Number(snap['12'])===66)return APCS55_TRANSPORT_DEFAULT_RECOVERY[code] ?? null;
+  return null;
+};
+
+// Run recovery after local state and again after remote hydration has had time to land.
+setTimeout(()=>{try{apcs55CanonicaliseStoredTransport();renderRatePage();if(pm==='3PL'&&selected)renderProfile()}catch(e){console.warn('Build 55 transport recovery warning',e)}},300);
+window.addEventListener('load',()=>setTimeout(()=>{try{apcs55CanonicaliseStoredTransport();renderRatePage();if(pm==='3PL'&&selected)renderProfile()}catch(e){console.warn('Build 55 post-sync recovery warning',e)}},1800));
+</script>
 </body></html>
 <!-- BUILD: 53 | Manual service charge fields + canonical Domestic Transport -->
 <style>
