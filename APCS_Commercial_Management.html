@@ -4805,3 +4805,148 @@ setTimeout(()=>{try{apcs52UpgradeActiveAddService();apcs52UpgradeQuoteAddService
 </script>
 
 </body></html>
+<!-- BUILD: 53 | Manual service charge fields + canonical Domestic Transport -->
+<style>
+  .apcs53ManualAdd{display:grid;grid-template-columns:1.15fr 1fr .75fr 2fr 1fr auto;gap:10px;align-items:end}
+  @media(max-width:900px){.apcs53ManualAdd{grid-template-columns:1fr 1fr}.apcs53ManualAdd .wide{grid-column:1/-1}}
+</style>
+<script>
+/* BUILD 53
+   Confirmed scope:
+   - Remove Service preset dropdown from Active Customer > Add service charge.
+   - Keep exactly 5 manual fields: Section/Header, Type, Code, Description, Rate.
+   - Canonicalise Domestic Transport rows to one section with Type=Transport,
+     codes 12,34,58,912,1322,2334 and clear Melbourne Metro descriptions.
+   - Preserve existing stored rates and notes; merge accidental duplicates.
+*/
+const APCS53_TRANSPORT={
+  '12':{code:'12',desc:'1-2 Pallets Melbourne Metro'},
+  '34':{code:'34',desc:'3-4 Pallets Melbourne Metro'},
+  '58':{code:'58',desc:'5-8 Pallets Melbourne Metro'},
+  '912':{code:'912',desc:'9-12 Pallets Melbourne Metro'},
+  '1322':{code:'1322',desc:'13-22 Pallets Melbourne Metro'},
+  '2334':{code:'2334',desc:'23-34 Pallets Melbourne Metro'}
+};
+function apcs53TransportCode(s){
+  const raw=String(s?.code||'').trim().replace(/[–—]/g,'-');
+  const digits=raw.replace(/\D/g,'');
+  if(APCS53_TRANSPORT[digits])return digits;
+  const d=String(s?.desc||'').toLowerCase();
+  if(/\b1\s*-\s*2\b/.test(d))return '12';
+  if(/\b3\s*-\s*4\b/.test(d))return '34';
+  if(/\b5\s*-\s*8\b/.test(d))return '58';
+  if(/\b9\s*-\s*12\b/.test(d))return '912';
+  if(/\b13\s*-\s*22\b/.test(d))return '1322';
+  if(/\b23\s*-\s*34\b/.test(d))return '2334';
+  return '';
+}
+function apcs53IsDomesticTransport(s){
+  const txt=[s?.section,s?.type,s?.desc].map(v=>String(v||'').toLowerCase()).join(' ');
+  return txt.includes('domestic transport') || txt.includes('melbourne metro transport') || (!!apcs53TransportCode(s) && txt.includes('melbourne metro'));
+}
+function apcs53NormalizeDomesticTransport(){
+  let st;
+  try{st=profiles()}catch(e){return false}
+  let changed=false;
+  Object.keys(st||{}).forEach(k=>{
+    const p=st[k]; if(!p||!Array.isArray(p.customServices))return;
+    p.rates=p.rates||{}; p.rateNotes=p.rateNotes||{};
+    const untouched=[]; const buckets={};
+    p.customServices.forEach(s=>{
+      if(!apcs53IsDomesticTransport(s)){untouched.push(s);return}
+      const code=apcs53TransportCode(s); if(!code||!APCS53_TRANSPORT[code]){untouched.push(s);return}
+      (buckets[code]||(buckets[code]=[])).push(s);
+    });
+    Object.entries(buckets).forEach(([code,items])=>{
+      const canonicalId='custom_domestic_transport_'+code;
+      const meta=APCS53_TRANSPORT[code];
+      let rate, note='';
+      // Preserve the first real stored rate/note found across duplicate legacy rows.
+      for(const s of items){
+        const rv=p.rates[s.id];
+        if(rate===undefined && rv!==undefined && rv!==null && rv!=='')rate=rv;
+        if(!note && p.rateNotes[s.id])note=p.rateNotes[s.id];
+      }
+      items.forEach(s=>{if(s.id!==canonicalId){delete p.rates[s.id];delete p.rateNotes[s.id]}});
+      if(rate!==undefined)p.rates[canonicalId]=rate;
+      if(note)p.rateNotes[canonicalId]=note;
+      untouched.push({id:canonicalId,section:'Domestic Transport',type:'Transport',code:meta.code,desc:meta.desc,standard:null,custom:true});
+      changed=true;
+    });
+    // De-dupe canonical rows while preserving order of all non-transport custom services.
+    const seen=new Set();
+    p.customServices=untouched.filter(s=>{const id=String(s.id||'');if(seen.has(id))return false;seen.add(id);return true});
+  });
+  if(changed)localStorage.setItem('apcs_profiles_v4',JSON.stringify(st));
+  return changed;
+}
+
+/* Active-customer editor: custom rows show their actual Type too. */
+serviceRows=function(p){
+  const custom=p.customServices||[];
+  const all=SERVICES.concat(custom).map(s=>s.custom?{...s,section:(String(s.section||'').trim()||apcs51CustomSection(s))}:s);
+  let last='';
+  return all.map(s=>{
+    let sec=''; const section=s.section||'Other Services';
+    if(section!==last){last=section;sec=`<tr class=sectionrow><td colspan=6>${apcs51Esc(section)}</td></tr>`}
+    const val=p.rates&&p.rates[s.id]!=null?p.rates[s.id]:(s.standard??'');
+    const displayVal=apcs52RateText(val);
+    return sec+`<tr><td>${apcs51Esc(s.type||'')}</td><td>${apcs51Esc(s.code||'—')}</td><td>${apcs51Esc(s.desc||'')}</td><td><input class=prate data-id="${apcs51Esc(s.id)}" type="text" inputmode="decimal" value="${displayVal}" onblur="apcs50FormatRateInput(this)"></td><td><input class=pnote data-id="${apcs51Esc(s.id)}" value="${apcs51Esc(p.rateNotes?.[s.id]||'')}"></td><td>${s.custom?`<button class=x onclick="removeCustom('${String(s.id).replaceAll("'","\\'")}')">×</button>`:''}</td></tr>`;
+  }).join('');
+};
+
+function apcs53UpgradeActiveAddService(){
+  if(pm!=='3PL')return;
+  const preset=$('apcs51Preset');
+  const anyField=$('newType')||$('newCode')||$('newDesc')||$('newRate');
+  const old=(preset?.closest('.apcs51PresetGrid')) || anyField?.closest('.apcs51PresetGrid') || anyField?.closest('.addline');
+  if(!old||old.dataset.apcs53==='1')return;
+  old.dataset.apcs53='1'; old.className='apcs53ManualAdd';
+  old.innerHTML=`
+    <div><label>Section / Header</label><input id="newSection" placeholder="e.g. Domestic Transport"></div>
+    <div><label>Type</label><input id="newType" placeholder="e.g. Transport"></div>
+    <div><label>Code</label><input id="newCode" placeholder="e.g. 12"></div>
+    <div><label>Description</label><input id="newDesc" placeholder="e.g. 1-2 Pallets Melbourne Metro"></div>
+    <div><label>Rate</label><input id="newRate" type="text" inputmode="decimal" placeholder="0.00" onblur="apcs50FormatRateInput(this)"></div>
+    <button class="btn" onclick="addServiceCharge()">Add / Update</button>`;
+}
+
+/* Manual add/update. Same Section + Type + Code updates instead of duplicating. */
+addServiceCharge=function(){
+  if(!selected)return;
+  const section=String($('newSection')?.value||'').trim();
+  const type=String($('newType')?.value||'').trim();
+  const code=String($('newCode')?.value||'').trim();
+  const desc=String($('newDesc')?.value||'').trim();
+  const rateRaw=String($('newRate')?.value||'').trim();
+  if(!section||!type||!code||!desc){appNotice('Complete Section / Header, Type, Code and Description.','Service required','warning');return}
+  saveCurrentProfile(false);
+  const st=profiles(),k=pkey(selected),p=st[k]||{};
+  p.customServices=p.customServices||[];p.rates=p.rates||{};p.rateNotes=p.rateNotes||{};
+  const norm=v=>String(v||'').trim().toLowerCase().replace(/[–—]/g,'-').replace(/\s+/g,'');
+  const matches=p.customServices.filter(s=>norm(s.section)===norm(section)&&norm(s.type)===norm(type)&&norm(s.code)===norm(code));
+  let target=matches[0];
+  if(target){
+    target.section=section;target.type=type;target.code=code;target.desc=desc;target.custom=true;
+  }else{
+    const id='custom_'+Date.now();target={id,section,type,code,desc,standard:null,custom:true};p.customServices.push(target);
+  }
+  if(rateRaw!==''&&Number.isFinite(Number(rateRaw)))p.rates[target.id]=Number(rateRaw);else delete p.rates[target.id];
+  matches.slice(1).forEach(dup=>{p.customServices=p.customServices.filter(s=>s.id!==dup.id);delete p.rates[dup.id];delete p.rateNotes[dup.id]});
+  st[k]=p;localStorage.setItem('apcs_profiles_v4',JSON.stringify(st));
+  apcs53NormalizeDomesticTransport();renderProfile();
+  appNotice(`${section} · ${code} saved.`,'Service saved','success');
+};
+
+/* Ensure migration is applied both after database hydration and whenever these views open. */
+const APCS53_renderProfile_base=renderProfile;
+renderProfile=function(){
+  apcs53NormalizeDomesticTransport();
+  const out=APCS53_renderProfile_base.apply(this,arguments);
+  setTimeout(apcs53UpgradeActiveAddService,0);
+  return out;
+};
+const APCS53_renderRateTable_base=renderRateTable;
+renderRateTable=function(){apcs53NormalizeDomesticTransport();return APCS53_renderRateTable_base.apply(this,arguments)};
+setTimeout(()=>{try{apcs53NormalizeDomesticTransport();apcs53UpgradeActiveAddService()}catch(e){}},250);
+</script>
