@@ -4023,6 +4023,142 @@ function apcsBuild45Init(){
 }
 setTimeout(apcsBuild45Init,300);
 setTimeout(apcsBuild45Init,2800);
+
+
+/* ===== BUILD 47: EXTRA SERVICES + REVENUE LABEL LOGIC + PDF TABLE ALIGNMENT ===== */
+
+/* Selected Extra Services are quote requirements, so they must always appear in
+   the Suggested Rate Card. Existing/saved prices are preserved; newly selected
+   services inherit the comparison profile rate only when one actually exists. */
+function apcsBuild47SelectedExtraNames(q){
+  const dom=[...document.querySelectorAll('#extras input:checked')]
+    .map(x=>((x.value&&String(x.value).toLowerCase()!=='on')?x.value:(x.nextElementSibling?.textContent||'')))
+    .map(x=>String(x||'').trim()).filter(Boolean);
+  const saved=Array.isArray(q?.snapshot?.selectedExtras)?q.snapshot.selectedExtras:[];
+  return [...new Set([...saved,...dom].map(x=>String(x||'').trim()).filter(Boolean))];
+}
+function apcsBuild47ForceExtrasIntoSuggested(){
+  if(qm!=='3PL')return;
+  const q=currentQuoteRecord();
+  const selected=apcsBuild47SelectedExtraNames(q);
+  selected.forEach(name=>{
+    const def=extraServiceDefinition(name);if(!def)return;
+    const existing=quoteRateServices.find(x=>x.id===def.id);
+    if(existing){existing._autoExtra=existing._autoExtra||name;return;}
+    const saved=(q?.selectedRateCard||[]).find(x=>x.id===def.id);
+    const matched=chosenMatch?.p?.rates?.[def.id];
+    quoteRateServices.push({...def,_autoExtra:name,_rate:saved?.rate??matched??''});
+    quoteRemovedServices=quoteRemovedServices.filter(x=>x.id!==def.id);
+  });
+  renderQuoteRateRows();
+  updateSuggestedEconomics();
+}
+const APCS_BUILD47_chooseMatch_base=chooseMatch;
+chooseMatch=function(i){
+  const r=APCS_BUILD47_chooseMatch_base(i);
+  if(qm==='3PL')apcsBuild47ForceExtrasIntoSuggested();
+  return r;
+};
+const APCS_BUILD47_chooseNoMatch_base=chooseNoMatch;
+chooseNoMatch=function(){
+  const r=APCS_BUILD47_chooseNoMatch_base();
+  if(qm==='3PL')apcsBuild47ForceExtrasIntoSuggested();
+  return r;
+};
+const APCS_BUILD47_prepareSaved3PLRateCard_base=prepareSaved3PLRateCard;
+prepareSaved3PLRateCard=function(q){
+  const r=APCS_BUILD47_prepareSaved3PLRateCard_base(q);
+  apcsBuild47ForceExtrasIntoSuggested();
+  return r;
+};
+
+/* Revenue wording: "One-off" is the value of the first operating week/cycle,
+   i.e. initial event revenue PLUS that first week's recurring revenue.
+   "Recurring" remains recurring revenue only. */
+const APCS_BUILD47_computeRevenueProfileForQuote_base=computeRevenueProfileForQuote;
+computeRevenueProfileForQuote=function(q){
+  const r=APCS_BUILD47_computeRevenueProfileForQuote_base(q);if(!r)return r;
+  const initialOnly=Number(r.oneOff)||0;
+  const recurringOnly=Number(r.weeklyRecurring)||0;
+  return {...r,initialRevenue:initialOnly,oneOff:initialOnly+recurringOnly};
+};
+const APCS_BUILD47_apcsRevenueSummaryHtml_base=apcsRevenueSummaryHtml;
+apcsRevenueSummaryHtml=function(q){
+  const r=computeRevenueProfileForQuote(q);if(!r)return '';
+  return `<div class=econBox style="margin-top:12px"><b>Revenue profile · ${esc(r.classification)}</b>
+    <div class=econGrid style="margin-top:9px">
+      <div class=econKpi><small>One-off revenue (initial + first recurring week)</small><b>${money(r.oneOff)}</b></div>
+      <div class=econKpi><small>Weekly recurring revenue</small><b>${money(r.weeklyRecurring)}/wk</b></div>
+      <div class=econKpi><small>Expected recurring revenue</small><b>${money(r.expectedRecurringAnnual)}/yr</b></div>
+    </div>
+    <div class=hint style="margin-top:7px">One-off includes the initial event plus the first recurring week. Recurring contains only the revenue that continues after the initial event, using the quote's actual cadence.</div>
+  </div>`;
+};
+
+/* Recalculate the Pending 3PL footer from the current rules instead of relying on
+   stale persisted revenueProfile values from earlier builds. */
+apcsPending3PLTotals=function(){
+  return quoteStore().filter(q=>q.model==='3PL'&&q.stage==='Submitted'&&q.status==='Pending').reduce((t,q)=>{
+    const r=computeRevenueProfileForQuote(q)||{};
+    t.oneOff+=Number(r.oneOff)||0;
+    t.weekly+=Number(r.weeklyRecurring)||0;
+    t.expected+=Number(r.expectedRecurringAnnual)||0;
+    t.count++;
+    return t;
+  },{oneOff:0,weekly:0,expected:0,count:0});
+};
+
+/* PDF rate card: vertically centre every cell and give the Code column more
+   breathing room so long codes such as STOPP / STOP do not hug the border. */
+buildStandaloneRateCardPdf=async function(q,rows){
+  const letterhead=await loadPdfImage(APCS_TEMPLATE_PAGE);
+  const canvas=document.createElement('canvas');canvas.width=1240;canvas.height=1754;
+  const c=canvas.getContext('2d');c.drawImage(letterhead,0,0,canvas.width,canvas.height);
+  const quoteType=q.quoteType||q.snapshot?.v?.quoteType||'New Quote';
+  const title=quoteType==='Contract Renewal'?`${q.name} - Contract Renewal Rate Card`:`${q.name} - Rate Card`;
+  c.fillStyle='#0b4f7d';c.font='700 46px Arial, sans-serif';c.textBaseline='alphabetic';c.fillText(title,105,355);
+  c.strokeStyle='#b9cfde';c.lineWidth=2;c.beginPath();c.moveTo(105,385);c.lineTo(1135,385);c.stroke();
+  c.fillStyle='#536f82';c.font='21px Arial, sans-serif';
+  c.fillText(`Quote ID: ${q.id}`,105,430);c.fillText(`Commercial model: ${q.model||'-'}`,105,466);c.fillText(`Quote type: ${quoteType}`,105,502);
+  c.textAlign='right';c.fillText(`Prepared: ${new Date().toLocaleDateString('en-AU')}`,1135,430);
+  c.fillStyle='#173246';c.font='700 21px Arial, sans-serif';c.fillText('Annual CPI: Review annually',1135,470);c.textAlign='left';
+
+  const x=105,y0=545,tableW=1030,col1=160,col2=690,col3=180;
+  const sorted=[...rows].sort((a,b)=>sectionRank(a.section)-sectionRank(b.section)||(a.section||'').localeCompare(b.section||'')||(a.code||'').localeCompare(b.code||''));
+  const sections=[];let last=null;
+  sorted.forEach(r=>{const s=r.section||'Other Services';if(s!==last){sections.push({heading:s});last=s}sections.push({row:r})});
+  const available=900;
+  const rowH=Math.max(30,Math.min(44,Math.floor(available/Math.max(sections.length+1,1))));
+  const font=Math.max(14,Math.min(19,rowH-13)),headH=42,secH=Math.max(26,rowH-4);
+  const codePad=22,bodyPad=14;
+
+  c.textBaseline='middle';
+  c.fillStyle='#0b4f7d';c.fillRect(x,y0,tableW,headH);c.fillStyle='#fff';c.font='700 18px Arial, sans-serif';
+  c.fillText('Code',x+codePad,y0+headH/2);c.fillText('Service',x+col1+bodyPad,y0+headH/2);c.fillText('Rate',x+col1+col2+bodyPad,y0+headH/2);
+  let y=y0+headH,idx=0;
+  for(const item of sections){
+    if(y>1510)break;
+    if(item.heading){
+      c.fillStyle='#e6f2f9';c.fillRect(x,y,tableW,secH);c.fillStyle='#075985';c.font=`700 ${Math.max(14,font-1)}px Arial, sans-serif`;
+      c.fillText(String(item.heading).slice(0,75),x+bodyPad,y+secH/2);y+=secH;continue;
+    }
+    const r=item.row;
+    c.fillStyle=idx%2?'rgba(245,249,251,.96)':'rgba(255,255,255,.94)';c.fillRect(x,y,tableW,rowH);
+    c.strokeStyle='#d6e4ec';c.lineWidth=1;c.strokeRect(x,y,tableW,rowH);
+    c.beginPath();c.moveTo(x+col1,y);c.lineTo(x+col1,y+rowH);c.stroke();
+    c.beginPath();c.moveTo(x+col1+col2,y);c.lineTo(x+col1+col2,y+rowH);c.stroke();
+    const cy=y+rowH/2;
+    c.fillStyle='#173246';c.font=`${font}px Arial, sans-serif`;
+    c.fillText(String(r.code||'-').slice(0,16),x+codePad,cy);
+    c.fillText(String(r.desc||'-').slice(0,58),x+col1+bodyPad,cy);
+    c.font=`700 ${font}px Arial, sans-serif`;c.fillText(rateDisplay(r.rate),x+col1+col2+bodyPad,cy);
+    y+=rowH;idx++;
+  }
+  c.textBaseline='alphabetic';
+  const jpeg=canvas.toDataURL('image/jpeg',0.97);
+  return canvasJpegToSinglePagePdf(jpeg,canvas.width,canvas.height);
+};
+
 </script>
 <style>
 .pending3plTotalRow td{background:#f4f9fc!important;border-top:2px solid #b9d9eb!important;font-size:12px}
