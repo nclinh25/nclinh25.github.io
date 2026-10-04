@@ -4771,7 +4771,7 @@ buildStandaloneRateCardPdf=async function(q,rows){
       c.fillText(`Page ${pageNo}`,1135,285);
       c.textAlign='left';
     }
-    const y0=pageNo===1?500:410;  // continuation pages begin below the logo/letterhead
+    const y0=pageNo===1?500:390;  // continuation pages begin below the logo/letterhead
     c.textBaseline='middle';
     c.fillStyle='#0b4f7d';c.fillRect(x,y0,tableW,headH);c.fillStyle='#fff';c.font='700 18px Arial, sans-serif';
     c.fillText('Code',x+codePad,y0+headH/2);c.fillText('Service',x+col1+bodyPad,y0+headH/2);c.fillText('Rate',x+col1+col2+bodyPad,y0+headH/2);
