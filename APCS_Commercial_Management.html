@@ -4160,6 +4160,174 @@ buildStandaloneRateCardPdf=async function(q,rows){
 };
 
 </script>
+
+<script>
+/* ===== BUILD 48: QUOTE-DRIVEN SERVICE RULES + RESUBMIT BASIS ONLY ===== */
+
+function apcs48Svc(id){
+  const s=SERVICES.find(x=>x.id===id);
+  return s?{...s}:null;
+}
+function apcs48QuoteState(){
+  const q=currentQuoteRecord();
+  const v=q?.snapshot?.v||{};
+  const bool=(id,key)=>{
+    const el=$(id);
+    if(el)return !!el.checked;
+    return !!v[key||id];
+  };
+  const val=(id,key)=>{
+    const el=$(id);
+    if(el && el.value!==undefined)return String(el.value||'');
+    return String(v[key||id]||'');
+  };
+  return {
+    q,v,
+    domestic:bool('dom'),
+    exportMarket:bool('exp'),
+    export20:bool('exp20'),
+    export40:bool('exp40'),
+    country:val('country'),
+    product:val('prod'),
+    scan:val('scan'),
+    extras:apcsBuild47SelectedExtraNames(q)
+  };
+}
+function apcs48RateForService(def,q){
+  if(!def)return '';
+  const saved=(q?.selectedRateCard||[]).find(x=>x.id===def.id);
+  if(saved && saved.rate!==undefined && saved.rate!==null && saved.rate!=='')return saved.rate;
+  const matched=chosenMatch?.p?.rates?.[def.id];
+  if(matched!==undefined && matched!==null && matched!=='')return matched;
+  return def.standard??'';
+}
+function apcs48EnsureService(id,tag){
+  const def=apcs48Svc(id);if(!def)return;
+  const q=currentQuoteRecord();
+  const existing=quoteRateServices.find(x=>x.id===id);
+  if(existing){existing._autoRule=existing._autoRule||tag;return;}
+  quoteRateServices.push({...def,_autoRule:tag,_rate:apcs48RateForService(def,q)});
+  quoteRemovedServices=quoteRemovedServices.filter(x=>x.id!==id);
+}
+function apcs48RemoveWrongBasisCore(basis){
+  const wrong=basis==='Pallet'
+    ?new Set(['svc024','svc026','svc030'])
+    :new Set(['svc031','svc032','svc033']);
+  quoteRateServices=quoteRateServices.filter(x=>!wrong.has(x.id));
+}
+function apcs48ApplyQuoteDrivenServices(){
+  if(qm!=='3PL')return;
+  const st=apcs48QuoteState();
+  const basis=currentBillingBasis()==='Pallet'?'Pallet':'Carton';
+  apcs48RemoveWrongBasisCore(basis);
+
+  // Core services for BOTH Domestic and Export.
+  apcs48EnsureService('svc039','core-admin-120'); // 120 Admin
+  apcs48EnsureService('svc028','core-scan');      // SCAN
+  if(basis==='Pallet'){
+    apcs48EnsureService('svc032','core-receive-pallet'); // RECP
+    apcs48EnsureService('svc031','core-pick-pallet');    // PICKP
+    apcs48EnsureService('svc033','core-storage-pallet'); // STOPP / STOP
+  }else{
+    apcs48EnsureService('svc026','core-receive-carton'); // REC
+    apcs48EnsureService('svc024','core-pick-carton');    // PICK
+    apcs48EnsureService('svc030','core-storage-carton'); // STOR
+  }
+  // All overtime sections are mandatory for both Domestic and Export.
+  ['svc045','svc046','svc047','svc048','svc049','svc050','svc051','svc052','svc053']
+    .forEach(id=>apcs48EnsureService(id,'mandatory-overtime'));
+
+  // Blast selection adds BREC.
+  if(String(st.product).toLowerCase()==='blast')apcs48EnsureService('svc020','blast');
+
+  // Quote-selected extras.
+  const extras=new Set(st.extras.map(x=>String(x).trim().toLowerCase()));
+  if(extras.has('shrinkwrap'))apcs48EnsureService('svc002','extra-shrinkwrap'); // 109
+  if(extras.has('handstack'))apcs48EnsureService('svc003','extra-handstack');   // 116
+  if(extras.has('label'))apcs48EnsureService('svc006','extra-label');           // 131
+  if(extras.has('temp logger'))apcs48EnsureService('svc004','extra-temp-logger'); //119
+  if(extras.has('portmark')){
+    apcs48EnsureService('svc000','extra-portmark'); // 108
+    if(st.exportMarket && /\busa\b|united states|u\.s\.?a?/i.test(st.country)){
+      apcs48EnsureService('svc001','extra-portmark-usa'); //108A
+    }
+  }
+
+  // Export defaults + container loading charges.
+  if(st.exportMarket){
+    ['svc034','svc035','svc036','svc040','svc042'].forEach(id=>apcs48EnsureService(id,'export-default')); //105,106,107,121,621
+    if(st.export20)apcs48EnsureService('svc009','export-20ft'); //523
+    if(st.export40)apcs48EnsureService('svc014','export-40ft'); //525
+  }
+
+  // Domestic defaults.
+  if(st.domestic){
+    ['svc039','svc041','svc038','svc042'].forEach(id=>apcs48EnsureService(id,'domestic-default')); //120,600,111,621
+  }
+
+  renderQuoteRateRows();
+  updateSuggestedEconomics();
+}
+
+// Replace the old extra-only inclusion rule with the full quote-driven rule set.
+ensureSelectedExtraServices=function(){
+  if(qm!=='3PL')return;
+  apcs48ApplyQuoteDrivenServices();
+};
+syncSelectedExtrasIntoSuggestedRateCard=function(){
+  if(qm!=='3PL')return;
+  apcs48ApplyQuoteDrivenServices();
+};
+apcsBuild47ForceExtrasIntoSuggested=function(){
+  if(qm!=='3PL')return;
+  apcs48ApplyQuoteDrivenServices();
+};
+
+// First submit AND resubmit both ask only for Carton/Pallet basis.
+// The existing proceedSubmitQuote resubmit branch then restores the saved comparison
+// customer and saved prices without showing the comparison-customer chooser again.
+submitQuote=function(){
+  if(qm!=='3PL')return proceedSubmitQuote('');
+  const q=currentQuoteRecord();
+  const current=q?.billingBasis||q?.snapshot?.v?.billingBasis||'';
+  const m=$('billingBasisModal');
+  if(!m)return proceedSubmitQuote(current||'Carton');
+  const title=m.querySelector('.sysModalTitle');
+  const hint=m.querySelector('.sysModalHead .hint');
+  if(q?.stage==='Submitted' && q?.status==='Pending' && Array.isArray(q.selectedRateCard) && q.selectedRateCard.length){
+    if(title)title.textContent='Confirm Billing Basis';
+    if(hint)hint.textContent=`Saved rate card will be restored. Choose Carton or Pallet only; the comparison customer will not be selected again.${current?` Current basis: ${current}.`:''}`;
+  }else{
+    if(title)title.textContent='Select Billing Basis';
+    if(hint)hint.textContent='How should the core 3PL services be charged for this customer?';
+  }
+  m.classList.add('on');m.setAttribute('aria-hidden','false');
+};
+
+// After a saved rate card is restored, enforce only the newly selected basis-specific
+// core services and quote-driven additions. All unrelated saved/manual prices remain.
+const APCS48_prepareSaved3PLRateCard_base=prepareSaved3PLRateCard;
+prepareSaved3PLRateCard=function(q){
+  const r=APCS48_prepareSaved3PLRateCard_base(q);
+  apcs48ApplyQuoteDrivenServices();
+  return r;
+};
+
+// First-time match/no-match also receives the full quote-driven service set.
+const APCS48_chooseMatch_base=chooseMatch;
+chooseMatch=function(i){
+  const r=APCS48_chooseMatch_base(i);
+  if(qm==='3PL')apcs48ApplyQuoteDrivenServices();
+  return r;
+};
+const APCS48_chooseNoMatch_base=chooseNoMatch;
+chooseNoMatch=function(){
+  const r=APCS48_chooseNoMatch_base();
+  if(qm==='3PL')apcs48ApplyQuoteDrivenServices();
+  return r;
+};
+</script>
+
 <style>
 .pending3plTotalRow td{background:#f4f9fc!important;border-top:2px solid #b9d9eb!important;font-size:12px}
 #costToServeBlock .g4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
