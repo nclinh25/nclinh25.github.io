@@ -767,7 +767,7 @@ function setFieldText(id,val){
   if('value' in e)e.value=val??'';
   else e.textContent=val??'';
 }
-const $=x=>document.getElementById(x), money=n=>n===null||n===undefined||n===''?'—':'$'+Number(n).toLocaleString(undefined,{maximumFractionDigits:2}), days=(n,u)=>+n*(u==='days'?1:u==='weeks'?7:u==='months'?30:0);
+const $=x=>document.getElementById(x), money=n=>n===null||n===undefined||n===''?'—':'$'+Number(n).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}), days=(n,u)=>+n*(u==='days'?1:u==='weeks'?7:u==='months'?30:0);
 function go(p){
   document.querySelectorAll('.page').forEach(x=>x.classList.remove('on'));
   $(p).classList.add('on');
@@ -1032,7 +1032,7 @@ This will remove the customer from the Customer Profile and Rate Card. This acti
     selected=null;renderList();renderRatePage();
   },{title:'Delete customer',confirmText:'Delete',type:'danger'});
 }
-function serviceRows(p){let custom=p.customServices||[],all=SERVICES.concat(custom);let last='';return all.map(s=>{let sec='';if(s.section!==last){last=s.section;sec=`<tr class=sectionrow><td colspan=6>${s.section}</td></tr>`}let val=p.rates&&p.rates[s.id]!=null?p.rates[s.id]:(s.standard??'');return sec+`<tr><td>${s.type||'Custom'}</td><td>${s.code||'—'}</td><td>${s.desc}</td><td><input class=prate data-id="${s.id}" type=number step=.01 value="${val}"></td><td><input class=pnote data-id="${s.id}" value="${p.rateNotes?.[s.id]||''}"></td><td>${s.custom?`<button class=x onclick="removeCustom('${s.id}')">×</button>`:''}</td></tr>`}).join('')}
+function serviceRows(p){let custom=p.customServices||[],all=SERVICES.concat(custom);let last='';return all.map(s=>{let sec='';if(s.section!==last){last=s.section;sec=`<tr class=sectionrow><td colspan=6>${s.section}</td></tr>`}let val=p.rates&&p.rates[s.id]!=null?p.rates[s.id]:(s.standard??'');let displayVal=(val===''||val==null)?'':Number(val).toFixed(2);return sec+`<tr><td>${s.type||'Custom'}</td><td>${s.code||'—'}</td><td>${s.desc}</td><td><input class=prate data-id="${s.id}" type=number step=.01 value="${displayVal}" onblur="apcs50FormatRateInput(this)"></td><td><input class=pnote data-id="${s.id}" value="${p.rateNotes?.[s.id]||''}"></td><td>${s.custom?`<button class=x onclick="removeCustom('${s.id}')">×</button>`:''}</td></tr>`}).join('')}
 function historyTable(p){let hist=p.rateHistory||[],current={effectiveDate:p.effectiveDate||'',cpi:p.lastAppliedCpi??p.cpi??'',rates:p.rates||{},current:true},versions=[current].concat([...hist].reverse());if(!versions.length)return'';let all=pm==='Tenant'?[{id:'RENT',code:'RENT',desc:'Rent — $/m²/year'},{id:'OUT',code:'OUT',desc:'Outgoings — $/m²/year'}]:SERVICES.concat(p.customServices||[]);return `<div class=historyWrap><table class=history><thead><tr><th class=svc>Rate / Service</th>${versions.map((v,i)=>`<th class="${i===0?'current':'past'}">${i===0?'Current':'Previous'}<br><small>${v.effectiveDate?fmtDate(v.effectiveDate):'No effective date'}${v.cpi!==''&&v.cpi!=null?` · CPI ${Number(v.cpi).toFixed(1)}%`:''}</small></th>`).join('')}</tr></thead><tbody>${all.map(x=>`<tr><td class=svc><b>${x.code||'—'}</b> — ${x.desc}</td>${versions.map((v,i)=>`<td class="${i===0?'current':'past'}">${money(v.rates?.[x.id])}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`}
 function fmtDate(v){if(!v)return'—';let d=new Date(v+'T00:00:00');return isNaN(d)?v:d.toLocaleDateString('en-AU',{day:'2-digit',month:'2-digit',year:'numeric'})}
 function tenantProfileUI(){let pk=$('pParking'),bi=$('pBillsIncluded');if(pk&&$('pParkingCountBox'))$('pParkingCountBox').classList.toggle('hide',pk.value!=='Yes');if(bi&&$('pOutBox'))$('pOutBox').classList.toggle('hide',bi.value!=='Yes')}
@@ -2623,7 +2623,7 @@ function safeFileName(v){return String(v||'Rate_Card').replace(/[^a-z0-9\-_]+/gi
 function rateDisplay(v){
   if(v===''||v==null)return '—';
   let n=Number(v);
-  return isFinite(n)?'$'+n.toLocaleString('en-AU',{minimumFractionDigits:2,maximumFractionDigits:4}):String(v);
+  return isFinite(n)?'$'+n.toLocaleString('en-AU',{minimumFractionDigits:2,maximumFractionDigits:2}):String(v);
 }
 function getQuoteRateCardRows(q){
   let selected=Array.isArray(q.selectedRateCard)?q.selectedRateCard.filter(x=>x.rate!==''&&x.rate!=null):[];
@@ -3221,9 +3221,9 @@ function extraServiceDefinition(name){
     const svc=SERVICES.find(s=>s.id===id);
     return svc?{...svc}:null;
   }
-  if(key==='handstack')return {id:'quote_auto_handstack',code:'',desc:'Handstack / manual handling',section:'Extra Services',type:'Handling',custom:true,standard:''};
+  if(key==='handstack'){const svc=SERVICES.find(s=>s.id==='svc003');return svc?{...svc}:null;}
   if(key==='mix product')return {id:'quote_auto_mixed_product',code:'',desc:'Mixed product handling',section:'Extra Services',type:'Handling',custom:true,standard:''};
-  if(key==='single product')return {id:'quote_auto_single_product',code:'',desc:'Single product handling',section:'Extra Services',type:'Handling',custom:true,standard:''};
+  if(key==='single product')return null;
   return null;
 }
 function ensureSelectedExtraServices(){
@@ -4123,7 +4123,7 @@ buildStandaloneRateCardPdf=async function(q,rows){
   c.textAlign='right';c.fillText(`Prepared: ${new Date().toLocaleDateString('en-AU')}`,1135,430);
   c.fillStyle='#173246';c.font='700 21px Arial, sans-serif';c.fillText('Annual CPI: Review annually',1135,470);c.textAlign='left';
 
-  const x=105,y0=545,tableW=1030,col1=160,col2=690,col3=180;
+  const x=105,y0=560,tableW=1030,col1=160,col2=690,col3=180;
   const sorted=[...rows].sort((a,b)=>sectionRank(a.section)-sectionRank(b.section)||(a.section||'').localeCompare(b.section||'')||(a.code||'').localeCompare(b.code||''));
   const sections=[];let last=null;
   sorted.forEach(r=>{const s=r.section||'Other Services';if(s!==last){sections.push({heading:s});last=s}sections.push({row:r})});
@@ -4162,6 +4162,9 @@ buildStandaloneRateCardPdf=async function(q,rows){
 </script>
 
 <script>
+/* ===== BUILD 49: CORRECT QUOTE SERVICE CLEANUP + PDF SPACING ===== */
+/* Fixes: no implicit blast, Handstack=>116, Single product=>no service, and slight PDF table drop. */
+
 /* ===== BUILD 48: QUOTE-DRIVEN SERVICE RULES + RESUBMIT BASIS ONLY ===== */
 
 function apcs48Svc(id){
@@ -4215,9 +4218,25 @@ function apcs48RemoveWrongBasisCore(basis){
     :new Set(['svc031','svc032','svc033']);
   quoteRateServices=quoteRateServices.filter(x=>!wrong.has(x.id));
 }
+function apcs49CleanQuoteDrivenServices(st){
+  // Remove legacy generic rows that older builds could save for these selections.
+  const legacyIds=new Set(['quote_auto_handstack','quote_auto_single_product']);
+  quoteRateServices=quoteRateServices.filter(x=>!legacyIds.has(x.id));
+  quoteRemovedServices=quoteRemovedServices.filter(x=>!legacyIds.has(x.id));
+
+  // Frozen product is NOT Blast. BREC is valid only when Product type is explicitly Blast.
+  if(String(st.product||'').trim().toLowerCase()!=='blast'){
+    quoteRateServices=quoteRateServices.filter(x=>x.id!=='svc020');
+    quoteRemovedServices=quoteRemovedServices.filter(x=>x.id!=='svc020');
+  }
+
+  // Single product is a product characteristic, never a chargeable rate-card service.
+  quoteRateServices=quoteRateServices.filter(x=>x.id!=='quote_auto_single_product');
+}
 function apcs48ApplyQuoteDrivenServices(){
   if(qm!=='3PL')return;
   const st=apcs48QuoteState();
+  apcs49CleanQuoteDrivenServices(st);
   const basis=currentBillingBasis()==='Pallet'?'Pallet':'Carton';
   apcs48RemoveWrongBasisCore(basis);
 
@@ -4334,5 +4353,251 @@ chooseNoMatch=function(){
 @media(max-width:900px){#costToServeBlock .g4{grid-template-columns:1fr 1fr}}
 @media(max-width:560px){#costToServeBlock .g4{grid-template-columns:1fr}}
 </style>
+
+
+<script>
+/* ===== BUILD 50: PDF VERTICAL BALANCE + ALWAYS-ON 3PL REVENUE PROFILE + 2DP RATES ===== */
+function apcs50Rate2(v){
+  if(v===''||v===null||v===undefined)return '';
+  const n=Number(v);return Number.isFinite(n)?n.toFixed(2):String(v);
+}
+function apcs50FormatRateInput(el){
+  if(!el||el.value==='')return;
+  const n=Number(el.value);if(!Number.isFinite(n))return;
+  el.value=n.toFixed(2);
+  if(el.dataset?.id){const s=quoteRateServices?.find?.(x=>x.id===el.dataset.id);if(s)s._rate=el.value;}
+}
+
+/* Suggested/final 3PL rate rows always show two decimal places. */
+renderQuoteRateRows=function(){
+  const host=$('quoteRateRows');if(!host)return;
+  let rows=[...quoteRateServices].sort((a,b)=>sectionRank(a.section)-sectionRank(b.section)||(a.section||'').localeCompare(b.section||'')||(a.code||'').localeCompare(b.code||''));
+  let last='';
+  host.innerHTML=rows.map(s=>{
+    let sec='';
+    if(s.section!==last){last=s.section;sec=`<div class=quoteRateSection>${esc(s.section||'Other Services')}</div>`}
+    const shown=apcs50Rate2(s._rate);
+    return `${sec}<div class=quoteRateRow data-rate-id="${s.id}">
+      <div class=quoteRateCode>${esc(s.code||'—')}</div>
+      <div class=quoteRateDesc>${esc(s.desc)}</div>
+      <div><input class="sugrate quoteRateInput" data-id="${s.id}" data-code="${esc(s.code||'')}" data-desc="${esc(s.desc||'')}" data-type="${esc(s.type||'')}" data-section="${esc(s.section||'')}" type=number step=.01 value="${shown}" oninput="syncQuoteRateValue(this);updateSuggestedEconomics()" onblur="apcs50FormatRateInput(this);syncQuoteRateValue(this);updateSuggestedEconomics()"></div>
+      <button class=quoteRateRemove title="Remove service" onclick="removeQuoteRateService('${s.id}')">×</button>
+    </div>`
+  }).join('');
+  setTimeout(apcs50EnsureRevenueProfile,0);
+};
+
+/* Revenue Profile must exist for every 3PL quote, including ad-hoc / Poultry Plus.
+   Missing operational inputs result in $0.00 rather than hiding the panel. */
+function apcs50Current3PLQuote(){
+  let q=null;
+  try{q=currentQuoteRecord?.()||null}catch(e){}
+  if(!q&&typeof currentQuoteId!=='undefined'&&currentQuoteId){
+    try{q=quoteStore().find(x=>x.id===currentQuoteId)||null}catch(e){}
+  }
+  return q&&q.model==='3PL'?q:null;
+}
+function apcs50EnsureRevenueProfile(){
+  const host=$('rateEconomics');if(!host||qm!=='3PL')return;
+  const q=apcs50Current3PLQuote();if(!q)return;
+  host.querySelector('#build45RevenueProfile')?.remove();
+  host.querySelector('#build50RevenueProfile')?.remove();
+  let html='';
+  try{html=apcsRevenueSummaryHtml(q)}catch(e){}
+  if(!html){
+    html=`<div class=econBox style="margin-top:12px"><b>Revenue profile · Ad-hoc / low-frequency</b>
+      <div class=econGrid style="margin-top:9px">
+        <div class=econKpi><small>One-off revenue (initial + first recurring week)</small><b>$0.00</b></div>
+        <div class=econKpi><small>Weekly recurring revenue</small><b>$0.00/wk</b></div>
+        <div class=econKpi><small>Expected recurring revenue</small><b>$0.00/yr</b></div>
+      </div><div class=hint style="margin-top:7px">Revenue will update as operational cadence and final rates are completed.</div></div>`;
+  }
+  const d=document.createElement('div');d.id='build50RevenueProfile';d.innerHTML=html;host.appendChild(d);
+}
+const APCS50_updateSuggestedEconomics_base=updateSuggestedEconomics;
+updateSuggestedEconomics=function(){
+  let result;
+  try{result=APCS50_updateSuggestedEconomics_base()}finally{setTimeout(apcs50EnsureRevenueProfile,0)}
+  return result;
+};
+
+/* PDF: every header, section and value row uses a true vertical-middle baseline.
+   Keep balanced top/bottom whitespace and comfortable left padding for long codes. */
+buildStandaloneRateCardPdf=async function(q,rows){
+  const letterhead=await loadPdfImage(APCS_TEMPLATE_PAGE);
+  const canvas=document.createElement('canvas');canvas.width=1240;canvas.height=1754;
+  const c=canvas.getContext('2d');c.drawImage(letterhead,0,0,canvas.width,canvas.height);
+  const quoteType=q.quoteType||q.snapshot?.v?.quoteType||'New Quote';
+  const title=quoteType==='Contract Renewal'?`${q.name} - Contract Renewal Rate Card`:`${q.name} - Rate Card`;
+  c.textBaseline='alphabetic';c.fillStyle='#0b4f7d';c.font='700 46px Arial, sans-serif';c.fillText(title,105,355);
+  c.strokeStyle='#b9cfde';c.lineWidth=2;c.beginPath();c.moveTo(105,385);c.lineTo(1135,385);c.stroke();
+  c.fillStyle='#536f82';c.font='21px Arial, sans-serif';
+  c.fillText(`Quote ID: ${q.id}`,105,430);c.fillText(`Commercial model: ${q.model||'-'}`,105,466);c.fillText(`Quote type: ${quoteType}`,105,502);
+  c.textAlign='right';c.fillText(`Prepared: ${new Date().toLocaleDateString('en-AU')}`,1135,430);
+  c.fillStyle='#173246';c.font='700 21px Arial, sans-serif';c.fillText('Annual CPI: Review annually',1135,470);c.textAlign='left';
+
+  const x=105,y0=575,tableW=1030,col1=175,col2=675,col3=180;
+  const sorted=[...rows].sort((a,b)=>sectionRank(a.section)-sectionRank(b.section)||(a.section||'').localeCompare(b.section||'')||(a.code||'').localeCompare(b.code||''));
+  const items=[];let last=null;
+  sorted.forEach(r=>{const s=r.section||'Other Services';if(s!==last){items.push({heading:s});last=s}items.push({row:r})});
+  const available=890;
+  const rowH=Math.max(34,Math.min(46,Math.floor(available/Math.max(items.length+1,1))));
+  const headH=Math.max(40,rowH),secH=Math.max(30,rowH-3),font=Math.max(15,Math.min(19,rowH-14));
+  const codePad=28,bodyPad=18;
+
+  c.textBaseline='middle';
+  c.fillStyle='#0b4f7d';c.fillRect(x,y0,tableW,headH);c.fillStyle='#fff';c.font='700 18px Arial, sans-serif';
+  c.fillText('Code',x+codePad,y0+headH/2+0.5);c.fillText('Service',x+col1+bodyPad,y0+headH/2+0.5);c.fillText('Rate',x+col1+col2+bodyPad,y0+headH/2+0.5);
+  let y=y0+headH,idx=0;
+  for(const item of items){
+    if(y>1510)break;
+    if(item.heading){
+      c.fillStyle='#e6f2f9';c.fillRect(x,y,tableW,secH);c.fillStyle='#075985';c.font=`700 ${Math.max(14,font-1)}px Arial, sans-serif`;
+      c.fillText(String(item.heading).slice(0,75),x+bodyPad,y+secH/2+0.5);y+=secH;continue;
+    }
+    const r=item.row;
+    c.fillStyle=idx%2?'rgba(245,249,251,.96)':'rgba(255,255,255,.94)';c.fillRect(x,y,tableW,rowH);
+    c.strokeStyle='#d6e4ec';c.lineWidth=1;c.strokeRect(x,y,tableW,rowH);
+    c.beginPath();c.moveTo(x+col1,y);c.lineTo(x+col1,y+rowH);c.stroke();
+    c.beginPath();c.moveTo(x+col1+col2,y);c.lineTo(x+col1+col2,y+rowH);c.stroke();
+    const cy=y+rowH/2+0.5;
+    c.fillStyle='#173246';c.font=`${font}px Arial, sans-serif`;
+    c.fillText(String(r.code||'-').slice(0,16),x+codePad,cy);
+    c.fillText(String(r.desc||'-').slice(0,58),x+col1+bodyPad,cy);
+    c.font=`700 ${font}px Arial, sans-serif`;c.fillText(rateDisplay(r.rate),x+col1+col2+bodyPad,cy);
+    y+=rowH;idx++;
+  }
+  c.textBaseline='alphabetic';
+  const jpeg=canvas.toDataURL('image/jpeg',0.97);
+  return canvasJpegToSinglePagePdf(jpeg,canvas.width,canvas.height);
+};
+</script>
+
+
+<!-- BUILD: 51 | Active customer service presets + grouped custom charge sections -->
+<style>
+  .apcs51PresetGrid{display:grid;grid-template-columns:1.15fr 1fr 1fr 2fr 1fr auto;gap:10px;align-items:end}
+  .apcs51PresetGrid input[readonly]{background:#f7fbfd;color:#24465e}
+  @media(max-width:900px){.apcs51PresetGrid{grid-template-columns:1fr 1fr}.apcs51PresetGrid .wide{grid-column:1/-1}}
+</style>
+<script>
+/* Build 51 — confirmed scope
+   - Keep PDF rows vertically centred (Build 50 renderer)
+   - Keep 3PL Revenue Profile visible
+   - Keep rates at 2 decimals
+   - Group custom services by their Type as the section header
+   - Smart preset-driven Add service charge; existing code updates instead of duplicating
+*/
+const APCS51_CUSTOM_PRESETS=[
+  {key:'dom_1_2',label:'Domestic Transport · 1–2 Pallets',section:'Domestic Transport',type:'Domestic Transport',code:'1-2',desc:'1-2 Pallets Melbourne Metro',rate:66},
+  {key:'dom_3_4',label:'Domestic Transport · 3–4 Pallets',section:'Domestic Transport',type:'Domestic Transport',code:'3-4',desc:'Melbourne Metro Transport Rates',rate:60},
+  {key:'dom_5_8',label:'Domestic Transport · 5–8 Pallets',section:'Domestic Transport',type:'Domestic Transport',code:'5-8',desc:'Melbourne Metro Transport Rates',rate:54},
+  {key:'dom_9_12',label:'Domestic Transport · 9–12 Pallets',section:'Domestic Transport',type:'Domestic Transport',code:'9-12',desc:'Melbourne Metro Transport Rates',rate:48},
+  {key:'dom_13_22',label:'Domestic Transport · 13–22 Pallets',section:'Domestic Transport',type:'Domestic Transport',code:'13-22',desc:'Melbourne Metro Transport Rates',rate:504},
+  {key:'dom_23_34',label:'Domestic Transport · 23–34 Pallets',section:'Domestic Transport',type:'Domestic Transport',code:'23-34',desc:'Melbourne Metro Transport Rates',rate:756}
+];
+function apcs51Esc(v){return String(v??'').replace(/[&<>\"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))}
+function apcs51CustomSection(s){
+  const t=String(s?.type||'').trim();
+  const sec=String(s?.section||'').trim();
+  if(s?.custom && t && t.toLowerCase()!=='custom')return t;
+  if(sec && sec!=='Custom Service Charges')return sec;
+  return t||'Other Services';
+}
+function apcs51NormalizeCode(v){return String(v||'').trim().toLowerCase().replace(/[–—]/g,'-').replace(/\s+/g,'')}
+function apcs51NormalizeType(v){return String(v||'').trim().toLowerCase().replace(/\s+/g,' ')}
+
+/* Active-customer profile: custom Type becomes its own section header; do not repeat Type in every custom row. */
+serviceRows=function(p){
+  const custom=p.customServices||[];
+  const all=SERVICES.concat(custom).map(s=>s.custom?{...s,section:apcs51CustomSection(s)}:s);
+  let last='';
+  return all.map(s=>{
+    let sec='';
+    const section=s.section||'Other Services';
+    if(section!==last){last=section;sec=`<tr class=sectionrow><td colspan=6>${apcs51Esc(section)}</td></tr>`}
+    const val=p.rates&&p.rates[s.id]!=null?p.rates[s.id]:(s.standard??'');
+    const displayVal=(val===''||val==null||!Number.isFinite(Number(val)))?'':Number(val).toFixed(2);
+    const typeCell=s.custom?'':apcs51Esc(s.type||'');
+    return sec+`<tr><td>${typeCell}</td><td>${apcs51Esc(s.code||'—')}</td><td>${apcs51Esc(s.desc||'')}</td><td><input class=prate data-id="${apcs51Esc(s.id)}" type=number step=.01 value="${displayVal}" onblur="apcs50FormatRateInput(this)"></td><td><input class=pnote data-id="${apcs51Esc(s.id)}" value="${apcs51Esc(p.rateNotes?.[s.id]||'')}"></td><td>${s.custom?`<button class=x onclick="removeCustom('${String(s.id).replaceAll("'","\\'")}')">×</button>`:''}</td></tr>`;
+  }).join('');
+};
+
+function apcs51PresetChanged(){
+  const key=$('apcs51Preset')?.value||'';
+  const p=APCS51_CUSTOM_PRESETS.find(x=>x.key===key);
+  if(!p)return;
+  if($('newSection'))$('newSection').value=p.section;
+  if($('newType'))$('newType').value=p.type;
+  if($('newCode'))$('newCode').value=p.code;
+  if($('newDesc'))$('newDesc').value=p.desc;
+  if($('newRate'))$('newRate').value=Number(p.rate).toFixed(2);
+}
+function apcs51UpgradeAddServiceUI(){
+  if(pm!=='3PL')return;
+  const addBtn=[...document.querySelectorAll('#profileDetail button')].find(b=>b.textContent.trim()==='Add' && b.getAttribute('onclick')==='addServiceCharge()');
+  if(!addBtn)return;
+  const old=addBtn.closest('.addline');
+  if(!old||old.dataset.apcs51==='1')return;
+  old.dataset.apcs51='1';
+  old.className='apcs51PresetGrid';
+  old.innerHTML=`
+    <div class="wide"><label>Service preset</label><select id="apcs51Preset" onchange="apcs51PresetChanged()"><option value="">Select service…</option>${APCS51_CUSTOM_PRESETS.map(x=>`<option value="${x.key}">${apcs51Esc(x.label)}</option>`).join('')}</select></div>
+    <div><label>Section / Header</label><input id="newSection" readonly placeholder="Auto"></div>
+    <div><label>Type</label><input id="newType" readonly placeholder="Auto"></div>
+    <div><label>Code</label><input id="newCode" readonly placeholder="Auto"></div>
+    <div><label>Description</label><input id="newDesc" readonly placeholder="Auto"></div>
+    <div><label>Rate</label><input id="newRate" type=number step=.01 placeholder="0.00" onblur="apcs50FormatRateInput(this)"></div>
+    <button class=btn onclick="addServiceCharge()">Add / Update</button>`;
+}
+const APCS51_renderProfile_base=renderProfile;
+renderProfile=function(){
+  const out=APCS51_renderProfile_base.apply(this,arguments);
+  setTimeout(apcs51UpgradeAddServiceUI,0);
+  return out;
+};
+
+/* Smart add/update: same Type + Code updates the existing row and removes accidental duplicates. */
+addServiceCharge=function(){
+  if(!selected)return;
+  const preset=APCS51_CUSTOM_PRESETS.find(x=>x.key===($('apcs51Preset')?.value||''));
+  const type=String($('newType')?.value||preset?.type||'').trim();
+  const section=String($('newSection')?.value||preset?.section||type||'Other Services').trim();
+  const code=String($('newCode')?.value||preset?.code||'').trim();
+  const desc=String($('newDesc')?.value||preset?.desc||'').trim();
+  const rateRaw=$('newRate')?.value;
+  if(!type||!code||!desc){appNotice('Choose a service preset first.','Service required','warning');return}
+  saveCurrentProfile(false);
+  const st=profiles(),k=pkey(selected),p=st[k]||{};
+  p.customServices=p.customServices||[];p.rates=p.rates||{};p.rateNotes=p.rateNotes||{};
+  const nt=apcs51NormalizeType(type),nc=apcs51NormalizeCode(code);
+  const matches=p.customServices.filter(s=>apcs51NormalizeType(s.type||apcs51CustomSection(s))===nt && apcs51NormalizeCode(s.code)===nc);
+  let target=matches[0];
+  if(target){
+    target.section=section;target.type=type;target.code=code;target.desc=desc;target.standard=(rateRaw!==''&&rateRaw!=null)?Number(rateRaw):null;target.custom=true;
+    if(rateRaw!==''&&rateRaw!=null&&Number.isFinite(Number(rateRaw)))p.rates[target.id]=Number(rateRaw);
+    else delete p.rates[target.id];
+    matches.slice(1).forEach(dup=>{p.customServices=p.customServices.filter(s=>s.id!==dup.id);delete p.rates[dup.id];delete p.rateNotes[dup.id]});
+  }else{
+    const id='custom_'+Date.now();
+    target={id,section,type,code,desc,standard:(rateRaw!==''&&rateRaw!=null)?Number(rateRaw):null,custom:true};
+    p.customServices.push(target);
+    if(rateRaw!==''&&rateRaw!=null&&Number.isFinite(Number(rateRaw)))p.rates[id]=Number(rateRaw);
+  }
+  st[k]=p;localStorage.setItem('apcs_profiles_v4',JSON.stringify(st));renderProfile();
+  appNotice(`${type} ${code} saved. Existing matching rows are updated instead of duplicated.`,'Service saved','success');
+};
+
+/* Matrix/export presentation: custom service section follows Type rather than generic Custom Service Charges. */
+const APCS51_renderRateTable_base=renderRateTable;
+renderRateTable=function(){
+  const out=APCS51_renderRateTable_base.apply(this,arguments);
+  document.querySelectorAll('.matrixSection td').forEach(td=>{if(td.textContent.trim()==='Custom Service Charges')td.textContent='Customer-specific services'});
+  return out;
+};
+
+/* Ensure Build 50 rate formatting remains active for dynamically-created fields. */
+setTimeout(()=>{try{apcs51UpgradeAddServiceUI()}catch(e){}},0);
+</script>
 
 </body></html>
