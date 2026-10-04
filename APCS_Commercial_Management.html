@@ -4762,8 +4762,16 @@ buildStandaloneRateCardPdf=async function(q,rows){
       c.fillText(`Quote ID: ${q.id}`,105,430);c.fillText(`Commercial model: ${q.model||'-'}`,105,466);c.fillText(`Quote type: ${quoteType}`,105,502);
       c.textAlign='right';c.fillText(`Prepared: ${new Date().toLocaleDateString('en-AU')}`,1135,430);
       c.fillStyle='#173246';c.font='700 21px Arial, sans-serif';c.fillText('Annual CPI: Review annually',1135,470);c.textAlign='left';
+    }else{
+      // Continuation pages: keep only the page number. Do not repeat the customer/title,
+      // which can collide visually with the letterhead logo.
+      c.textAlign='right';
+      c.fillStyle='#536f82';
+      c.font='18px Arial, sans-serif';
+      c.fillText(`Page ${pageNo}`,1135,285);
+      c.textAlign='left';
     }
-    const y0=pageNo===1?605:255;  // continuation pages start cleanly under the letterhead
+    const y0=pageNo===1?605:330;  // continuation pages begin below the logo/letterhead
     c.textBaseline='middle';
     c.fillStyle='#0b4f7d';c.fillRect(x,y0,tableW,headH);c.fillStyle='#fff';c.font='700 18px Arial, sans-serif';
     c.fillText('Code',x+codePad,y0+headH/2);c.fillText('Service',x+col1+bodyPad,y0+headH/2);c.fillText('Rate',x+col1+col2+bodyPad,y0+headH/2);
@@ -4802,7 +4810,7 @@ setTimeout(()=>{try{apcs52UpgradeActiveAddService();apcs52UpgradeQuoteAddService
 </script>
 
 
-<!-- BUILD: 56 | Safe Domestic Transport rate recovery -->
+<!-- BUILD: 57 | Clean continuation page header + page number -->
 <script>
 /* BUILD 55
    Repair for Build 54 transport migration:
