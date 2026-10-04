@@ -4600,4 +4600,208 @@ renderRateTable=function(){
 setTimeout(()=>{try{apcs51UpgradeAddServiceUI()}catch(e){}},0);
 </script>
 
+
+
+<!-- BUILD: 52 | 2dp input display + multi-page PDF + section/header controls -->
+<style>
+  .apcs52HeaderSelect{min-width:180px}
+</style>
+<script>
+/* BUILD 52
+   - Rate inputs visibly retain 2 decimals by using text inputs with decimal inputmode.
+   - PDF rate card paginates across as many pages as needed; no Saturday/Sunday rows are dropped.
+   - Table starts slightly lower and every row/header remains vertically centred.
+   - Add Service exposes an explicit Section / Header selector in both Active Customer and Quote flows.
+*/
+const APCS52_SECTIONS=[
+  'Service - Frozen','Service - Chilled','Administration Charges','Overtime – Weekday',
+  'Saturday – Minimum 4 hours Charge','Sunday / Public Holiday – Minimum 4 hours Charge',
+  'Domestic Transport','Other Services'
+];
+function apcs52RateText(v){
+  if(v===''||v===null||v===undefined)return '';
+  const n=Number(v);return Number.isFinite(n)?n.toFixed(2):String(v);
+}
+function apcs52SectionOptions(selected){
+  const cur=String(selected||'').trim();
+  const all=[...APCS52_SECTIONS];
+  if(cur&&!all.includes(cur))all.push(cur);
+  return all.map(x=>`<option ${x===cur?'selected':''}>${apcs51Esc(x)}</option>`).join('');
+}
+
+/* Visible 2DP in Suggested Rate Card: type=number normalises 100.00 back to 100 in browsers,
+   therefore rate fields are text+decimal-inputmode while remaining numeric in save/calculation logic. */
+renderQuoteRateRows=function(){
+  const host=$('quoteRateRows');if(!host)return;
+  const rows=[...quoteRateServices].sort((a,b)=>sectionRank(a.section)-sectionRank(b.section)||(a.section||'').localeCompare(b.section||'')||(a.code||'').localeCompare(b.code||''));
+  let last='';
+  host.innerHTML=rows.map(s=>{
+    let sec='';
+    if(s.section!==last){last=s.section;sec=`<div class=quoteRateSection>${esc(s.section||'Other Services')}</div>`}
+    const shown=apcs52RateText(s._rate);
+    return `${sec}<div class=quoteRateRow data-rate-id="${s.id}">
+      <div class=quoteRateCode>${esc(s.code||'—')}</div>
+      <div class=quoteRateDesc>${esc(s.desc)}</div>
+      <div><input class="sugrate quoteRateInput" data-id="${s.id}" data-code="${esc(s.code||'')}" data-desc="${esc(s.desc||'')}" data-type="${esc(s.type||'')}" data-section="${esc(s.section||'')}" type="text" inputmode="decimal" value="${shown}" oninput="syncQuoteRateValue(this);updateSuggestedEconomics()" onblur="apcs50FormatRateInput(this);syncQuoteRateValue(this);updateSuggestedEconomics()"></div>
+      <button class=quoteRateRemove title="Remove service" onclick="removeQuoteRateService('${s.id}')">×</button>
+    </div>`;
+  }).join('');
+  setTimeout(apcs50EnsureRevenueProfile,0);
+};
+
+/* Active Customer rate inputs also visibly retain 2DP. */
+serviceRows=function(p){
+  const custom=p.customServices||[];
+  const all=SERVICES.concat(custom).map(s=>s.custom?{...s,section:apcs51CustomSection(s)}:s);
+  let last='';
+  return all.map(s=>{
+    let sec=''; const section=s.section||'Other Services';
+    if(section!==last){last=section;sec=`<tr class=sectionrow><td colspan=6>${apcs51Esc(section)}</td></tr>`}
+    const val=p.rates&&p.rates[s.id]!=null?p.rates[s.id]:(s.standard??'');
+    const displayVal=apcs52RateText(val);
+    const typeCell=s.custom?'':apcs51Esc(s.type||'');
+    return sec+`<tr><td>${typeCell}</td><td>${apcs51Esc(s.code||'—')}</td><td>${apcs51Esc(s.desc||'')}</td><td><input class=prate data-id="${apcs51Esc(s.id)}" type="text" inputmode="decimal" value="${displayVal}" onblur="apcs50FormatRateInput(this)"></td><td><input class=pnote data-id="${apcs51Esc(s.id)}" value="${apcs51Esc(p.rateNotes?.[s.id]||'')}"></td><td>${s.custom?`<button class=x onclick="removeCustom('${String(s.id).replaceAll("'","\\'")}')">×</button>`:''}</td></tr>`;
+  }).join('');
+};
+
+/* Active Customer add-service: explicit Section/Header field; presets auto-populate it. */
+function apcs52UpgradeActiveAddService(){
+  if(pm!=='3PL')return;
+  const preset=$('apcs51Preset');if(!preset)return;
+  const section=$('newSection');
+  if(section && section.tagName!=='SELECT'){
+    const sel=document.createElement('select');sel.id='newSection';sel.className='apcs52HeaderSelect';
+    sel.innerHTML=apcs52SectionOptions(section.value||'Domestic Transport');
+    section.replaceWith(sel);
+  }
+  const rate=$('newRate');if(rate&&rate.type!=='text'){rate.type='text';rate.setAttribute('inputmode','decimal');rate.value=apcs52RateText(rate.value)}
+}
+const APCS52_renderProfile_base=renderProfile;
+renderProfile=function(){
+  const out=APCS52_renderProfile_base.apply(this,arguments);
+  setTimeout(apcs52UpgradeActiveAddService,0);
+  return out;
+};
+const APCS52_presetChanged_base=apcs51PresetChanged;
+apcs51PresetChanged=function(){
+  APCS52_presetChanged_base();
+  setTimeout(()=>{
+    const p=APCS51_CUSTOM_PRESETS.find(x=>x.key===($('apcs51Preset')?.value||''));
+    const sec=$('newSection');if(p&&sec)sec.value=p.section;
+    const r=$('newRate');if(r)r.value=apcs52RateText(r.value);
+  },0);
+};
+
+/* Quote +Add Service: Section/Header is an explicit selector rather than free text. */
+function apcs52UpgradeQuoteAddService(){
+  const section=$('quoteNewSvcSection');
+  if(section&&section.tagName!=='SELECT'){
+    const sel=document.createElement('select');sel.id='quoteNewSvcSection';sel.className='apcs52HeaderSelect';
+    sel.innerHTML=apcs52SectionOptions(section.value||'Other Services');
+    section.replaceWith(sel);
+  }
+  const r=$('quoteNewSvcRate');if(r&&r.type!=='text'){r.type='text';r.setAttribute('inputmode','decimal');if(r.value)r.value=apcs52RateText(r.value)}
+}
+const APCS52_openQuoteServiceModal_base=openQuoteServiceModal;
+openQuoteServiceModal=function(){
+  const out=APCS52_openQuoteServiceModal_base.apply(this,arguments);
+  setTimeout(apcs52UpgradeQuoteAddService,0);
+  return out;
+};
+
+/* Generic N-page PDF assembler from full-page JPEG canvases. */
+function canvasJpegsToMultiPagePdf(pages){
+  const W=595.28,H=841.89;
+  const pageCount=pages.length;
+  const objs=[];
+  const pageObjNums=[],contentObjNums=[],imageObjNums=[];
+  let next=3;
+  for(let i=0;i<pageCount;i++){pageObjNums.push(next++);contentObjNums.push(next++);imageObjNums.push(next++)}
+  objs[1]=bytesFromBinaryString('<< /Type /Catalog /Pages 2 0 R >>');
+  objs[2]=bytesFromBinaryString(`<< /Type /Pages /Kids [${pageObjNums.map(n=>n+' 0 R').join(' ')}] /Count ${pageCount} >>`);
+  for(let i=0;i<pageCount;i++){
+    const p=pages[i],jpg=jpegDataUrlToBytes(p.jpegUrl);
+    const po=pageObjNums[i],co=contentObjNums[i],io=imageObjNums[i];
+    objs[po]=bytesFromBinaryString(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${W} ${H}] /Resources << /XObject << /Im${i} ${io} 0 R >> >> /Contents ${co} 0 R >>`);
+    const content=`q\n${W} 0 0 ${H} 0 0 cm\n/Im${i} Do\nQ\n`;
+    objs[co]=bytesFromBinaryString(`<< /Length ${content.length} >>\nstream\n${content}endstream`);
+    const head=bytesFromBinaryString(`<< /Type /XObject /Subtype /Image /Width ${p.wPx} /Height ${p.hPx} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpg.length} >>\nstream\n`);
+    objs[io]=concatBytes([head,jpg,bytesFromBinaryString('\nendstream')]);
+  }
+  const maxObj=next-1,header=bytesFromBinaryString('%PDF-1.4\n'),chunks=[header],offsets=[0];let pos=header.length;
+  for(let i=1;i<=maxObj;i++){
+    offsets[i]=pos;const pre=bytesFromBinaryString(`${i} 0 obj\n`),post=bytesFromBinaryString('\nendobj\n');
+    chunks.push(pre,objs[i],post);pos+=pre.length+objs[i].length+post.length;
+  }
+  const xrefPos=pos;let xref=`xref\n0 ${maxObj+1}\n0000000000 65535 f \n`;
+  for(let i=1;i<=maxObj;i++)xref+=String(offsets[i]).padStart(10,'0')+' 00000 n \n';
+  xref+=`trailer\n<< /Size ${maxObj+1} /Root 1 0 R >>\nstartxref\n${xrefPos}\n%%EOF`;
+  chunks.push(bytesFromBinaryString(xref));return new Blob([concatBytes(chunks)],{type:'application/pdf'});
+}
+
+/* Multi-page Rate Card renderer. Fixed comfortable row heights; overflow continues to a new page.
+   No service rows are dropped. First-page table begins lower for better visual spacing. */
+buildStandaloneRateCardPdf=async function(q,rows){
+  const letterhead=await loadPdfImage(APCS_TEMPLATE_PAGE);
+  const quoteType=q.quoteType||q.snapshot?.v?.quoteType||'New Quote';
+  const title=quoteType==='Contract Renewal'?`${q.name} - Contract Renewal Rate Card`:`${q.name} - Rate Card`;
+  const sorted=[...rows].sort((a,b)=>sectionRank(a.section)-sectionRank(b.section)||(a.section||'').localeCompare(b.section||'')||(a.code||'').localeCompare(b.code||''));
+  const items=[];let last=null;
+  sorted.forEach(r=>{const sec=r.section||'Other Services';if(sec!==last){items.push({heading:sec});last=sec}items.push({row:r})});
+  const pages=[];let cursor=0,pageNo=0;
+  const rowH=48,secH=36,headH=48,x=105,tableW=1030,col1=175,col2=675,codePad=28,bodyPad=18,font=18;
+  while(cursor<items.length || pageNo===0){
+    pageNo++;
+    const canvas=document.createElement('canvas');canvas.width=1240;canvas.height=1754;
+    const c=canvas.getContext('2d');c.drawImage(letterhead,0,0,canvas.width,canvas.height);
+    c.textBaseline='alphabetic';
+    if(pageNo===1){
+      c.fillStyle='#0b4f7d';c.font='700 46px Arial, sans-serif';c.fillText(title,105,355);
+      c.strokeStyle='#b9cfde';c.lineWidth=2;c.beginPath();c.moveTo(105,385);c.lineTo(1135,385);c.stroke();
+      c.fillStyle='#536f82';c.font='21px Arial, sans-serif';
+      c.fillText(`Quote ID: ${q.id}`,105,430);c.fillText(`Commercial model: ${q.model||'-'}`,105,466);c.fillText(`Quote type: ${quoteType}`,105,502);
+      c.textAlign='right';c.fillText(`Prepared: ${new Date().toLocaleDateString('en-AU')}`,1135,430);
+      c.fillStyle='#173246';c.font='700 21px Arial, sans-serif';c.fillText('Annual CPI: Review annually',1135,470);c.textAlign='left';
+    }else{
+      c.fillStyle='#0b4f7d';c.font='700 34px Arial, sans-serif';c.fillText(`${q.name} - Rate Card (continued)`,105,300);
+      c.fillStyle='#536f82';c.font='18px Arial, sans-serif';c.textAlign='right';c.fillText(`Page ${pageNo}`,1135,300);c.textAlign='left';
+    }
+    const y0=pageNo===1?605:345;  // deliberately lower than Build 51
+    c.textBaseline='middle';
+    c.fillStyle='#0b4f7d';c.fillRect(x,y0,tableW,headH);c.fillStyle='#fff';c.font='700 18px Arial, sans-serif';
+    c.fillText('Code',x+codePad,y0+headH/2);c.fillText('Service',x+col1+bodyPad,y0+headH/2);c.fillText('Rate',x+col1+col2+bodyPad,y0+headH/2);
+    let y=y0+headH,idx=0;
+    const bottomLimit=1450; // preserve footer/letterhead area
+    let pageLastSection='';
+    while(cursor<items.length){
+      const item=items[cursor],need=item.heading?secH:rowH;
+      // If a section header cannot fit with at least one row, carry section to next page.
+      const nextNeed=item.heading && cursor+1<items.length && items[cursor+1].row ? secH+rowH : need;
+      if(y+nextNeed>bottomLimit)break;
+      if(item.heading){
+        c.fillStyle='#e6f2f9';c.fillRect(x,y,tableW,secH);c.fillStyle='#075985';c.font='700 17px Arial, sans-serif';
+        c.fillText(String(item.heading).slice(0,75),x+bodyPad,y+secH/2);pageLastSection=item.heading;y+=secH;cursor++;continue;
+      }
+      const r=item.row;
+      c.fillStyle=idx%2?'rgba(245,249,251,.96)':'rgba(255,255,255,.94)';c.fillRect(x,y,tableW,rowH);
+      c.strokeStyle='#d6e4ec';c.lineWidth=1;c.strokeRect(x,y,tableW,rowH);
+      c.beginPath();c.moveTo(x+col1,y);c.lineTo(x+col1,y+rowH);c.stroke();
+      c.beginPath();c.moveTo(x+col1+col2,y);c.lineTo(x+col1+col2,y+rowH);c.stroke();
+      const cy=y+rowH/2;
+      c.fillStyle='#173246';c.font=`${font}px Arial, sans-serif`;
+      c.fillText(String(r.code||'-').slice(0,16),x+codePad,cy);
+      c.fillText(String(r.desc||'-').slice(0,58),x+col1+bodyPad,cy);
+      c.font=`700 ${font}px Arial, sans-serif`;c.fillText(rateDisplay(r.rate),x+col1+col2+bodyPad,cy);
+      y+=rowH;idx++;cursor++;
+    }
+    c.textBaseline='alphabetic';
+    pages.push({jpegUrl:canvas.toDataURL('image/jpeg',0.97),wPx:canvas.width,hPx:canvas.height});
+    if(cursor>=items.length)break;
+  }
+  return canvasJpegsToMultiPagePdf(pages);
+};
+
+setTimeout(()=>{try{apcs52UpgradeActiveAddService();apcs52UpgradeQuoteAddService()}catch(e){}},0);
+</script>
+
 </body></html>
