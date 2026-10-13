@@ -4,8 +4,8 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>APCS Commercial Management</title>
-<!-- BUILD: 59 FINAL | PDF y0 500/410 + cache-bust refresh; no data reset --><style>
+<title>APCS Commercial Management — Build 61</title>
+<!-- BUILD: 61 REPAIRED | PDF y0 500/410 + cache-bust refresh; no data reset --><style>
 :root{--navy:#073d69;--blue:#0b6ea8;--purple:#7057c8;--teal:#16847a;--bg:#eef5f9;--line:#d6e4ec;--text:#173246;--muted:#6d8494}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,"Segoe UI",Arial;background:linear-gradient(#f8fbfd,#edf4f8);color:var(--text)}
 header{height:72px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 24px;position:sticky;top:0;z-index:30}.brand b{font-size:18px;color:#0b416c}.brand small{display:block;color:var(--muted);font-size:11px}.nav{margin-left:auto;height:100%;display:flex}.nav button{border:0;background:transparent;padding:0 20px;font-weight:650;color:#50697b;cursor:pointer;border-bottom:3px solid transparent}.nav button:hover{color:#075f98;background:#f6fbfe}.nav button:active{background:#e2f1f9}.nav button.on{color:#075f98;border-bottom-color:#0b78b8;background:#eef7fc}.navGroup{position:relative;height:100%;display:flex;align-items:stretch}.navGroup>.navMain{height:100%}.navDrop{display:none;position:absolute;top:68px;right:0;min-width:205px;background:#fff;border:1px solid var(--line);border-radius:0 0 10px 10px;box-shadow:0 10px 25px #12384d24;padding:7px;z-index:60}.navGroup:hover .navDrop,.navGroup:focus-within .navDrop{display:block}.navDrop button{display:block;width:100%;height:42px;padding:0 13px!important;text-align:left;border:0!important;border-radius:7px;background:#fff!important;color:#416278!important}.navDrop button:hover{background:#eef7fc!important;color:#075f98!important}.navDrop button.subon{background:#e5f3fb!important;color:#075f98!important;font-weight:750}.navMain .chev{font-size:10px;margin-left:6px}
@@ -1247,6 +1247,21 @@ function proceedSubmitQuote(basis){
         .map(z=>({...z,score:scoreProfile(z.p),areaGap:qm==='Tenant'?tenantAreaGap(z.p):null}))
         .sort((a,b)=>qm==='Tenant'?(a.areaGap-b.areaGap):(b.score-a.score));
 
+  // Include saved 3PL profiles even when their account alias is not in the active customer list.
+  // Never alter the stored profiles; only extend the comparison candidates.
+  if(qm==='3PL'){
+    const seen=new Set(all.map(z=>pkey(z.x,'3PL')));
+    for(const [key,profile] of Object.entries(st)){
+      if(!key.startsWith('3PL|')||!profile||typeof profile!=='object'||!Object.keys(profile).length)continue;
+      if(seen.has(key))continue;
+      const parts=key.split('|');
+      const x={customer:parts[1]||'Customer',account:parts.slice(2).join('|')||parts[1]||''};
+      if(!x.customer)continue;
+      seen.add(key);
+      all.push({x,p:profile,score:scoreProfile(profile),areaGap:null});
+    }
+    all.sort((a,b)=>b.score-a.score);
+  }
   let arr=qm==='Tenant'
     ?all.filter(z=>Number.isFinite(z.areaGap)).slice(0,2)
     :all.slice(0,3);
@@ -3112,7 +3127,7 @@ function esc(v){return String(v??'').replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&l
 function deleteQuote(id){let a=quoteStore(),q=a.find(x=>x.id===id);if(!q)return;appConfirm(`Delete “${q.name}” permanently?
 
 This action cannot be undone.`,()=>{putQuotes(a.filter(x=>x.id!==id));if(currentQuoteId===id){currentQuoteId=null;localStorage.removeItem('apcs_cm_current_quote_v1')}closeRecordMenu();renderQuotes();renderOnboarding()},{title:'Delete quote',confirmText:'Delete',type:'danger'})}
-function parseAUDate(d){let m=(d||'').trim().match(/^(\d{2})\/(\d{2})\/(\d{4})$/);if(!m)return null;let iso=`${m[3]}-${m[2]}-${m[1]}`,chk=new Date(iso+'T00:00:00');return(!isNaN(chk)&&chk.getFullYear()==+m[3]&&chk.getMonth()+1==+m[2]&&chk.getDate()==+m[1])?iso:null}
+function parseAUDate(d){let m=(d||'').trim().match(/^(\d{2})\/(\d{2})\/(\d{4})$/);if(!m)return null;let iso=`${m[3]}-${m[2]}-${m[1]}`,chk=new Date(Date.UTC(+m[3],+m[2]-1,+m[1]));return(chk.getUTCFullYear()==+m[3]&&chk.getUTCMonth()+1==+m[2]&&chk.getUTCDate()==+m[1])?iso:null}
 function changeQuoteStatus(id,status,btn){
   let a=quoteStore(),i=a.findIndex(x=>x.id===id);if(i<0)return;
   let q=a[i];if(q.stage!=='Submitted'||q.status!=='Pending')return;
@@ -3128,44 +3143,58 @@ function changeQuoteStatus(id,status,btn){
   }
 
   if(status==='Won'){
-    let label=qt==='Contract Renewal'?'Renewal Effective Date':'Expected Start Date';
-    showInputModal({title:qt==='Contract Renewal'?'Confirm Contract Renewal':'Mark Quote as Won',label:`${label} (dd/mm/yyyy)`,placeholder:'dd/mm/yyyy',confirmText:'Confirm',onConfirm:(d)=>{
-      if(!d)return;
-      let iso=parseAUDate(d);
-      if(!iso){
+    const label=qt==='Contract Renewal'?'Renewal Effective Date':'Expected Start Date';
+    showInputModal({
+      title:qt==='Contract Renewal'?'Confirm Contract Renewal':'Mark Quote as Won',
+      label:`${label} (dd/mm/yyyy)`,placeholder:'dd/mm/yyyy',confirmText:'Confirm',
+      onConfirm:(input)=>{
+        const iso=parseAUDate(String(input||''));
         const err=document.getElementById('inputModalError');
-        err.textContent=`Please enter a valid ${label} as dd/mm/yyyy.`;
-        err.style.display='block';
-        return;
+        if(!iso){
+          if(err){err.textContent=`Please enter a valid ${label} as dd/mm/yyyy.`;err.style.display='block'}
+          return;
+        }
+        try{
+          // Load the current record at confirmation time to avoid stale references.
+          const rows=quoteStore();
+          const idx=rows.findIndex(item=>item.id===id);
+          if(idx<0)throw new Error('Quote was not found in saved records.');
+          const record=rows[idx];
+          if(record.status==='Won'){
+            closeInputModal();renderQuotes();renderOnboarding();
+            go(qt==='Contract Renewal'?'quotes':'onboarding');return;
+          }
+          if(record.status!=='Pending'||record.stage!=='Submitted')throw new Error('This quote is no longer Pending. Refresh the list and try again.');
+          const stamp=nowISO();
+          record.status='Won';record.wonDate=stamp;record.expectedStartDate=iso;record.updatedAt=stamp;
+          if(qt==='Contract Renewal'){
+            record.renewalEffectiveDate=iso;
+            if(record.onboarding&&!record.onboarding.completedAt)delete record.onboarding;
+            addHistory(record,'Won',`Contract Renewal · Effective ${input}`);
+          }else{
+            if(!record.onboarding)record.onboarding=defaultOnboarding(record);
+            addHistory(record,'Won',`Expected Start ${input}`);
+          }
+          rows[idx]=record;
+          putQuotes(rows);
+          const check=quoteStore().find(item=>item.id===id);
+          if(!check||check.status!=='Won')throw new Error('The quote status could not be saved locally.');
+          closeInputModal();
+          quoteFilter='Won';
+          document.querySelectorAll('.qfilter').forEach(button=>button.classList.toggle('on',button.dataset.filter==='Won'));
+          renderQuotes();renderOnboarding();
+          go(qt==='Contract Renewal'?'quotes':'onboarding');
+          if(qt==='Contract Renewal'){
+            appNotice(`${record.name} renewal is now Won. Effective date: ${input}.`,'Contract renewal won','success');
+          }else{
+            appNotice(`${record.name} is Won and appears in Onboarding Customers. Expected Start: ${input}.`,'Quote won','success');
+          }
+        }catch(error){
+          console.error('Won transition failed',error);
+          if(err){err.textContent='Could not mark quote Won: '+(error?.message||String(error));err.style.display='block'}
+        }
       }
-      closeInputModal();
-      let t=nowISO();
-    q.status='Won';q.wonDate=t;q.expectedStartDate=iso;q.updatedAt=t;
-    if(qt==='Contract Renewal'){
-      if(q.onboarding&&!q.onboarding.completedAt)delete q.onboarding;
-      q.renewalEffectiveDate=iso;
-      addHistory(q,'Won',`Contract Renewal · Effective ${d}`);
-    }else{
-      q.onboarding=defaultOnboarding(q);
-      addHistory(q,'Won',`Expected Start ${d}`);
-    }
-    a[i]=q;putQuotes(a);
-
-    let saved=quoteStore().find(x=>x.id===id);
-    if(!saved||saved.status!=='Won'){appNotice('The Won status could not be saved. Please try again.','Save failed','danger');return}
-
-    quoteFilter='Won';
-    document.querySelectorAll('.qfilter').forEach(b=>b.classList.toggle('on',b.dataset.filter==='Won'));
-    renderQuotes();renderOnboarding();
-
-    if(qt==='Contract Renewal'){
-      go('quotes');
-      setTimeout(()=>appNotice(`${q.name} contract renewal is now Won. Effective date: ${d}. It has not been added to Onboarding because this is an existing customer renewal.`,'Contract renewal won','success'),50);
-    }else{
-      go('onboarding');
-      setTimeout(()=>{renderOnboarding();appNotice(`${q.name} is now Won. Expected Start: ${d}. The customer is now in Our Customers → Onboarding Customers.`,'Quote won','success')},50);
-    }
-    }});
+    });
     return;
   }
 }
