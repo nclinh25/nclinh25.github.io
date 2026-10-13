@@ -542,7 +542,7 @@ textarea{
 @media(max-width:430px){.tenantFinalKpis{grid-template-columns:1fr}}
 </style>
 
-<script>window.__APCS_BUILD__="60-safe-preview";</script>
+<script>window.__APCS_BUILD__="63-won-hotfix";</script>
 </head><body>
 <header><div class=brand><b>Austco Polar Cold Storage</b><small>Commercial Management</small></div><div class=nav><button id=nrate class=on onclick="go('rate')">Rate Card</button><div class=navGroup><button id=nquotesMain class=navMain onclick="go('quotes')">Quotes <span class=chev>▼</span></button><div class=navDrop><button id=subquote onclick="go('quote')">Create Quote</button><button id=subquotes onclick="go('quotes')">Quote List</button></div></div><div class=navGroup><button id=ncustomersMain class=navMain onclick="go('onboarding')">Our Customers <span class=chev>▼</span></button><div class=navDrop><button id=subonboarding onclick="go('onboarding')">Onboarding Customers</button><button id=subprofile onclick="go('profile')">Active Customers</button></div></div></div></header>
 
@@ -2550,7 +2550,27 @@ function putQuotes(a){
 function nowISO(){return new Date().toISOString()}
 function quoteName(){return ($('qname').value||'').trim()||'Untitled quote'}
 function addHistory(q,event,detail=''){q.history=Array.isArray(q.history)?q.history:[];q.history.push({event,detail,at:nowISO()})}
-function defaultOnboarding(q){return{quoteId:q.id,status:'In Progress',createdAt:nowISO(),tasks:(DEFAULT_ONBOARDING[q.model]||[]).map((t,i)=>({...t,id:'T-'+Date.now()+'-'+i,done:false,dueDate:'',notes:''}))}}
+function defaultOnboarding(q){
+  // Build 63: self-contained fallback. No dependency on any separate DEFAULT_ONBOARDING binding.
+  const templates = {
+    '3PL': [
+      ['Confirm customer details and commercial agreement','Verify account and agreed service scope.'],
+      ['Confirm rates and billing setup','Check receivable, storage, load out and additional service charges.'],
+      ['Complete WMS customer setup','Configure account, products and operating requirements.'],
+      ['Confirm operational requirements','Coordinate expected volume, storage and despatch requirements.'],
+      ['Confirm commencement and first booking','Validate start date and readiness with the customer.']
+    ],
+    'Tenant': [
+      ['Confirm signed tenancy agreement','Validate terms and effective date.'],
+      ['Confirm rent, outgoings and billing setup','Check agreed charges and billing start date.'],
+      ['Prepare room and access arrangements','Verify room condition, keys and access requirements.'],
+      ['Confirm handover and commencement','Agree handover details and commencement date.']
+    ]
+  };
+  const model=String(q.model||'').toLowerCase()==='tenant'?'Tenant':'3PL';
+  const stamp=Date.now();
+  return {quoteId:q.id,status:'In Progress',createdAt:nowISO(),tasks:templates[model].map((t,i)=>({name:t[0],description:t[1],owners:'',id:'T-'+stamp+'-'+i,done:false,dueDate:'',notes:''}))};
+}
 function ensureOnboarding(q){if(!q.onboarding)q.onboarding=defaultOnboarding(q);if(!Array.isArray(q.onboarding.tasks))q.onboarding.tasks=defaultOnboarding(q).tasks;return q.onboarding}
 function saveQuoteRecord(stage='Draft',status=''){
   let a=quoteStore(),now=nowISO(),snap=snapshot();
@@ -3687,7 +3707,7 @@ try{
 </div>
 
 
-<div id="apcsDbStatus" class="dbStatus">Database connecting…</div>
+<div id="apcsDbStatus" class="dbStatus">Database connecting…</div><div id="apcsBuild63" style="position:fixed;bottom:14px;right:14px;z-index:10003;background:#073d69;color:white;font:700 10px Segoe UI,Arial;padding:5px 9px;border-radius:20px;pointer-events:none">Build 63</div>
 
 <div class="modal" id="quoteServiceModal">
   <div class="modalbox" style="width:min(760px,94vw)">
