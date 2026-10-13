@@ -542,7 +542,7 @@ textarea{
 @media(max-width:430px){.tenantFinalKpis{grid-template-columns:1fr}}
 </style>
 
-<script>window.__APCS_BUILD__="59";</script>
+<script>window.__APCS_BUILD__="60-safe-preview";</script>
 </head><body>
 <header><div class=brand><b>Austco Polar Cold Storage</b><small>Commercial Management</small></div><div class=nav><button id=nrate class=on onclick="go('rate')">Rate Card</button><div class=navGroup><button id=nquotesMain class=navMain onclick="go('quotes')">Quotes <span class=chev>▼</span></button><div class=navDrop><button id=subquote onclick="go('quote')">Create Quote</button><button id=subquotes onclick="go('quotes')">Quote List</button></div></div><div class=navGroup><button id=ncustomersMain class=navMain onclick="go('onboarding')">Our Customers <span class=chev>▼</span></button><div class=navDrop><button id=subonboarding onclick="go('onboarding')">Onboarding Customers</button><button id=subprofile onclick="go('profile')">Active Customers</button></div></div></div></header>
 
@@ -635,7 +635,7 @@ const APCS_SUPABASE_URL='https://facwyhjemlhmlbqcebqi.supabase.co';
 const APCS_SUPABASE_KEY='sb_publishable_kHFBSykS_QqFGlE3GFHgmA_mTKfXG2j';
 const APCS_REST=APCS_SUPABASE_URL+'/rest/v1/app_state';
 const APCS_NATIVE_SET=Storage.prototype.setItem,APCS_NATIVE_REMOVE=Storage.prototype.removeItem;
-let apcsSyncTimers=new Map(),apcsHydrating=false;
+let apcsSyncTimers=new Map(),apcsHydrating=false,apcsPendingWrites=0,apcsFailedWrites=new Set();
 
 function dbBadge(msg,ok=true){
   let e=document.getElementById('apcsDbStatus');if(!e)return;
@@ -661,14 +661,16 @@ async function dbRequest(url,opts={}){
 }
 async function dbPush(k,v){
   if(apcsHydrating||!String(k).startsWith('apcs_'))return;
+  apcsPendingWrites++;dbBadge('Database syncing…');
   try{
     await dbRequest(APCS_REST+'?on_conflict=state_key',{
       method:'POST',
       headers:{'Prefer':'resolution=merge-duplicates,return=minimal'},
       body:JSON.stringify([{state_key:String(k),raw_value:String(v),updated_at:new Date().toISOString()}])
     });
-    dbBadge('Database synced');
-  }catch(error){console.error(error);dbBadge('Database sync error',false)}
+    apcsFailedWrites.delete(k);
+  }catch(error){console.error(error);apcsFailedWrites.add(k);dbBadge('Database sync error',false)}
+  finally{apcsPendingWrites--;if(!apcsFailedWrites.size&&apcsPendingWrites===0)dbBadge('Database synced')}
 }
 async function dbDelete(k){
   if(apcsHydrating||!String(k).startsWith('apcs_'))return;
@@ -686,9 +688,21 @@ Storage.prototype.setItem=function(k,v){
 };
 Storage.prototype.removeItem=function(k){
   APCS_NATIVE_REMOVE.call(this,k);
-  if(this===localStorage&&String(k).startsWith('apcs_'))dbDelete(k)
+  // Local removal is not automatically a server delete; this prevents accidental remote data loss.
 };
 async function bootstrapDatabase(){
+  // Local recovery snapshot (not an apcs_ key: never uploads private backup records).
+  try{
+    const snapshot={savedAt:new Date().toISOString(),build:'60-safe-preview',values:{}};
+    for(let i=0;i<localStorage.length;i++){
+      const key=localStorage.key(i);
+      if(key&&key.startsWith('apcs_'))snapshot.values[key]=localStorage.getItem(key);
+    }
+    const bk='apcsRecoverySnapshot_'+Date.now();
+    APCS_NATIVE_SET.call(localStorage,bk,JSON.stringify(snapshot));
+    const old=Object.keys(localStorage).filter(x=>x.startsWith('apcsRecoverySnapshot_')).sort();
+    old.slice(0,Math.max(0,old.length-3)).forEach(x=>APCS_NATIVE_REMOVE.call(localStorage,x));
+  }catch(e){console.warn('Recovery snapshot unavailable',e)}
   dbBadge('Database connecting…');
   try{
     let data=await dbRequest(APCS_REST+'?select=state_key,raw_value&order=state_key.asc');
@@ -733,6 +747,27 @@ async function bootstrapDatabase(){
           // Push the recovered union back to Supabase after hydration.
           setTimeout(()=>dbPush(r.state_key,mergedRaw),50);
         }
+      }else if(['apcs_profiles_v4','apcs_customers_v4','apcs_deleted_customers_v1'].includes(r.state_key)){
+        // Merge independently-created profiles rather than replacing the entire local collection.
+        // Conflicting existing entries use the remote authoritative version, while a local
+        // snapshot is retained in the device recovery journal for manual comparison.
+        try{
+          const local=JSON.parse(localStorage.getItem(r.state_key)||'{}');
+          const server=JSON.parse(r.raw_value||'{}');
+          let merged;
+          if(r.state_key==='apcs_profiles_v4')merged={...local,...server};
+          else{
+            merged={...local,...server};
+            for(const type of ['3PL','Tenant']){
+              const entries=[...(server[type]||[]),...(local[type]||[])];
+              const seen=new Set();
+              merged[type]=entries.filter(x=>{const id=JSON.stringify(x);if(seen.has(id))return false;seen.add(id);return true});
+            }
+          }
+          const raw=JSON.stringify(merged);
+          APCS_NATIVE_SET.call(localStorage,r.state_key,raw);
+          if(raw!==r.raw_value)setTimeout(()=>dbPush(r.state_key,raw),100);
+        }catch(e){console.warn('Merge retained local value',r.state_key,e)}
       }else if(localStorage.getItem(r.state_key)!==r.raw_value){
         APCS_NATIVE_SET.call(localStorage,r.state_key,r.raw_value);
       }
@@ -741,7 +776,8 @@ async function bootstrapDatabase(){
     for(let i=0;i<localStorage.length;i++){
       let k=localStorage.key(i);if(k&&k.startsWith('apcs_'))localKeys.push(k)
     }
-    localKeys.forEach(k=>{if(!remote.has(k))APCS_NATIVE_REMOVE.call(localStorage,k)});
+    // Never delete a local-only business record merely because the remote snapshot lacks it.
+    localKeys.forEach(k=>{if(!remote.has(k))setTimeout(()=>dbPush(k,localStorage.getItem(k)||''),100)});
     apcsHydrating=false;
     dbBadge('Database synced');
 
@@ -1213,10 +1249,10 @@ function proceedSubmitQuote(basis){
 
   let arr=qm==='Tenant'
     ?all.filter(z=>Number.isFinite(z.areaGap)).slice(0,2)
-    :all.filter(z=>z.score>=90).slice(0,3);
+    :all.slice(0,3);
 
   $('matchHint').textContent=qm==='3PL'
-    ?'Only profiles with at least a 90% match are shown. A comparison customer is used only as a starting rate-card reference. Choose No Match to use APCS standard rates.'
+    ?'Top 3 closest customer profiles, ranked by operational similarity. Select a reference customer to see a full editable service rate card; reference rates are not copied automatically.'
     :'Tenant matching uses chargeable area only. The two Active Tenant profiles with the closest m² are shown automatically; room type, contract and other details affect pricing only.';
 
   let qMatchNote=fieldText('qNotes')||rec.quoteNotes||'';
@@ -1232,7 +1268,7 @@ function proceedSubmitQuote(basis){
     </div>`
   }).join('');
 
-  cards+=`<div class="match noMatchCard" onclick="chooseNoMatch()">
+  if(qm==='Tenant'||!arr.length)cards+=`<div class="match noMatchCard" onclick="chooseNoMatch()">
     <b>No Match</b>
     <div class=hint>Use APCS standard rates and the new customer's own operational data.</div>
   </div>`;
@@ -2183,13 +2219,22 @@ function chooseMatch(i){
       let rv=z.p.rates?.[s.id]??s.standard??'';
       if(s.code==='STOR'&&rv!==''&&Number(rv)<0.44)rv=Number(rv)+0.04;
       if(String(s.code).includes('STOP')&&rv!==''&&Number(rv)<13.44)rv=Number(rv)+1.44;
+      // The reference is a benchmark, not the selling price. Adjust core and extra
+      // services by the difference in operational similarity; preserve numeric blanks.
+      if(rv!==''&&rv!==null&&Number.isFinite(Number(rv))){
+        const similarity=Number(z.score)||0;
+        const difference=Math.max(0,100-similarity)/100;
+        const isStorage=s.type==='Storage';
+        const adjustment=1+difference*(isStorage?0.12:0.08);
+        rv=Number((Number(rv)*adjustment).toFixed(4));
+      }
       return {...s,_rate:rv}
     })
     .filter(s=>s._rate!==''&&s._rate!=null);
   quoteRemovedServices=[];
 
   $('matchRates').innerHTML=
-    `<h3>${rateCardHeading()}</h3><div class=hint id=rateCardSourceNote style="margin:-4px 0 10px">Starting rates referenced from the selected comparison profile. All operating assumptions and scenario calculations use the new customer's information.</div>
+    `<h3>${rateCardHeading()}</h3><div class=hint id=rateCardSourceNote style="margin:-4px 0 10px">Suggested rates for all available services are derived from the selected reference customer and adjusted for operational similarity. These are editable proposals, not copies of the reference rate card. Verify profitability before submitting.</div>
      <div class=rateWrap><div id=quoteRateRows></div></div>
      <div class=quoteRateToolbar>
        <button class="btn addServiceBtn" onclick=openQuoteServiceModal()>+ Add Service</button>
