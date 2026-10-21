@@ -5386,10 +5386,11 @@ async function apcsExportApplicationData(){
 /* Additional 3PL service catalogue entries only. No migration or database writes.
    A customer's explicit rate, including zero, always takes precedence. */
 const APCS_EXTRA_CHARGES=[
- {id:'apcs_charge_emergency_container_same_day',section:'Additional Service Charges',type:'Handling',code:'EMERG-LO',desc:'Emergency Container Load Out Request — Same day',standard:500},
- {id:'apcs_charge_receivable_missed_booking',section:'Additional Service Charges',type:'Handling',code:'MISSED-REC',desc:'Schedule Delay (Receivable) — Missed booking',standard:100},
- {id:'apcs_charge_reschedule_booking',section:'Additional Service Charges',type:'Handling',code:'RESCHEDULE',desc:'Reschedule booking',standard:100},
- {id:'apcs_charge_pallet_daily_hire',section:'Additional Service Charges',type:'Handling',code:'PALLET-HIRE',desc:'Pallet Fee — Daily Hire Rate',standard:0.11}
+{id:'apcs_charge_emergency_container_same_day',section:'Additional Service Charges',type:'Handling',code:'ELOAD',desc:'Emergency Load Out – Same Day',standard:500},
+{id:'apcs_charge_receivable_missed_booking',section:'Additional Service Charges',type:'Handling',code:'MISREC',desc:'Missed Receival Booking',standard:100},
+{id:'apcs_charge_reschedule_booking',section:'Additional Service Charges',type:'Handling',code:'RESCH',desc:'Booking Rescheduling',standard:100},
+{id:'apcs_charge_pallet_daily_hire',section:'Additional Service Charges',type:'Handling',code:'PALH',desc:'Pallet Hire – Daily',standard:0.11}
+  }
 ];
 for(const entry of APCS_EXTRA_CHARGES){
  if(!SERVICES.some(s=>s.id===entry.id))SERVICES.push(entry);
