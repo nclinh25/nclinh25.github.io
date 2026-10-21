@@ -5487,3 +5487,41 @@ renderRateTable=function(){
   clearQuoteForm=function(){const result=priorClear.apply(this,arguments);disableCustomerSuggestions();const el=document.getElementById('qname');if(el)el.value='';return result};
 })();
 </script>
+
+<script id="apcs-live-revenue-profile-fix">
+/* Suggested Rate Card preview: Revenue Profile must read the same live rates and
+   operational inputs as Estimated Economics. This is read-only; no database writes. */
+(function(){
+  const previousRevenueHtml=apcsRevenueSummaryHtml;
+  function liveQuoteForRevenueProfile(q){
+    if(!q || q.model!=='3PL')return q;
+    const v={...(q.snapshot?.v||{})};
+    for(const id of ['prod','blastPct','scan','scanPct','holdN','holdU','loFreq','loUnit','domPal','expQty','exp20','exp40','dom','exp']){
+      const el=document.getElementById(id);
+      if(el)v[id]=el.type==='checkbox'?el.checked:el.value;
+    }
+    const inputRows=typeof collectReceivableRows==='function'?collectReceivableRows():[];
+    const rows=inputRows.length?inputRows:(q.receivableRows||q.snapshot?.receivableRows||[]);
+    const basis=typeof currentBillingBasis==='function'?currentBillingBasis():(q.billingBasis||v.billingBasis||'Carton');
+    const card=(q.selectedRateCard||[]).map(s=>({...s}));
+    if(Array.isArray(quoteRateServices)){
+      for(const s of quoteRateServices){
+        const el=[...document.querySelectorAll('.sugrate')].find(x=>x.dataset.id===String(s.id));
+        const raw=el?el.value:s._rate;
+        const n=raw===''||raw===null||raw===undefined?0:Number(raw);
+        const entry={id:s.id,code:s.code,rate:Number.isFinite(n)?n:0};
+        const index=card.findIndex(x=>x.id===s.id);
+        if(index>=0)card[index]=entry;else card.push(entry);
+      }
+      // An existing saved card line that the user removed must not be charged.
+      const visible=new Set(quoteRateServices.map(s=>s.id));
+      for(let i=card.length-1;i>=0;i--){if(!visible.has(card[i].id))card.splice(i,1)}
+    }
+    return {...q,billingBasis:basis,receivableRows:rows,selectedRateCard:card,
+      snapshot:{...(q.snapshot||{}),v,receivableRows:rows}};
+  }
+  apcsRevenueSummaryHtml=function(q){
+    return previousRevenueHtml(liveQuoteForRevenueProfile(q));
+  };
+})();
+</script>
