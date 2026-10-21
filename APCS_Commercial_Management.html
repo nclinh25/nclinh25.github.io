@@ -1352,50 +1352,54 @@ function currentBudgetInfo(){
   return {label:labels[idx],monthly,weekly:monthly/4.3};
 }
 function suggestedRate(code){
-  let svc=SERVICES.find(s=>s.code===code || (code==='STOP'&&String(s.code).includes('STOP')));
-  if(!svc)return 0;
-  let el=document.querySelector(`.sugrate[data-id="${svc.id}"]`);
-  if(el&&el.value!=='')return Number(el.value)||0;
-  return Number(svc.standard)||0;
+  // Rate preview must use the currently edited rate card, not stale catalogue defaults.
+  const normalized=String(code||'').toUpperCase();
+  const same=s=>normalized==='STOP'?String(s.code||'').toUpperCase().startsWith('STOP'):String(s.code||'').toUpperCase()===normalized;
+  const row=(typeof quoteRateServices!=='undefined'&&Array.isArray(quoteRateServices))?quoteRateServices.find(same):null;
+  if(row){
+    const input=document.querySelector(`.sugrate[data-id="${row.id}"]`);
+    const raw=input?input.value:row._rate;
+    if(raw!==''&&raw!==null&&raw!==undefined){const n=Number(raw);return Number.isFinite(n)?n:0;}
+    return 0; // An intentionally blank rate is not the catalogue standard.
+  }
+  return 0; // A removed service must not contribute to estimated revenue.
 }
+
 function quoteOperationalPattern(){
   const q=currentQuoteRecord(),v=q?.snapshot?.v||{};
-  let recRows=[...document.querySelectorAll('#recRows .row')];
-  let first=recRows[0];
-  let perBatch=0,recDays=0,recType='',recQty=0,recUnit='',recEvery=0;
-
-  if(first){
-    recType=first.querySelector('.rt')?.value||'';
-    recQty=Number(first.querySelector('.rq')?.value)||0;
-    recEvery=Number(first.querySelector('.rf')?.value)||0;
-    recUnit=first.querySelector('.ru')?.value||'';
-    recDays=profileDays(recEvery,recUnit);
-    if(recType==='Truck')perBatch=recQty*22;
-    else if(recType==='Container'){
-      let size=first.querySelector('.cs')?.value||'';
-      perBatch=recQty*(size==='20ft'?22:size==='40ft'?44:0);
-    }else if(recType==='Pallets')perBatch=recQty;
+  const domRows=[...document.querySelectorAll('#recRows .row')];
+  const rows=domRows.length?domRows.map(r=>({
+    receiveType:r.querySelector('.rt')?.value||'', quantity:r.querySelector('.rq')?.value||'',
+    containerSize:r.querySelector('.cs')?.value||'', frequency:r.querySelector('.rf')?.value||'',
+    frequencyUnit:r.querySelector('.ru')?.value||''
+  })):q?.receivableRows||q?.snapshot?.receivableRows||[];
+  const first=rows[0]||{},recType=first.receiveType||'',recQty=Number(first.quantity)||0,
+    recEvery=Number(first.frequency)||0,recUnit=first.frequencyUnit||'',recDays=profileDays(recEvery,recUnit);
+  let weeklyPallets=0,missingContainerSize=false,perBatch=0;
+  for(const r of rows){
+    const qty=Number(r.quantity)||0;
+    const type=String(r.receiveType||'').trim().toLowerCase();
+    const size=String(r.containerSize||'').trim().toLowerCase();
+    let pallets=0;
+    if(type==='container'){
+      if(size==='20ft')pallets=qty*22;
+      else if(size==='40ft')pallets=qty*44;
+      else if(qty>0)missingContainerSize=true;
+    }else if(type==='truck')pallets=qty*22;
+    else if(type==='pallet'||type==='pallets')pallets=qty;
+    perBatch+=pallets;
+    const d=profileDays(r.frequency,r.frequencyUnit);
+    if(d>0)weeklyPallets+=pallets*7/d;
   }
-
-  // fallback to the submitted quote snapshot if DOM is unavailable
-  if(!first && q?.snapshot?.rec){
-    perBatch=currentQuoteBatchPallets();
-  }
-
-  const receiptsPerWeek=recDays?7/recDays:0;
-  const weeklyPallets=perBatch*receiptsPerWeek;
   const weeklyCartons=weeklyPallets*36;
-  const dwellDays=profileDays(v.holdN||$('holdN')?.value,v.holdU||$('holdU')?.value);
-  const loadDays=profileDays(v.loFreq||$('loFreq')?.value,v.loUnit||$('loUnit')?.value);
-
-  return {
-    recType,recQty,recEvery,recUnit,recDays,perBatch,receiptsPerWeek,weeklyPallets,weeklyCartons,
-    dwellDays,loadDays,
-    product:v.prod||$('prod')?.value||'',
-    mix:v.mix||$('mix')?.value||'',
-    market:[v.dom||$('dom')?.checked?'Domestic':'',v.exp||$('exp')?.checked?'Export':''].filter(Boolean).join(' / ')
-  }
+  const dwellDays=profileDays($('holdN')?.value||v.holdN,$('holdU')?.value||v.holdU);
+  const loadDays=profileDays($('loFreq')?.value||v.loFreq,$('loUnit')?.value||v.loUnit);
+  return {recType,recQty,recEvery,recUnit,recDays,perBatch,receiptsPerWeek:recDays?7/recDays:0,
+    weeklyPallets,weeklyCartons,dwellDays,loadDays,missingContainerSize,
+    product:$('prod')?.value||v.prod||'',mix:$('mix')?.value||v.mix||'',
+    market:[($('dom')?.checked??v.dom)?'Domestic':'',($('exp')?.checked??v.exp)?'Export':''].filter(Boolean).join(' / ')};
 }
+
 function suggestedPatternEconomics(){
   if(qm!=='3PL')return null;
   let p=quoteOperationalPattern();
@@ -1407,11 +1411,11 @@ function suggestedPatternEconomics(){
   let storCarton=basis==='Carton'?suggestedRate('STOR'):0,storPallet=basis==='Pallet'?suggestedRate('STOP'):0;
   let blastRate=suggestedRate('BREC'),scanRate=suggestedRate('SCAN');
 
-  let receiveRevenue=recCarton?weeklyCartons*recCarton:weeklyPallets*recPallet;
+  let receiveRevenue=basis==='Pallet'?weeklyPallets*recPallet:weeklyCartons*recCarton;
 
   let avgPallets=p.dwellDays?weeklyPallets*(p.dwellDays/7):0;
   let avgCartons=avgPallets*36;
-  let storageRevenue=storCarton?avgCartons*storCarton:avgPallets*storPallet;
+  let storageRevenue=basis==='Pallet'?avgPallets*storPallet:avgCartons*storCarton;
 
   const currentQuote=quoteStore().find(x=>x.id===currentQuoteId);
   const qv=currentQuote?.snapshot?.v||{};
@@ -1427,7 +1431,7 @@ function suggestedPatternEconomics(){
 
   // New customer's load-out pattern: if a frequency is entered, use steady-state outbound ~= inbound.
   // If not, still use one full batch per cycle for scenario comparison.
-  let loadRevenue=pickCarton?weeklyCartons*pickCarton:weeklyPallets*pickPallet;
+  let loadRevenue=basis==='Pallet'?weeklyPallets*pickPallet:weeklyCartons*pickCarton;
 
   let total=receiveRevenue+storageRevenue+blastRevenue+scanRevenue+loadRevenue;
   let budget=currentBudgetInfo(),coverage=budget.weekly?total/budget.weekly*100:0;
@@ -1766,6 +1770,8 @@ function updateSuggestedEconomics(){
         ${targetMultiplier>0?`Rate/revenue level needed for 100% of this weekly budget: <b>${targetMultiplier.toFixed(2)}×</b> current estimate.`:''}
       </div>
     </div>
+    ${e.p.missingContainerSize?'<div class="econWarn">A receivable Container has no 20ft / 40ft size selected. Please select the size to calculate the number of pallets and cartons accurately; unknown sizes are not assigned a guessed quantity.</div>':''}
+    ${e.weeklyPallets>0&&e.receiveRevenue===0&&e.storageRevenue===0&&e.loadRevenue===0?'<div class="econWarn">Volume is available, but all three core rates are zero or blank. Check the REC/RECP, STOR/STOP and PICK/PICKP rates above; revenue is calculated as rate × chargeable cartons or pallets.</div>':''}
     ${renderScenarioAnalysis()}
   </div>`;
 }
