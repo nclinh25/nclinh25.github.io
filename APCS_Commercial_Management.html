@@ -3727,7 +3727,13 @@ try{
 
 
 <div id="apcsDbStatus" class="dbStatus">Database connecting…</div>
-<button id="apcsExportDataBtn" type="button" title="Export an application data backup (JSON)" onclick="apcsExportApplicationData()" style="position:fixed;bottom:48px;right:151px;z-index:10002;padding:7px 12px;border-radius:999px;background:#fff;border:1px solid #d6e4ec;box-shadow:0 4px 18px #17324622;font:700 10px Inter,Segoe UI,Arial;color:#075985;cursor:pointer">Export Data</button>
+<button id="apcsExportDataBtn" type="button" title="Export Application Data" aria-label="Export Application Data" onclick="apcsExportApplicationData()" style="position:fixed;left:12px;bottom:12px;z-index:10002;width:36px;height:36px;padding:0;border-radius:999px;background:#fff;border:1px solid #d6e4ec;box-shadow:0 4px 18px #17324622;color:#075985;cursor:pointer;display:flex;align-items:center;justify-content:center">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="width:18px;height:18px">
+  <path d="M12 3v12"/>
+  <path d="m7 10 5 5 5-5"/>
+  <path d="M5 21h14"/>
+</svg>
+</button>
 
 <div class="modal" id="quoteServiceModal">
   <div class="modalbox" style="width:min(760px,94vw)">
@@ -5306,10 +5312,11 @@ window.addEventListener('load',()=>setTimeout(()=>{
 
 <script id="apcs-export-application-data-v1">
 /* Additive, read-only application backup. No database writes, migrations or restores. */
+const APCS_EXPORT_BTN_ICON=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="width:18px;height:18px"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>`;
 async function apcsExportApplicationData(){
   const button=document.getElementById('apcsExportDataBtn');
   if(button?.disabled)return;
-  if(button){button.disabled=true;button.textContent='Preparing backup…';}
+  if(button){button.disabled=true;button.style.opacity='.7';button.title='Preparing backup…';}
   try{
     // Let normal, already-scheduled writes settle. Do not create or force any writes.
     await new Promise(resolve=>setTimeout(resolve,450));
@@ -5370,7 +5377,43 @@ async function apcsExportApplicationData(){
     if(typeof appNotice==='function')appNotice('No backup was downloaded: '+String(error?.message||error),'Export failed','warning');
     else alert('Export failed: '+String(error?.message||error));
   }finally{
-    if(button){button.disabled=false;button.textContent='Export Data';}
+    if(button){button.disabled=false;button.style.opacity='1';button.title='Export Application Data';button.setAttribute('aria-label','Export Application Data');button.innerHTML=APCS_EXPORT_BTN_ICON;}
   }
 }
+</script>
+
+<script id="apcs-3pl-default-extra-charges">
+/* Additional 3PL service catalogue entries only. No migration or database writes.
+   A customer's explicit rate, including zero, always takes precedence. */
+const APCS_EXTRA_CHARGES=[
+ {id:'apcs_charge_emergency_container_same_day',section:'Additional Service Charges',type:'Handling',code:'EMERG-LO',desc:'Emergency Container Load Out Request — Same day',standard:500},
+ {id:'apcs_charge_receivable_missed_booking',section:'Additional Service Charges',type:'Handling',code:'MISSED-REC',desc:'Schedule Delay (Receivable) — Missed booking',standard:100},
+ {id:'apcs_charge_reschedule_booking',section:'Additional Service Charges',type:'Handling',code:'RESCHEDULE',desc:'Reschedule booking',standard:100},
+ {id:'apcs_charge_pallet_daily_hire',section:'Additional Service Charges',type:'Handling',code:'PALLET-HIRE',desc:'Pallet Fee — Daily Hire Rate',standard:0.11}
+];
+for(const entry of APCS_EXTRA_CHARGES){
+ if(!SERVICES.some(s=>s.id===entry.id))SERVICES.push(entry);
+}
+// Keep quote preview and export consistent with default rates, without storing defaults in Supabase.
+const apcsOriginalRenderRateTableDefaultCharges=renderRateTable;
+renderRateTable=function(){
+ apcsOriginalRenderRateTableDefaultCharges.apply(this,arguments);
+ if($('rateModel')?.value!=='3PL')return;
+ // Existing matrix override renders rows from SERVICES; only fill blank rates for our four new services.
+ const all=APCS_EXTRA_CHARGES;
+ const matrix=$('rateTableWrap')?.querySelector('.matrix');
+ if(!matrix)return;
+ const customers=[...allCustomers('3PL')].sort((a,b)=>(a.customer+' '+a.account).localeCompare(b.customer+' '+b.account));
+ const st=profiles();
+ for(const row of matrix.tBodies[0]?.rows||[]){
+   const label=row.cells[0]?.textContent||'';
+   const svc=all.find(s=>label.includes(s.code+' — '+s.desc));
+   if(!svc)continue;
+   customers.forEach((cust,index)=>{
+     const cell=row.cells[index+1];if(!cell)return;
+     const rate=st[pkey(cust,'3PL')]?.rates?.[svc.id];
+     cell.textContent=money(rate===undefined||rate===null||rate===''?svc.standard:rate);
+   });
+ }
+};
 </script>
