@@ -543,7 +543,9 @@ textarea{
 </style>
 
 <script>window.__APCS_BUILD__="63-won-hotfix";</script>
-</head><body>
+<style id="apcsTransportAndChecklistStyle">
+.apcsTransportChoices{display:flex;flex-wrap:wrap;gap:12px;margin:10px 0}.apcsTransportChoices label{font-size:12px;text-transform:none;display:flex;gap:7px;align-items:center}.apcsTransportChoices input{width:17px;height:17px}.apcsTransportGroup{padding:12px;margin:10px 0;border:1px solid #dce8ef;border-radius:11px;background:#fbfdfe}.apcsTransportGroup h3{margin:0 0 8px}.apcsTransportLine{display:grid;grid-template-columns:1fr 1.5fr 1fr auto;gap:7px;margin:7px 0}.apcsTransportLine input{min-width:0}.apcsTransportModal{position:fixed;inset:0;background:#092d4677;z-index:20001;display:none;align-items:center;justify-content:center;padding:18px}.apcsTransportModal.on{display:flex}.apcsChecklistCard{width:min(610px,96vw);max-height:88vh;overflow:auto;background:white;border-radius:16px;padding:23px;box-shadow:0 25px 65px #092d4644}.apcsChecklistLine{display:flex;align-items:start;gap:12px;padding:12px 0;border-bottom:1px solid #e6eef3;font-size:13px}.apcsChecklistLine input{height:18px;width:18px;flex:none}.apcsChecklistLine b{display:block}.apcsChecklistLine small{color:#6d8494}.apcsChecklistActions{display:flex;justify-content:flex-end;gap:10px;margin-top:16px}@media(max-width:650px){.apcsTransportLine{grid-template-columns:1fr 1fr}.apcsTransportLine button{grid-column:2}}
+</style></head><body>
 <header><div class=brand><b>Austco Polar Cold Storage</b><small>Commercial Management</small></div><div class=nav><button id=nrate class=on onclick="go('rate')">Rate Card</button><div class=navGroup><button id=nquotesMain class=navMain onclick="go('quotes')">Quotes <span class=chev>▼</span></button><div class=navDrop><button id=subquote onclick="go('quote')">Create Quote</button><button id=subquotes onclick="go('quotes')">Quote List</button></div></div><div class=navGroup><button id=ncustomersMain class=navMain onclick="go('onboarding')">Our Customers <span class=chev>▼</span></button><div class=navDrop><button id=subonboarding onclick="go('onboarding')">Onboarding Customers</button><button id=subprofile onclick="go('profile')">Active Customers</button></div></div></div></header>
 
 <div id=rate class="page on"><div class=hero><div><h1>Rate Card</h1><p>Current customer rates with CPI and effective-date context.</p></div><button class="iconbtn rateExportIcon" title="Export Rate Card" aria-label="Export Rate Card" onclick="exportRateCard()">
@@ -585,6 +587,16 @@ textarea{
 <div class=card><h2>2. Occupancy & contract</h2><div class=grid><div><label>Bills</label><select id=bills><option value="">Select…</option><option>Tenant pays</option><option>Included in rent</option></select></div><div><label>Parking?</label><select id=parking><option value="">Select…</option><option>No</option><option>Yes</option></select></div><div><label>Parking lots</label><input id=lots type=number></div><div><label>Contract length (years)</label><input id=years type=number></div></div></div>
 <div class=card><h2>3. Capacity check</h2><div class=g3><div><label>3PL onboarding in next 3–6 months?</label><select id=future3pl><option value="">Select…</option><option>No</option><option>Yes</option><option>Not sure</option></select></div><div><label>Expected pallets</label><input id=futurePal type=number></div><div><label>Utilisation</label><div class=info id=util>—</div></div></div><div id=draftWarn class="info warn hide" style="margin-top:10px">Draft only: future 3PL demand is uncertain. Recheck capacity before finalising.</div></div></div>
 
+<div class="card" id="apcsTransportSection"><h2>Transport Requirements</h2>
+<div class="g2"><div><label>Does the customer require transport?</label><select id="apcsTransportRequired" onchange="apcsTransportToggle();autoSave()"><option value="No">No</option><option value="Yes">Yes</option></select></div></div>
+<div id="apcsTransportDetails" class="hide"><div class="apcsTransportChoices">
+<label><input type="checkbox" id="apcsTransportMetro" onchange="apcsTransportToggle();autoSave()">Melbourne Metro</label>
+<label><input type="checkbox" id="apcsTransportInterstate" onchange="apcsTransportToggle();autoSave()">Interstate / Domestic</label>
+<label><input type="checkbox" id="apcsTransportOverseas" onchange="apcsTransportToggle();autoSave()">Overseas / International</label></div>
+<div id="apcsMetroGroup" class="apcsTransportGroup hide"><h3>Melbourne Metro Services</h3><div class="apcsTransportChoices" id="apcsMetroServices"></div><button class="btn" type="button" onclick="apcsMetroSelectAll()">Select All / Clear All</button></div>
+<div id="apcsInterstateGroup" class="apcsTransportGroup hide"><h3>Interstate / Domestic Services</h3><div id="apcsInterstateRows"></div><button class="btn" type="button" onclick="apcsAddTransportRow('interstate')">+ Add Service</button></div>
+<div id="apcsOverseasGroup" class="apcsTransportGroup hide"><h3>Overseas / International Services</h3><div id="apcsOverseasRows"></div><button class="btn" type="button" onclick="apcsAddTransportRow('overseas')">+ Add Service</button></div>
+</div></div>
 <div class=card><h2 id=notesSectionTitle>5. Notes, Comments & Attachments</h2>
 <div class=g2>
   <div>
@@ -616,6 +628,13 @@ textarea{
 </div><div class=kpis><div class=kpi><small>Monthly revenue</small><b id=monthly>—</b></div><div class=kpi><small>Annual revenue</small><b id=annual>—</b></div><div class=kpi><small id=thirdLabel>Top revenue area</small><b id=thirdKpi>—</b></div><div class=kpi><small id=coverLabel>Pipeline budget coverage</small><b id=coverage>—</b></div></div><div class=insights><div class=insight><div class=insightHead><svg class=bulb viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 18h6M10 22h4M8.2 14.8C6.8 13.7 6 12 6 10a6 6 0 1 1 12 0c0 2-.8 3.7-2.2 4.8-.8.7-1.3 1.5-1.5 2.2H9.7c-.2-.7-.7-1.5-1.5-2.2Z"/></svg><span>Commercial insights</span></div><ul><li id=ins1>Complete the quote to assess ad-hoc vs ongoing.</li><li id=ins2>Complete the quote to identify the highest-revenue area.</li><li id=ins3>Complete the quote to identify extra revenue opportunities and operational complexity.</li></ul></div></div></div>
 <div class=bar><div><b id=draftName>Untitled draft</b><div class=hint>Autosaves in this browser.</div></div><div><button class="btn primary" onclick=submitQuote()>Submit</button> <button class=btn onclick=saveDraft()>Save Draft</button></div></div></div>
 
+<div id="apcsPreSubmitModal" class="apcsTransportModal" role="dialog" aria-modal="true" aria-labelledby="apcsChecklistTitle"><div class="apcsChecklistCard"><h2 id="apcsChecklistTitle" style="margin-top:0;color:#075985">Pre-Submission Checklist · 3PL</h2><p style="font-size:13px">Make sure you have considered these aspects before submitting the quote. Checking an item confirms review; it does not automatically add a charge.</p>
+<div class="apcsChecklistLine"><input type="checkbox" class="apcsPreCheck" onchange="apcsUpdateChecklist()"><span><b>Emergency Container Load Out Request</b><small>Same day — $500.00</small></span></div>
+<div class="apcsChecklistLine"><input type="checkbox" class="apcsPreCheck" onchange="apcsUpdateChecklist()"><span><b>Schedule Delay (Receivable)</b><small>Missed booking — $100.00</small></span></div>
+<div class="apcsChecklistLine"><input type="checkbox" class="apcsPreCheck" onchange="apcsUpdateChecklist()"><span><b>Reschedule Booking</b><small>$100.00</small></span></div>
+<div class="apcsChecklistLine"><input type="checkbox" class="apcsPreCheck" onchange="apcsUpdateChecklist()"><span><b>Pallet Fee</b><small>Daily Hire Rate — $0.11</small></span></div>
+<div class="apcsChecklistActions"><button class="btn" onclick="apcsCloseChecklist()">Cancel</button><button id="apcsConfirmPreSubmit" class="btn primary" disabled onclick="apcsConfirmChecklist()">OK · Continue</button></div>
+</div></div>
 <div id=quotes class=page><div class=hero><div><h1>Quotes</h1><p>Manage unfinished drafts and submitted opportunities from one place.</p></div><button class="btn primary" onclick="newQuote()">+ New Quote</button></div><div class=card><div class=quoteFilters><button class="btn qfilter on" data-filter="All" onclick="setQuoteFilter(this,'All')">All</button><button class="btn qfilter" data-filter="Draft" onclick="setQuoteFilter(this,'Draft')">Drafts</button><button class="btn qfilter" data-filter="Pending" onclick="setQuoteFilter(this,'Pending')">Pending</button><button class="btn qfilter" data-filter="Won" onclick="setQuoteFilter(this,'Won')">Won</button><button class="btn qfilter" data-filter="Lost" onclick="setQuoteFilter(this,'Lost')">Lost</button></div><div id=quotesTable></div></div></div>
 
 <div id=onboarding class=page><div class=hero><div><h1>Onboarding Customers</h1><p>Won opportunities stay here until every required onboarding task is complete and the customer has started.</p></div></div><div class=card><div id=onboardingTable></div></div><div id=onboardingDetail></div></div>
@@ -3707,7 +3726,8 @@ try{
 </div>
 
 
-<div id="apcsDbStatus" class="dbStatus">Database connecting…</div><div id="apcsBuild63" style="position:fixed;bottom:14px;right:14px;z-index:10003;background:#073d69;color:white;font:700 10px Segoe UI,Arial;padding:5px 9px;border-radius:20px;pointer-events:none">Build 63</div>
+<div id="apcsDbStatus" class="dbStatus">Database connecting…</div>
+<button id="apcsExportDataBtn" type="button" title="Export an application data backup (JSON)" onclick="apcsExportApplicationData()" style="position:fixed;bottom:48px;right:151px;z-index:10002;padding:7px 12px;border-radius:999px;background:#fff;border:1px solid #d6e4ec;box-shadow:0 4px 18px #17324622;font:700 10px Inter,Segoe UI,Arial;color:#075985;cursor:pointer">Export Data</button>
 
 <div class="modal" id="quoteServiceModal">
   <div class="modalbox" style="width:min(760px,94vw)">
@@ -5001,6 +5021,33 @@ apcs54RateForTransportProfile=function(p,code){
 setTimeout(()=>{try{apcs55CanonicaliseStoredTransport();renderRatePage();if(pm==='3PL'&&selected)renderProfile()}catch(e){console.warn('Build 55 transport recovery warning',e)}},300);
 window.addEventListener('load',()=>setTimeout(()=>{try{apcs55CanonicaliseStoredTransport();renderRatePage();if(pm==='3PL'&&selected)renderProfile()}catch(e){console.warn('Build 55 post-sync recovery warning',e)}},1800));
 </script>
+<script id="apcsTransportChecklistScript">
+/* Additive transport selection + 3PL checklist; all original submissions and sync functions retained. */
+const APCS_TRANSPORT_METRO=[['12','1–2 Pallets Melbourne Metro'],['34','3–4 Pallets Melbourne Metro'],['58','5–8 Pallets Melbourne Metro'],['912','9–12 Pallets Melbourne Metro'],['1322','13–22 Pallets Melbourne Metro'],['2334','23–34 Pallets Melbourne Metro']];
+function apcsTransportInit(){let host=$('apcsMetroServices');if(!host||host.children.length)return;host.innerHTML=APCS_TRANSPORT_METRO.map(([code,desc])=>`<label><input type="checkbox" class="apcsMetroChoice" value="${code}" onchange="autoSave()">${desc}</label>`).join('')}
+function apcsTransportToggle(){apcsTransportInit();const yes=$('apcsTransportRequired')?.value==='Yes';$('apcsTransportDetails').classList.toggle('hide',!yes);for(const [id,group] of [['apcsTransportMetro','apcsMetroGroup'],['apcsTransportInterstate','apcsInterstateGroup'],['apcsTransportOverseas','apcsOverseasGroup']])$(group).classList.toggle('hide',!yes||!$(id).checked)}
+function apcsMetroSelectAll(){const checks=[...document.querySelectorAll('.apcsMetroChoice')];const next=!checks.every(x=>x.checked);checks.forEach(x=>x.checked=next);autoSave()}
+function apcsAddTransportRow(type,data={}){const target=$(type==='interstate'?'apcsInterstateRows':'apcsOverseasRows');if(!target)return;const row=document.createElement('div');row.className='apcsTransportLine';row.innerHTML='<input class="apcsTransportCode" placeholder="Service code"><input class="apcsTransportDescription" placeholder="Service description"><input class="apcsTransportRate" type="number" step="0.01" placeholder="Rate (optional)"><button type="button" class="btn" onclick="this.parentElement.remove();autoSave()">Remove</button>';target.appendChild(row);row.querySelector('.apcsTransportCode').value=data.code||'';row.querySelector('.apcsTransportDescription').value=data.desc||'';row.querySelector('.apcsTransportRate').value=data.rate??'';row.querySelectorAll('input').forEach(input=>input.addEventListener('input',autoSave))}
+function apcsTransportSelection(){apcsTransportInit();const required=$('apcsTransportRequired')?.value==='Yes';const types=required?['metro','interstate','overseas'].filter(t=>$(t==='metro'?'apcsTransportMetro':t==='interstate'?'apcsTransportInterstate':'apcsTransportOverseas')?.checked):[];const metro=types.includes('metro')?[...document.querySelectorAll('.apcsMetroChoice:checked')].map(x=>x.value):[];const get=t=>{if(!types.includes(t))return [];return [...$(t==='interstate'?'apcsInterstateRows':'apcsOverseasRows').querySelectorAll('.apcsTransportLine')].map(r=>({code:r.querySelector('.apcsTransportCode').value.trim(),desc:r.querySelector('.apcsTransportDescription').value.trim(),rate:r.querySelector('.apcsTransportRate').value})).filter(r=>r.code||r.desc)};return {required,types,metro,interstate:get('interstate'),overseas:get('overseas')}}
+function apcsTransportRestore(data){apcsTransportInit();const v=data&&typeof data==='object'?data:{};$('apcsTransportRequired').value=v.required?'Yes':'No';for(const t of ['metro','interstate','overseas'])$(t==='metro'?'apcsTransportMetro':t==='interstate'?'apcsTransportInterstate':'apcsTransportOverseas').checked=(v.types||[]).includes(t);document.querySelectorAll('.apcsMetroChoice').forEach(x=>x.checked=(v.metro||[]).includes(x.value));for(const t of ['interstate','overseas']){const host=$(t==='interstate'?'apcsInterstateRows':'apcsOverseasRows');host.innerHTML='';(v[t]||[]).forEach(d=>apcsAddTransportRow(t,d))}apcsTransportToggle()}
+function apcsTransportServiceList(){const x=apcsTransportSelection();if(!x.required)return [];const list=[];for(const code of x.metro){const meta=APCS_TRANSPORT_METRO.find(z=>z[0]===code);if(!meta)continue;list.push({id:'custom_domestic_transport_'+code,section:'Domestic Transport',type:'Transport',code,desc:meta[1],standard:null,custom:true,_transportAuto:true})}for(const type of ['interstate','overseas'])for(const r of x[type]){const code=r.code||r.desc;list.push({id:'apcs_quote_transport_'+type+'_'+code.toLowerCase().replace(/[^a-z0-9]+/g,'_'),section:type==='interstate'?'Interstate / Domestic Transport':'Overseas / International Transport',type:'Transport',code:r.code,desc:r.desc,standard:r.rate===''?'':Number(r.rate),custom:true,_transportAuto:true})}return list}
+function apcsIncludeTransportRates(profile){if(qm!=='3PL')return;const selected=apcsTransportSelection();const selectedCodes=new Set(selected.metro);quoteRateServices=quoteRateServices.filter(s=>{const code=typeof apcs54TransportCodeAny==='function'?apcs54TransportCodeAny(s):'';const metro=code&&((s.section||'').toLowerCase().includes('transport')||(s.type||'').toLowerCase().includes('transport'));return !metro||selectedCodes.has(code)});for(const svc of apcsTransportServiceList()){if(quoteRateServices.some(s=>s.id===svc.id))continue;let rate=svc.standard??'';if(svc.section==='Domestic Transport'&&typeof apcs54RateForTransportProfile==='function'){const fromProfile=apcs54RateForTransportProfile(profile,svc.code);if(fromProfile!==null)rate=fromProfile}quoteRateServices.push({...svc,_rate:rate})}renderQuoteRateRows();updateSuggestedEconomics()}
+function apcsCloseChecklist(){$('apcsPreSubmitModal').classList.remove('on')}
+function apcsUpdateChecklist(){$('apcsConfirmPreSubmit').disabled=![...document.querySelectorAll('.apcsPreCheck')].every(x=>x.checked)}
+function apcsConfirmChecklist(){if($('apcsConfirmPreSubmit').disabled)return;apcsCloseChecklist();apcsPreChecklistSubmit()}
+const apcsPreChecklistSubmit=submitQuote;
+submitQuote=function(){if(qm!=='3PL'){apcsPreChecklistSubmit();return}document.querySelectorAll('.apcsPreCheck').forEach(x=>x.checked=false);apcsUpdateChecklist();$('apcsPreSubmitModal').classList.add('on')}
+const apcsOriginalSnapshot=snapshot;
+snapshot=function(){const snap=apcsOriginalSnapshot();snap.transportRequirements=apcsTransportSelection();return snap};
+const apcsOriginalRestoreSnapshotValues=restoreSnapshotValues;
+restoreSnapshotValues=function(s){apcsOriginalRestoreSnapshotValues(s);apcsTransportRestore(s?.transportRequirements||null)};
+const apcsOriginalClearQuoteForm=clearQuoteForm;
+clearQuoteForm=function(){apcsOriginalClearQuoteForm();apcsTransportRestore(null)};
+const apcsOriginalChooseMatch=chooseMatch;
+chooseMatch=function(i){apcsOriginalChooseMatch(i);if(qm==='3PL')apcsIncludeTransportRates(chosenMatch?.p||{})};
+const apcsOriginalChooseNoMatch=chooseNoMatch;
+chooseNoMatch=function(){apcsOriginalChooseNoMatch();if(qm==='3PL')apcsIncludeTransportRates({})};
+</script>
 </body></html>
 <!-- BUILD: 53 | Manual service charge fields + canonical Domestic Transport -->
 <style>
@@ -5255,4 +5302,75 @@ renderRateTable=function(){
 window.addEventListener('load',()=>setTimeout(()=>{
   try{apcs54CanonicaliseStoredTransport();renderRatePage();if(pm==='3PL'&&selected)renderProfile()}catch(e){console.warn('Build 54 transport migration warning',e)}
 },1200));
+</script>
+
+<script id="apcs-export-application-data-v1">
+/* Additive, read-only application backup. No database writes, migrations or restores. */
+async function apcsExportApplicationData(){
+  const button=document.getElementById('apcsExportDataBtn');
+  if(button?.disabled)return;
+  if(button){button.disabled=true;button.textContent='Preparing backup…';}
+  try{
+    // Let normal, already-scheduled writes settle. Do not create or force any writes.
+    await new Promise(resolve=>setTimeout(resolve,450));
+    const deadline=Date.now()+8000;
+    while(typeof apcsPendingWrites==='number'&&apcsPendingWrites>0&&Date.now()<deadline){
+      await new Promise(resolve=>setTimeout(resolve,150));
+    }
+    const local={};
+    for(let i=0;i<localStorage.length;i++){
+      const k=localStorage.key(i);
+      if(k&&k.startsWith('apcs_'))local[k]=localStorage.getItem(k);
+    }
+    let remote={},remoteError=null;
+    try{
+      // Supabase REST defaults to a row cap. Read all pages, not just the first page.
+      const pageSize=500;
+      for(let offset=0;offset<50000;offset+=pageSize){
+        const rows=await dbRequest(APCS_REST+'?select=state_key,raw_value&order=state_key.asc&limit='+pageSize+'&offset='+offset);
+        if(!Array.isArray(rows))throw new Error('Unexpected server backup response');
+        rows.forEach(row=>{if(row&&typeof row.state_key==='string'&&row.state_key.startsWith('apcs_'))remote[row.state_key]=row.raw_value;});
+        if(rows.length<pageSize)break;
+        if(offset+pageSize>=50000)throw new Error('Server backup exceeded the safe export limit');
+      }
+    }catch(error){remoteError=String(error?.message||error);}
+    const allKeys=new Set([...Object.keys(local),...Object.keys(remote)]);
+    const differingKeys=[...allKeys].filter(k=>local[k]!==remote[k]);
+    const pending=(typeof apcsPendingWrites==='number'&&apcsPendingWrites>0)||
+      (typeof apcsFailedWrites!=='undefined'&&apcsFailedWrites.size>0);
+    const complete=!remoteError&&!pending;
+    if(!complete){
+      const reason=[remoteError&&('Server read failed: '+remoteError),pending&&'Some database writes are still pending or failed'].filter(Boolean).join('\n');
+      if(!confirm('A complete synced backup cannot be verified.\n'+reason+'\n\nYou may export the LOCAL data and any server data that was readable, clearly marked as incomplete. Continue?'))return;
+    }
+    const backup={
+      format:'APCS_APPLICATION_DATA_BACKUP',formatVersion:1,
+      exportedAt:new Date().toISOString(),
+      source:'APCS Commercial Management',
+      backupStatus:complete?(differingKeys.length?'SERVER_AND_LOCAL_DIFFER':'SERVER_READ_SUCCESS'):'INCOMPLETE',
+      databaseReadSuccessful:!remoteError,
+      databaseReadError:remoteError,
+      databasePendingOrFailedWrites:!!pending,
+      keyCounts:{server:Object.keys(remote).length,browser:Object.keys(local).length},
+      differingKeys,
+      notes:'Read-only export. Raw values are retained as saved (JSON strings or ordinary strings). Browser and server copies are intentionally kept separate to preserve differences. This is an application-data export, not a SQL/schema/storage backup or an automatic restore file.',
+      data:{server:remote,browser:local}
+    };
+    const stamp=new Date().toISOString().replace(/[:.]/g,'-');
+    const name='APCS_Commercial_Application_Backup_'+stamp+'.json';
+    const blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json;charset=utf-8'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;a.download=name;a.style.display='none';document.body.appendChild(a);
+    a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),10000);
+    if(typeof appNotice==='function'){
+      appNotice(complete?'Backup downloaded. It contains both server and browser application data.':'Partial backup downloaded. Check backupStatus before using this file.','Application backup',complete?'success':'warning');
+    }
+  }catch(error){
+    console.error('Application backup failed',error);
+    if(typeof appNotice==='function')appNotice('No backup was downloaded: '+String(error?.message||error),'Export failed','warning');
+    else alert('Export failed: '+String(error?.message||error));
+  }finally{
+    if(button){button.disabled=false;button.textContent='Export Data';}
+  }
+}
 </script>
