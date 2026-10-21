@@ -5086,6 +5086,55 @@ chooseMatch=function(i){apcsOriginalChooseMatch(i);if(qm==='3PL')apcsIncludeTran
 const apcsOriginalChooseNoMatch=chooseNoMatch;
 chooseNoMatch=function(){apcsOriginalChooseNoMatch();if(qm==='3PL')apcsIncludeTransportRates({})};
 </script>
+<script id="apcs-revenue-profile-consistent">
+/* Use the exact Estimated Economics result for the displayed Revenue Profile.
+   Preview only: no writes to Supabase or local storage. */
+(function(){
+  function drawProfile(){
+    const host=document.getElementById('rateEconomics');
+    if(!host || qm!=='3PL' || !chosenMatch)return;
+    host.querySelector('#build45RevenueProfile')?.remove();
+    host.querySelector('#build50RevenueProfile')?.remove();
+    host.querySelector('#apcsConsistentRevenueProfile')?.remove();
+    const e=suggestedPatternEconomics();
+    if(!e)return;
+    const p=e.p||{};
+    const week=Number(e.total)||0;
+    // One-off = first inbound event, including handling, blast and scanning,
+    // plus the first recurring week's revenue, matching the established UI label.
+    const batchPallets=Number(e.perBatch)||0;
+    const batchCartons=batchPallets*36;
+    const basis=currentBillingBasis();
+    const inbound=batchPallets*(basis==='Pallet'?suggestedRate('RECP'):36*suggestedRate('REC'));
+    const blast=batchCartons*(Number(e.blastPct)||0)*suggestedRate('BREC');
+    const scan=batchCartons*(Number(e.scanPct)||0)*suggestedRate('SCAN');
+    const firstEvent=inbound+blast+scan;
+    const recurring=week;
+    const annual=recurring*52;
+    const missing=[];
+    if(batchPallets<=0)missing.push(p.missingContainerSize?'container size (20ft or 40ft)':'receivable quantity / container size');
+    if((basis==='Pallet'?suggestedRate('RECP'):suggestedRate('REC'))<=0)missing.push(basis==='Pallet'?'RECP rate':'REC rate');
+    if((basis==='Pallet'?suggestedRate('STOP'):suggestedRate('STOR'))<=0)missing.push(basis==='Pallet'?'STOP rate':'STOR rate');
+    if((basis==='Pallet'?suggestedRate('PICKP'):suggestedRate('PICK'))<=0)missing.push(basis==='Pallet'?'PICKP rate':'PICK rate');
+    const div=document.createElement('div');div.id='apcsConsistentRevenueProfile';div.className='econBox';div.style.marginTop='12px';
+    div.innerHTML=`<b>Revenue profile · Estimated ongoing</b>
+      <div class="econGrid" style="margin-top:9px">
+       <div class="econKpi"><small>One-off revenue (initial + first recurring week)</small><b>${money(firstEvent+recurring)}</b></div>
+       <div class="econKpi"><small>Weekly recurring revenue</small><b>${money(recurring)}/wk</b></div>
+       <div class="econKpi"><small>Expected recurring revenue</small><b>${money(annual)}/yr</b></div>
+      </div>
+      <div class="hint" style="margin-top:7px">Uses the same live carton/pallet quantities and editable service rates as Estimated Economics above. The annual figure is a 52-week run-rate, not a guaranteed contract forecast.</div>
+      ${missing.length?`<div class="econWarn" style="margin-top:8px">Check these inputs: ${missing.map(esc).join(', ')}. Missing rates are treated as zero; no price is invented.</div>`:''}`;
+    host.appendChild(div);
+  }
+  // There are older deferred renderers. This replacement wins each render cycle.
+  window.apcs50EnsureRevenueProfile=drawProfile;
+  const previous=updateSuggestedEconomics;
+  updateSuggestedEconomics=function(){const result=previous.apply(this,arguments);drawProfile();return result;};
+  const previousRows=renderQuoteRateRows;
+  renderQuoteRateRows=function(){const result=previousRows.apply(this,arguments);setTimeout(drawProfile,0);return result;};
+})();
+</script>
 </body></html>
 <!-- BUILD: 53 | Manual service charge fields + canonical Domestic Transport -->
 <style>
