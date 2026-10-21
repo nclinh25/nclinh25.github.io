@@ -571,7 +571,7 @@ textarea{
   </div>
   <div>
     <label>CUSTOMER / OPPORTUNITY</label>
-    <input id=qname placeholder="Customer name">
+    <input id=qname name="apcs_new_quote_customer" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="Customer name">
   </div>
 </div>
 </div>
@@ -5386,11 +5386,10 @@ async function apcsExportApplicationData(){
 /* Additional 3PL service catalogue entries only. No migration or database writes.
    A customer's explicit rate, including zero, always takes precedence. */
 const APCS_EXTRA_CHARGES=[
-{id:'apcs_charge_emergency_container_same_day',section:'Additional Service Charges',type:'Handling',code:'ELOAD',desc:'Emergency Load Out – Same Day',standard:500},
-{id:'apcs_charge_receivable_missed_booking',section:'Additional Service Charges',type:'Handling',code:'MISREC',desc:'Missed Receival Booking',standard:100},
-{id:'apcs_charge_reschedule_booking',section:'Additional Service Charges',type:'Handling',code:'RESCH',desc:'Booking Rescheduling',standard:100},
-{id:'apcs_charge_pallet_daily_hire',section:'Additional Service Charges',type:'Handling',code:'PALH',desc:'Pallet Hire – Daily',standard:0.11}
-  }
+ {id:'apcs_charge_emergency_container_same_day',section:'Additional Service Charges',type:'Handling',code:'ELOAD',desc:'Emergency Load Out – Same Day',standard:500},
+ {id:'apcs_charge_receivable_missed_booking',section:'Additional Service Charges',type:'Handling',code:'MISREC',desc:'Missed Receival Booking',standard:100},
+ {id:'apcs_charge_reschedule_booking',section:'Additional Service Charges',type:'Handling',code:'RESCH',desc:'Booking Rescheduling',standard:100},
+ {id:'apcs_charge_pallet_daily_hire',section:'Additional Service Charges',type:'Handling',code:'PALH',desc:'Pallet Hire – Daily',standard:0.11}
 ];
 for(const entry of APCS_EXTRA_CHARGES){
  if(!SERVICES.some(s=>s.id===entry.id))SERVICES.push(entry);
@@ -5417,4 +5416,42 @@ renderRateTable=function(){
    });
  }
 };
+</script>
+
+<!-- Additional non-destructive fixes: rate-card defaults for existing/new 3PL quotes and customer-name autofill -->
+<script id="apcs-3pl-rate-and-new-quote-fixes">
+(function(){
+  // Runs only when a rate card is being shown. No database writes or migrations.
+  function addMissingCharges(){
+    if(qm!=='3PL'||!Array.isArray(quoteRateServices)||typeof APCS_EXTRA_CHARGES==='undefined')return;
+    const existingQuote=typeof currentQuoteRecord==='function'?currentQuoteRecord():null;
+    const storedRows=Array.isArray(existingQuote?.selectedRateCard)?existingQuote.selectedRateCard:[];
+    const benchmarkRates=chosenMatch?.p?.rates||{};
+    for(const svc of APCS_EXTRA_CHARGES){
+      if(quoteRateServices.some(x=>x.id===svc.id))continue;
+      const saved=storedRows.find(x=>x.id===svc.id);
+      const r=saved?.rate??existingQuote?.suggestedRates?.[svc.id]??benchmarkRates[svc.id]??svc.standard;
+      quoteRateServices.push({...svc,_rate:r});
+      quoteRemovedServices=quoteRemovedServices.filter(x=>x.id!==svc.id);
+    }
+  }
+  const priorMatch=chooseMatch;
+  chooseMatch=function(i){const result=priorMatch.apply(this,arguments);if(qm==='3PL'){addMissingCharges();renderQuoteRateRows();updateSuggestedEconomics()}return result};
+  const priorNoMatch=chooseNoMatch;
+  chooseNoMatch=function(){const result=priorNoMatch.apply(this,arguments);if(qm==='3PL'){addMissingCharges();renderQuoteRateRows();updateSuggestedEconomics()}return result};
+  if(typeof prepareSaved3PLRateCard==='function'){
+    const priorSaved=prepareSaved3PLRateCard;
+    prepareSaved3PLRateCard=function(q){const result=priorSaved.apply(this,arguments);addMissingCharges();renderQuoteRateRows();updateSuggestedEconomics();return result};
+  }
+  // Browser history suggestions are separate from app records and should not surface on a fresh quote.
+  function disableCustomerSuggestions(){
+    const el=document.getElementById('qname');if(!el)return;
+    el.setAttribute('autocomplete','off');el.setAttribute('autocorrect','off');
+    el.setAttribute('autocapitalize','off');el.setAttribute('spellcheck','false');
+    el.removeAttribute('list');
+  }
+  disableCustomerSuggestions();
+  const priorClear=clearQuoteForm;
+  clearQuoteForm=function(){const result=priorClear.apply(this,arguments);disableCustomerSuggestions();const el=document.getElementById('qname');if(el)el.value='';return result};
+})();
 </script>
