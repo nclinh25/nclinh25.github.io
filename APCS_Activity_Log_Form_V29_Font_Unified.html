@@ -1,0 +1,155 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>POLAR · Log Activity</title><style>
+:root{--polar:#073d69;--ink:#173c54;--line:#d6e4ec;--muted:#688195}
+*{box-sizing:border-box}body{font-family:"Segoe UI",Arial,sans-serif;margin:0;background:#f5f8fa;color:var(--ink);font-size:14px}
+header{background:#fff;border-bottom:1px solid var(--line);padding:13px max(24px,calc((100vw - 1030px)/2));display:flex;align-items:center;gap:18px}
+.logo{display:flex;align-items:center;gap:14px}.logo img{width:38px;height:62px;object-fit:contain}.logo b{color:#073d69;font-size:17px;letter-spacing:.01em}.logo small{display:block;color:#668198;font-size:11px}
+.container{max-width:1030px;margin:35px auto 85px;padding:0 18px}.eyebrow{font-size:11px;font-weight:700;color:#2b779f;text-transform:uppercase;letter-spacing:.1em}h1{font-size:30px;margin:7px 0;font-weight:700;letter-spacing:-.65px}p{color:#647f90;margin:0 0 22px}
+.panel{border:1px solid #dce6ed;background:#fff;border-radius:9px;overflow:hidden;box-shadow:0 6px 22px #153c560a}.section{padding:28px 32px;border-bottom:1px solid #e6eef3}.heading{display:flex;align-items:center;gap:12px;margin-bottom:22px}.step{display:grid;place-items:center;background:#e8f2f8;color:#075985;width:35px;height:35px;border-radius:6px;font-weight:700}.heading strong{font-size:17px}.heading small{display:block;color:#8399a8;font-size:12px;margin-top:3px}
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:20px}.full{grid-column:1/-1}label{display:block;font-weight:650;font-size:12px;color:#38566b;margin-bottom:7px}label em{color:#b43f3f;font-style:normal}
+input,select,textarea{width:100%;padding:11px 12px;color:#183c54;border:1px solid #cbdce7;background:#fff;border-radius:6px;font:inherit;outline:none}textarea{resize:vertical;min-height:110px}input:focus,select:focus,textarea:focus{border-color:#2581b7;box-shadow:0 0 0 3px #d4eaf6}.notice{padding:12px 15px;margin-bottom:17px;color:#557288;background:#eaf3f9;border:1px solid #d3e5f0;border-radius:6px;font-size:12px}
+.actions{padding:22px 32px;background:#f9fbfc;display:flex;justify-content:flex-end;gap:10px}button{font:600 13px "Segoe UI",Arial;cursor:pointer;padding:11px 17px;border-radius:6px;border:1px solid #0b6397;background:#0b6397;color:white}button.secondary{border-color:#d5e1e9;background:white;color:#234b65}button:hover{filter:brightness(.95)}
+.backdrop{position:fixed;inset:0;background:#07283c91;display:none;align-items:center;justify-content:center;padding:20px;z-index:50}.backdrop.show{display:flex}.dialog{max-width:460px;width:100%;background:white;text-align:center;padding:36px;border-radius:10px;box-shadow:0 25px 70px #08233838}.check{display:grid;place-items:center;width:56px;height:56px;background:#e5f4eb;color:#167748;border-radius:50%;font-size:26px;margin:auto auto 16px}.dialog h2{font-size:20px;margin:0 0 12px}.stamp{background:#f3f7fa;padding:14px;margin:18px 0;color:#335b73;border-radius:6px}.dialog .actions{padding:0;justify-content:center;background:none}.hint{font-size:12px;color:#688195;margin-top:7px}
+@media(max-width:680px){header{padding:10px 20px}.fields{grid-template-columns:1fr}.full{grid-column:auto}.section{padding:22px 18px}.actions{padding:18px}.container{margin-top:24px}h1{font-size:25px}}
+</style>
+<style id="polar-unified-form-design-v2">
+:root{--polar:#073d69;--polar-blue:#0b6ea8;--polar-ink:#123e5d;--polar-muted:#678093;--polar-edge:#dae5ed;--polar-background:#f6f8fa;font-family:"Segoe UI",Arial,sans-serif!important}
+html,body{font-family:"Segoe UI",Arial,sans-serif!important;background:var(--polar-background)!important;color:var(--polar-ink)!important;font-size:14px!important}
+header{background:#fff!important;color:var(--polar-ink)!important;border:0!important;border-bottom:1px solid #dce6ee!important;box-shadow:0 1px 5px rgba(5,42,72,.035)!important;padding:0!important;min-height:94px!important}
+header .head,header>.logo{max-width:1120px!important;width:100%!important;margin:auto!important;padding:12px 26px!important;min-height:94px!important;display:flex!important;align-items:center!important;justify-content:space-between!important;gap:16px!important}
+header .brand,header .logo{display:flex!important;align-items:center!important;gap:18px!important}
+header .realmark{display:flex!important;align-items:center!important;justify-content:center!important;width:56px!important;min-width:56px!important;padding:0!important;border:0!important;background:transparent!important}
+header img.apcsHeaderRealLogo,header .logo img{display:block!important;object-fit:contain!important;width:54px!important;height:70px!important;max-height:70px!important;filter:none!important;opacity:1!important}
+header .brand b,header .logo b{color:#073d69!important;letter-spacing:.005em!important;font-size:18px!important;line-height:1.25!important;font-weight:700!important}
+header .brand small,header .logo small{color:#758b9a!important;letter-spacing:.02em!important;font-size:12px!important;margin-top:3px!important}
+header .tag{color:#59778a!important;font-size:12px!important;letter-spacing:0!important;font-weight:500!important}
+header .tag a{color:#075985!important;text-decoration:none!important;font-weight:600!important}
+header .tag a:hover{text-decoration:underline!important}
+.wrap,.container{max-width:1080px!important;width:100%!important;margin:34px auto 78px!important;padding:0 24px!important}
+.intro{margin-bottom:23px!important}.eyebrow{color:#32749a!important;letter-spacing:1.1px!important;font-size:11px!important;font-weight:700!important}
+h1{color:#103e60!important;font-size:31px!important;letter-spacing:-.75px!important;line-height:1.2!important;font-weight:700!important;margin:8px 0 9px!important}
+.intro p,main>p{color:#71879a!important;font-size:13px!important;line-height:1.6!important}
+.sheet,.panel{background:#fff!important;border:1px solid var(--polar-edge)!important;border-radius:10px!important;box-shadow:0 8px 32px rgba(16,57,82,.045)!important;overflow:hidden!important}
+.section{padding:27px 32px!important;border-bottom:1px solid #e6edf2!important}
+.sectionhead,.heading{display:flex!important;align-items:center!important;gap:13px!important;margin-bottom:23px!important}
+.num,.step{width:35px!important;height:35px!important;min-width:35px!important;border-radius:7px!important;background:#e7f1f7!important;color:#0b6494!important;display:grid!important;place-items:center!important;font-size:12px!important;font-weight:750!important}
+.section h2,.heading strong{color:#173f5a!important;font-weight:700!important;font-size:17px!important}
+.sectionhead small,.heading small{font-size:12px!important;color:#8a9daa!important;margin-top:3px!important}
+.fields{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:19px 22px!important}
+label{font-family:"Segoe UI",Arial,sans-serif!important;text-transform:none!important;letter-spacing:0!important;color:#36586e!important;font-size:12px!important;font-weight:650!important;margin-bottom:7px!important}
+input,select,textarea{font-family:"Segoe UI",Arial,sans-serif!important;color:#173d55!important;background:#fff!important;border:1px solid #cfdee8!important;border-radius:7px!important;font-size:13px!important;min-height:42px!important;padding:10px 12px!important}
+input:focus,select:focus,textarea:focus{outline:none!important;border-color:#2980b2!important;box-shadow:0 0 0 3px rgba(41,128,178,.11)!important}
+button,.btn{font-family:"Segoe UI",Arial,sans-serif!important;font-size:13px!important;font-weight:650!important;border-radius:7px!important}
+button:not(.secondary):not(.ghost),.btn:not(.ghost){background:#0b6898!important;color:#fff!important}
+button:not(.secondary):not(.ghost):hover,.btn:not(.ghost):hover{background:#075482!important}
+button.secondary,.btn.ghost{background:#fff!important;border:1px solid #cddfe9!important;color:#195071!important}
+.footer,.actions{background:#fbfcfd!important}
+.backdrop .actions{background:transparent!important}
+.dialog{border-radius:12px!important}
+@media(max-width:700px){header{min-height:78px!important}header .head,header>.logo{padding:10px 16px!important;min-height:78px!important}header img.apcsHeaderRealLogo,header .logo img{height:58px!important;width:43px!important}header .brand b,header .logo b{font-size:14px!important}.wrap,.container{margin-top:24px!important;padding:0 15px!important}.fields{grid-template-columns:1fr!important}.full{grid-column:auto!important}.section{padding:21px 18px!important}h1{font-size:27px!important}}
+</style>
+<style id="activity-direct-form-v3">
+html,body{background:#f5f8fa!important}
+body{margin:0!important}
+.container{max-width:1140px!important;margin:0 auto!important;padding:22px 24px 44px!important}
+.form-topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 0 14px}
+.form-topbar h1{font-size:23px!important;letter-spacing:-.4px!important;line-height:1.25;margin:0!important;color:#073d69}
+.crm-quicklink{font-size:13px;font-weight:650;color:#075985;text-decoration:none;border:1px solid #d2e3ed;border-radius:7px;background:#fff;padding:10px 14px;white-space:nowrap}
+.crm-quicklink:hover{color:#074a75;background:#edf6fc;border-color:#b4d4e7}
+.panel{margin:0!important;box-shadow:0 2px 12px rgba(18,64,93,.04)!important}
+@media(max-width:650px){.container{padding:12px 12px 28px!important}.form-topbar h1{font-size:19px!important}.crm-quicklink{padding:9px 11px}}
+</style><style id="polar-mobile-forms-v26">
+@media(max-width:760px){
+ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!important;font-family:"Segoe UI",Arial,sans-serif!important}
+ header{min-height:0!important;height:auto!important;padding:10px 12px!important}
+ header .head,header>.logo{min-height:0!important;padding:6px!important;flex-wrap:wrap!important;gap:9px!important}
+ header .brand b,header .logo b{font-size:13px!important}
+ header img.apcsHeaderRealLogo,header .logo img{width:32px!important;height:45px!important}
+ .wrap,.container{width:100%!important;max-width:100%!important;margin:12px auto 35px!important;padding:0 12px!important}
+ h1{font-size:23px!important;line-height:1.2!important}
+ .eyebrow{font-size:10px!important}
+ .panel{border-radius:8px!important;box-shadow:none!important}
+ .section{padding:17px 14px!important}
+ .fields,.grid,.g2,.g3{display:grid!important;grid-template-columns:1fr!important;gap:13px!important}
+ .fields>*{grid-column:1/-1!important;min-width:0!important}
+ input,select,textarea{font-size:16px!important;min-height:44px!important;max-width:100%!important}
+ textarea{min-height:100px!important}
+ button,.actions button{min-height:44px!important}
+ .actions{display:flex!important;flex-direction:column-reverse!important;gap:9px!important;padding:14px!important}
+ .actions button{width:100%!important;margin:0!important}
+ .form-topbar{flex-wrap:wrap!important;align-items:center!important;gap:8px!important}
+ .form-topbar h1{margin:0!important}
+ .crm-quicklink{white-space:nowrap!important}
+ .dialog,.polarSuccessDialog{max-width:calc(100vw - 28px)!important;max-height:90dvh!important;overflow:auto!important}
+ .polarSuccessActions{display:grid!important;grid-template-columns:1fr!important}
+}
+</style>
+<style id="polar-v28-mobile-fixed">
+@media (max-width: 900px) {
+ html,body{width:100%!important;max-width:100%!important;overflow-x:clip!important}
+ *,*::before,*::after{box-sizing:border-box}
+ .fields,.fields>div,.fields>.full,.section,.sheet,.panel,.wrap,.container{min-width:0!important;max-width:100%!important}
+ input,select,textarea,input[type="date"],input[type="datetime-local"]{display:block!important;width:100%!important;max-width:100%!important;min-width:0!important;font-family:"Segoe UI",Arial,sans-serif!important;font-size:16px!important;box-sizing:border-box!important}
+ input[type="date"]{-webkit-appearance:none;appearance:none;padding:10px 8px!important;min-height:47px!important;line-height:1.3!important}
+ .fields{grid-template-columns:minmax(0,1fr)!important;gap:15px!important}
+ .fields>*{min-width:0!important;width:100%!important;grid-column:1/-1!important}
+ .section{padding:18px 16px!important}
+ .wrap,.container{padding-left:12px!important;padding-right:12px!important;margin-top:14px!important}
+ .sectionhead,.heading{gap:10px!important}
+ .sectionhead h2,.heading strong{font-size:17px!important}
+ .footer,.actions{max-width:100%!important}
+}
+@media (max-width: 420px){.section{padding:15px 12px!important}.wrap,.container{padding-left:9px!important;padding-right:9px!important}}
+</style>
+
+<style id="polar-unified-ratecard-font-v29">
+/* POLAR V29: use the same typographic family as Rate Card across every module. */
+:root { --polar-ui-font: "Segoe UI", Arial, sans-serif; }
+html, body,
+body *:not(.material-icons):not(.material-symbols-outlined):not(.material-symbols-rounded):not(.fa):not(.fas):not(.far):not(.fab):not([class^="fa-"]):not([class*=" fa-"]),
+input, select, textarea, button, option, optgroup,
+table, th, td, label, summary,
+[role="button"], [role="textbox"], [contenteditable="true"] {
+  font-family: var(--polar-ui-font) !important;
+}
+</style>
+</head><body>
+
+<main class="container"><div class="form-topbar"><h1>Log Customer Activity</h1><a class="crm-quicklink" href="APCS_Commercial_Management_CRM.html?open=pipeline" target="_blank" rel="noopener">Open CRM ↗</a></div>
+
+<form id="activity" class="panel"><section class="section"><div class="heading"><span class="step">01</span><div><strong>Customer & Contact</strong><small>Select the opportunity and record your interaction</small></div></div>
+<div class="fields"><div class="full"><label>Customer / Opportunity <em>*</em></label><select name="leadId" id="leadId" required><option value="">Loading customers...</option></select></div><div><label>Contact Date <em>*</em></label><input name="date" id="contactDate" required type="date"></div><div><label>Outcome <em>*</em></label><select name="outcome" required><option value="">Select outcome</option><option>Spoke with customer</option><option>No answer</option><option>Left voicemail</option><option>Email sent</option><option>Meeting / appointment</option><option>Customer decision pending</option><option>Other</option></select></div><div class="full"><label>Notes / Comments</label><textarea name="notes" placeholder="What happened? What did the customer say? What is the commercial context?"></textarea><div class="hint">Required when outcome is “Spoke with customer”.</div></div></div></section>
+<section class="section"><div class="heading"><span class="step">02</span><div><strong>Next Follow-Up</strong><small>This date will update the customer's Pipeline record</small></div></div><div class="fields"><div><label>Next Follow-up Date <em>*</em></label><input name="nextFollowUp" type="date" required></div><div><label>Logged By <em>*</em></label><input name="loggedBy" placeholder="Your name" required></div></div></section>
+<div class="actions"><button type="reset" class="secondary">Clear Form</button><button type="submit">Submit Activity →</button></div></form></main>
+<div class="backdrop" id="confirmation" role="dialog" aria-modal="true" aria-labelledby="successTitle"><div class="dialog"><div class="check">✓</div><h2 id="successTitle">Activity Logged Successfully!</h2><p>The activity has been added to the customer history and their follow-up date updated.</p><div class="stamp"><small>SUBMITTED AT</small><div id="stamp"></div><strong id="customerStamp"></strong></div><div class="actions"><button type="button" class="secondary" id="done">Done</button><button type="button" id="view">View Pipeline →</button></div></div></div>
+<script>
+const CRM='APCS_Commercial_Management_CRM.html',LEADS='apcs_crm_leads_v2',QUEUE='polar_activity_form_submissions';
+const $=id=>document.getElementById(id),safeRead=(key,fallback)=>{try{const x=JSON.parse(localStorage.getItem(key)||'null');return x??fallback}catch(e){return fallback}};
+let lastCustomer='';
+function dateLocal(offset=0){const d=new Date();d.setDate(d.getDate()+offset);return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')}
+function defaultActivityDates(){document.querySelector('[name="nextFollowUp"]').value=dateLocal(3);$('contactDate').value=dateLocal()}
+function availableLeads(){
+ const byId=new Map();
+ for(const row of safeRead(LEADS,[])) if(row&&row.id&&row.businessName)byId.set(row.id,row);
+ // Pending opportunity submissions can be added before the CRM is opened.
+ for(const row of safeRead('polar_opportunity_form_submissions',[]))
+   if(row&&row.id&&row.businessName&&!byId.has(row.id))byId.set(row.id,row);
+ return [...byId.values()].sort((a,b)=>a.businessName.localeCompare(b.businessName));
+}
+function populate(){
+ const data=availableLeads(),el=$('leadId'),old=el.value;
+ el.innerHTML='<option value="">Select customer / opportunity</option>';
+ for(const row of data){const opt=document.createElement('option');opt.value=row.id;opt.textContent=row.businessName;el.appendChild(opt)}
+ if(data.some(row=>row.id===old))el.value=old;
+ if(!data.length){const opt=document.createElement('option');opt.disabled=true;opt.textContent='No opportunities saved in this browser';el.appendChild(opt)}
+}
+
+populate();defaultActivityDates();
+$('leadId').addEventListener('change',()=>{document.querySelector('[name="nextFollowUp"]').value=dateLocal(3);});
+$('activity').addEventListener('submit',event=>{event.preventDefault();const form=event.currentTarget;if(!form.reportValidity())return; const v=Object.fromEntries(new FormData(form)),lead=availableLeads().find(x=>x.id===v.leadId);if(!lead){alert('This customer could not be found in the local Pipeline. Open the CRM first.');return}if(v.outcome==='Spoke with customer'&&!v.notes.trim()){alert('Notes are required when you spoke with the customer.');return}
+const now=new Date(),record={id:'ACT-EXT-'+now.getTime()+'-'+Math.random().toString(36).slice(2,6),...v,loggedAt:now.toISOString()};
+try{const q=safeRead(QUEUE,[]);q.push(record);localStorage.setItem(QUEUE,JSON.stringify(q));const activities=safeRead('apcs_crm_activity_v1',[]);if(!activities.some(x=>x.id===record.id)){activities.push(record);localStorage.setItem('apcs_crm_activity_v1',JSON.stringify(activities))}const leads=safeRead(LEADS,[]);let row=leads.find(x=>x.id===v.leadId);if(!row){row={...lead};leads.push(row)}row.followUpDate=v.nextFollowUp;localStorage.setItem(LEADS,JSON.stringify(leads));const pending=safeRead('polar_opportunity_form_submissions',[]);const pendingRow=pending.find(x=>x.id===v.leadId);if(pendingRow){pendingRow.followUpDate=v.nextFollowUp;localStorage.setItem('polar_opportunity_form_submissions',JSON.stringify(pending))}}catch(err){alert('Save failed: '+err.message);return}
+lastCustomer=lead.businessName;$('stamp').textContent=new Intl.DateTimeFormat('en-AU',{dateStyle:'full',timeStyle:'short'}).format(now);$('customerStamp').textContent=lead.businessName;$('confirmation').classList.add('show');});
+$('done').onclick=()=>{$('confirmation').classList.remove('show');$('activity').reset();defaultActivityDates();scrollTo(0,0)};
+$('view').onclick=()=>{location.href=CRM+'?page=pipeline'};
+window.addEventListener('focus',populate);window.addEventListener('pageshow',populate);window.addEventListener('storage',e=>{if([LEADS,'polar_opportunity_form_submissions'].includes(e.key))populate()});document.addEventListener('visibilitychange',()=>{if(!document.hidden)populate()});
+</script></body></html>
