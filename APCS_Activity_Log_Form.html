@@ -112,9 +112,127 @@ table, th, td, label, summary,
   font-family: var(--polar-ui-font) !important;
 }
 </style>
+
+<style id="polar-activity-header-v30">
+.polar-form-header {
+  background: #ffffff;
+  border-bottom: 1px solid #dce5ed;
+  width: 100%;
+}
+
+.polar-form-header-inner {
+  max-width: 1320px;
+  margin: auto;
+  padding: 14px 22px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+
+.polar-form-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.polar-brand-logo img {
+  width: 58px;
+  height: 78px;
+  object-fit: contain;
+}
+
+.polar-brand-info {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.polar-brand-info strong {
+  font: 700 21px "Segoe UI", Arial, sans-serif;
+  color: #073d69;
+}
+
+.polar-brand-info span {
+  font: 13px "Segoe UI", Arial, sans-serif;
+  color: #7890a3;
+}
+
+.polar-form-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font: 13px "Segoe UI", Arial, sans-serif;
+  color: #557590;
+}
+
+.polar-form-header-right a {
+  color: #075985;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+@media (max-width: 600px) {
+  .polar-form-header-inner {
+    padding: 10px 14px;
+    gap: 8px;
+  }
+
+  .polar-brand-logo img {
+    width: 40px;
+    height: 54px;
+  }
+
+  .polar-brand-info strong {
+    font-size: 17px;
+  }
+
+  .polar-brand-info span,
+  .polar-form-header-right > span {
+    display: none;
+  }
+
+  .polar-form-header-right a {
+    font-size: 12px;
+    white-space: nowrap;
+  }
+}
+</style>
 </head><body>
 
-<main class="container"><div class="form-topbar"><h1>Log Customer Activity</h1><a class="crm-quicklink" href="APCS_Commercial_Management_CRM.html?open=pipeline" target="_blank" rel="noopener">Open CRM ↗</a></div>
+
+<header class="polar-form-header">
+  <div class="polar-form-header-inner">
+
+    <div class="polar-form-brand">
+      <div class="polar-brand-logo">
+        <img
+          src="POLAR_LOGO_URL"
+          alt="Austco Polar Cold Storage"
+        >
+      </div>
+
+      <div class="polar-brand-info">
+        <strong>POLAR</strong>
+        <span>AUSTCO POLAR COLD STORAGE</span>
+      </div>
+    </div>
+
+    <div class="polar-form-header-right">
+      <span>COMMERCIAL MANAGEMENT · SALES</span>
+      <a href="APCS_Commercial_Management_CRM.html">
+        Open CRM ↗
+      </a>
+    </div>
+
+  </div>
+</header>
+
+
+<main class="container">
+  <div class="form-topbar">
+    <h1>Log Customer Activity</h1>
+  </div>
 
 <form id="activity" class="panel"><section class="section"><div class="heading"><span class="step">01</span><div><strong>Customer & Contact</strong><small>Select the opportunity and record your interaction</small></div></div>
 <div class="fields"><div class="full"><label>Customer / Opportunity <em>*</em></label><select name="leadId" id="leadId" required><option value="">Loading customers...</option></select></div><div><label>Contact Date <em>*</em></label><input name="date" id="contactDate" required type="date"></div><div><label>Outcome <em>*</em></label><select name="outcome" required><option value="">Select outcome</option><option>Spoke with customer</option><option>No answer</option><option>Left voicemail</option><option>Email sent</option><option>Meeting / appointment</option><option>Customer decision pending</option><option>Other</option></select></div><div class="full"><label>Notes / Comments</label><textarea name="notes" placeholder="What happened? What did the customer say? What is the commercial context?"></textarea><div class="hint">Required when outcome is “Spoke with customer”.</div></div></div></section>
